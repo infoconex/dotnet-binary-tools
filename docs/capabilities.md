@@ -1,6 +1,6 @@
 # Version 0.1 approved product capabilities
 
-**Status: Approved (Decision 35).** Capability identifiers are stable; implementation is not yet complete.
+**Status: Approved.** Capability identifiers are stable; implementation is not yet complete.
 
 | ID | Capability | Responsibility |
 | --- | --- | --- |

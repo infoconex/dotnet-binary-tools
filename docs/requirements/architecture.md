@@ -1,6 +1,6 @@
 # Mandatory architecture constraints (approved)
 
-**Status: Approved (Decision 35).** These are binding constraints across CAP-001–CAP-008, not another product capability.
+**Status: Approved.** These are binding constraints across CAP-001–CAP-008, not another product capability.
 
 | ID | Architectural constraint | Verification |
 | --- | --- | --- |
