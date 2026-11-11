@@ -2,7 +2,7 @@
 
 Follow [AGENTS.md](../AGENTS.md) and [docs/README.md](../docs/README.md) as authoritative project guidance.
 
-- Keep the project on .NET 11 / modern SDK-style builds; do not copy RecordSift's net48/C# 7.3 restrictions.
+- Keep the project on .NET 11 with modern SDK-style builds and compatible language features.
 - Enforce Microsoft's C# conventions using `.editorconfig`, nullable reference types, meaningful XML API comments and scoped architecture boundaries.
 - Work in one issue-scoped PR; verify the exact current branch and avoid changes to `main` without review.
 - Trace FR/NFR scenario specifications to NUnit tests and actual GitHub Actions evidence. Use red/green/refactor for missing functionality.

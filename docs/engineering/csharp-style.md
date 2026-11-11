@@ -1,6 +1,6 @@
 # Microsoft-aligned C# coding standard
 
-Adapted from the engineering standards of [RecordSift](https://github.com/infoconex/RecordSift/blob/main/docs/engineering/csharp-style.md), for modern .NET 11 rather than net48.
+Project coding conventions for .NET 11, aligned with Microsoft's C# coding-style and identifier guidelines.
 
 ## Language and formatting
 

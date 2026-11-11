@@ -10,7 +10,7 @@ The tool reads compiled managed assemblies without source code and must not exec
 
 Use two production SDK-style projects: `Infoconex.DotNetFramework.Core` and `Infoconex.DotNetFramework.Cli`. CLI depends on Core, never the reverse. Core owns parsing and results; CLI owns paths, arguments, output and packaging. Use corresponding independent NUnit test projects.
 
-Prefer standard Microsoft metadata libraries. Do not create RecordSift's extensive domain/application/adapter assembly graph without an actual need.
+Prefer standard Microsoft metadata libraries. Avoid extra Domain/Application/Infrastructure assemblies without an actual requirement.
 
 ## Consequences
 

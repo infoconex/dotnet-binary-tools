@@ -1,6 +1,6 @@
 # Testing strategy and TDD policy
 
-Adapted from RecordSift's requirements-driven approach.
+This document establishes the requirements-driven testing and TDD policy for dotnet-framework.
 
 ## Red / Green / Refactor
 
