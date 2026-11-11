@@ -11,7 +11,7 @@ import sys
 from pathlib import PurePosixPath
 
 LF_EXTENSIONS = {
-    ".cs", ".csproj", ".props", ".targets", ".slnx", ".config",
+    ".cs", ".csx", ".csproj", ".props", ".targets", ".slnx", ".config",
     ".xml", ".md", ".json", ".yml", ".yaml", ".py",
     ".ps1", ".psm1", ".psd1", ".sh", ".txt", ".nuspec",
 }

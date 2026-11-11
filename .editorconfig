@@ -86,7 +86,7 @@ dotnet_naming_symbols.private_static_fields.required_modifiers = static
 dotnet_naming_style.s_camel.capitalization = camel_case
 dotnet_naming_style.s_camel.required_prefix = s_
 
-# Acceptance test method names use stable FR-/NFR- scenario IDs.
+# Acceptance tests use independent SC-<capability>-### or NFR-###-SC## scenario IDs.
 # Production source rules do not apply to the tests directory.
 
 [*.{csproj,props,targets,config,xml}]

@@ -26,6 +26,24 @@ public sealed class CliApplicationTests
     }
 
     [Test]
+    public void HelpReflectsSingleFileAndMultipleDirectoryInputs()
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var code = CliApplication.Run(new[] { "--help" }, output, error);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.Zero);
+            Assert.That(output.ToString(), Does.Contain("inspect <file>"));
+            Assert.That(output.ToString(), Does.Contain("any extension"));
+            Assert.That(output.ToString(), Does.Contain("scan <directory> [<directory> ...]"));
+            Assert.That(error.ToString(), Is.Empty);
+        });
+    }
+
+    [Test]
     public void InspectionCommandMustNotPretendToWork()
     {
         using var output = new StringWriter();

@@ -8,6 +8,7 @@ LICENSE text eol=lf
 
 # .NET source and build configuration.
 *.cs text eol=lf
+*.csx text eol=lf
 *.csproj text eol=lf
 *.props text eol=lf
 *.targets text eol=lf

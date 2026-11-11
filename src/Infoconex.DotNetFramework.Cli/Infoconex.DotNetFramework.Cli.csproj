@@ -10,7 +10,7 @@
     <PackageId>Infoconex.DotNetFramework.Tools</PackageId>
     <Version>0.1.0-preview.1</Version>
     <Authors>Infoconex</Authors>
-    <Description>A .NET CLI extension for inspecting compiled assemblies and their declared target frameworks.</Description>
+    <Description>Cross-platform, metadata-only inspection of compiled .NET binaries, deployment runtime configuration, and framework lifecycle information.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/infoconex/dotnet-framework</PackageProjectUrl>

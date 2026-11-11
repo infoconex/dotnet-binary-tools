@@ -19,7 +19,7 @@ Project coding conventions for .NET 11, aligned with Microsoft's C# coding-style
 - Private instance fields: `_camelCase`.
 - Private static nonconstant fields: `s_camelCase`.
 - All constants: PascalCase, regardless of accessibility.
-- Namespaces reflect responsibility: `Infoconex.DotNetFramework.Core`, `Infoconex.DotNetFramework.Cli`, and subnamespaces.
+- Namespaces reflect the compiled layers: `Infoconex.DotNetFramework.Domain`, `.Application`, `.Infrastructure`, `.Cli`, and their subnamespaces.
 
 The root `.editorconfig` declares Roslyn naming rules. CI runs `dotnet format style --diagnostics IDE1006 --verify-no-changes`, not merely editor suggestions.
 
@@ -27,7 +27,7 @@ The root `.editorconfig` declares Roslyn naming rules. CI runs `dotnet format st
 
 - Document public APIs with useful XML comments, including inputs, errors and ownership.
 - Use `nameof` for argument exceptions; preserve stable diagnostic codes and JSON field names.
-- Keep Core unaware of CLI or NuGet packaging; never expose framework or third-party metadata-reader objects in its public result contract.
+- Keep Domain independent of Application, Infrastructure, CLI and NuGet packaging; define consumed ports in Application and prevent external metadata-reader types from leaking into inner contracts.
 - Never load or execute inspected assemblies. Read-only metadata access is the security boundary.
 - Treat PE files, metadata lengths and directory traversal as hostile; bound work and handle errors explicitly.
 - Avoid ambient culture, random iteration order and nondeterministic path formatting in machine-readable output.

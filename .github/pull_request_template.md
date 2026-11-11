@@ -2,8 +2,8 @@
 
 Issue: #<!-- number or explain setup exception -->
 Capability: `CAP-###`
-Requirements/constraints: `FR-INP-###` / `NFR-###` / `ARCH-###`
-Scenarios: `SC-INP-###` / `NFR-###-SC##` (or future independent IDs)
+Requirements/constraints: `FR-<capability>-###` (for example `FR-ASM-001`) / `NFR-###` / `ARCH-###`
+Scenarios: `SC-<capability>-###` (for example `SC-ASM-001`) / `NFR-###-SC##`
 
 Describe the smallest behavior or engineering improvement delivered.
 

@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace Infoconex.DotNetFramework.Cli;
 
 /// <summary>
@@ -24,9 +22,10 @@ public static class CliApplication
         if (arguments.Count == 0 ||
             (arguments.Count == 1 && arguments[0] is "--help" or "-h" or "help"))
         {
-            output.WriteLine("dotnet-framework: .NET assembly target-framework inventory");
+            output.WriteLine("dotnet-framework: static .NET binary inspection (planned)");
             output.WriteLine("Usage: dotnet framework <command> [options]");
-            output.WriteLine("Planned: inspect <assembly>, scan <directory>");
+            output.WriteLine("Planned: inspect <file> [options] (one regular file, any extension)");
+            output.WriteLine("         scan <directory> [<directory> ...] [options]");
             output.WriteLine("Status: engineering foundation; inspection commands not implemented yet.");
             return 0;
         }

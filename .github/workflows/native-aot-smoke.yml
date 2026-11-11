@@ -37,11 +37,34 @@ jobs:
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '11.0.x'
-      - name: Install Linux AOT compiler prerequisites
+      - name: Verify Linux AOT compiler prerequisites
         if: runner.os == 'Linux'
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang zlib1g-dev
+          set -euo pipefail
+          if ! command -v clang >/dev/null 2>&1; then
+            for candidate in clang-20 clang-19 clang-18 clang-17 clang-16; do
+              if command -v "$candidate" >/dev/null 2>&1; then
+                sudo ln -s "$(command -v "$candidate")" /usr/local/bin/clang
+                break
+              fi
+            done
+          fi
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            for attempt in 1 2 3; do
+              if sudo apt-get update && sudo apt-get install -y clang zlib1g-dev; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "Linux AOT prerequisites unavailable after three installation attempts." >&2
+                exit 1
+              fi
+              sleep 10
+            done
+          fi
+          command -v clang
+          clang --version
+          test -f /usr/include/zlib.h
       - name: Restore for native RID
         shell: pwsh
         run: |
