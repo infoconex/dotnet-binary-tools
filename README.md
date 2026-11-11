@@ -16,7 +16,7 @@ This repository includes a **.NET 11 engineering foundation** and a help-only CL
 - **CLI command:** `dotnet-framework` / `dotnet framework` when installed as a .NET Tool.
 - **Implementation status:** `--help` and `--version` work in the scaffold. `inspect` and `scan` deliberately return an unimplemented error.
 
-Engineering standards and the normative requirements are in [docs/README.md](docs/README.md), [the FR/NFR catalogs](docs/requirements/functional.md), [acceptance scenarios](docs/scenarios/README.md), and [traceability](docs/testing/traceability.md). The original twelve `REQ-###` identifiers below are maintained through an explicit mapping.
+Engineering standards and the normative requirements are in [docs/README.md](docs/README.md), [the FR/NFR catalogs](docs/requirements/functional.md), [acceptance scenarios](docs/scenarios/README.md), and [traceability](docs/testing/traceability.md).
 
 The solution uses the XML-based `DotNetFramework.slnx` format, and the root NuGet configuration is `nuget.config` (lowercase). Explicitly supplying the configuration during restore keeps package sources consistent on every platform.
 
@@ -83,24 +83,9 @@ Illustrative JSON output:
 
 Outputs must clearly distinguish **detected metadata** from an **unknown** or **inferred** result. The JSON shape is illustrative and will be finalized with automated contract tests.
 
-## Original requirements: v0.1 (mapped to FR/NFR catalog)
+## Requirements and acceptance
 
-The following original IDs remain for historical context. The authoritative specifications now use stable FR/NFR IDs in [the engineering catalog](docs/README.md).
-
-| ID | Requirement |
-| --- | --- |
-| REQ-001 → FR-001 | Inspect a specified DLL or EXE file and determine whether it contains a readable managed .NET assembly. |
-| REQ-002 → FR-002 | Read the assembly's declared `TargetFrameworkAttribute`, when present, **without loading or executing the assembly**. |
-| REQ-003 → FR-003 | Preserve the original framework moniker and produce a human-readable framework name when it can be mapped reliably. |
-| REQ-004 → FR-004 | Recognize common declared targets across .NET Framework, .NET Standard, and modern .NET (`.NETCoreApp`). Do not hard-code an upper major-version limit. |
-| REQ-005 → FR-005 | Report a clear `unknown`, `not managed`, or `invalid/unreadable` result when the target cannot be established. Do not manufacture a target framework. |
-| REQ-006 → FR-006 | Support one-file inspection through `dotnet framework inspect <path>`. |
-| REQ-007 → FR-007 | Support directory inventory through `dotnet framework scan <directory>`, with optional recursive traversal of DLL and EXE files. |
-| REQ-008 → FR-008 | Provide readable console output and machine-readable JSON output suitable for scripting or CI use. |
-| REQ-009 → NFR-001 | Handle missing files, invalid binaries, permission failures, and malformed metadata with actionable errors, without terminating an entire directory scan because of one bad file. |
-| REQ-010 → NFR-002 | Work on Windows, Linux, and macOS for supported managed assembly formats, without requiring the inspected application's runtime or source code. |
-| REQ-011 → NFR-003 | Be packaged as a standard .NET Tool using the command name `dotnet-framework`, with help and version information. |
-| REQ-012 → NFR-004 | Include automated tests covering successful detection, unknown targets, invalid inputs, CLI output, and directory scans. |
+The v0.1 specification is maintained in the [functional requirements](docs/requirements/functional.md), [nonfunctional requirements](docs/requirements/non-functional.md), [Given/When/Then scenarios](docs/scenarios/README.md), and [scenario-to-test traceability](docs/testing/traceability.md). These are the authoritative sources for requirement identifiers, acceptance criteria, and verification evidence.
 
 ### Detection rules and limitations
 
@@ -130,7 +115,7 @@ Automated tests should use known fixture assemblies with explicitly documented t
 
 ## Engineering approach
 
-- **Language and platform:** C# and a modern, supported .NET SDK. The tool's own target framework will be selected during implementation.
+- **Language and platform:** C# and .NET 11, using the SDK selected by `global.json`.
 - **Metadata reader:** Prefer Microsoft's `System.Reflection.Metadata` and `System.Reflection.PortableExecutable` APIs to inspect binary metadata directly.
 - **Architecture:** Keep binary inspection separate from CLI argument parsing, formatting, and directory traversal so the detection logic can be tested independently.
 - **Portability:** Use cross-platform APIs and paths. Do not depend on Visual Studio or Windows-only SDK utilities for normal operation.

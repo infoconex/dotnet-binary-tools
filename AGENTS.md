@@ -34,7 +34,6 @@ These instructions apply to the whole repository. Read [docs/README.md](docs/REA
 ## Requirements and TDD
 
 - The v0.1 requirement catalog is under `docs/requirements`, with stable `FR-###` / `NFR-###` identifiers and `FR-###-SC##` / `NFR-###-SC##` scenarios.
-- The earlier README `REQ-001`–`REQ-012` numbers are retained via an explicit mapping in the requirements index.
 - For a new behavior: first add an independently failing test, then implement the smallest passing change, then refactor.
 - For existing behavior: verification-only tests are allowed without manufacturing a red test; state why.
 - Include positive, negative, edge, malicious, and platform-specific cases as appropriate. Use sanitized synthetic binary fixtures.

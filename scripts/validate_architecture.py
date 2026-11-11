@@ -59,16 +59,41 @@ def validate_repository_layout() -> None:
         report("Missing lowercase nuget.config")
     else:
         try:
-            if ET.parse(config).getroot().tag != "configuration":
+            config_root = ET.parse(config).getroot()
+            if config_root.tag != "configuration":
                 report("nuget.config must have a configuration root")
+            for section in ("packageSources", "disabledPackageSources", "packageSourceMapping", "auditSources"):
+                node = config_root.find(section)
+                if node is None or node.find("clear") is None:
+                    report(f"nuget.config: {section} must clear inherited configuration")
+            sources = config_root.findall("./packageSources/add")
+            if len(sources) != 1 or sources[0].get("key") != "nuget.org" or sources[0].get("value") != "https://api.nuget.org/v3/index.json":
+                report("nuget.config must use only the official nuget.org package source")
         except ET.ParseError as exc:
             report(f"Invalid nuget.config XML: {exc}")
     if (ROOT / "NuGet.Config").exists():
         report("Remove uppercase NuGet.Config; use lowercase nuget.config only")
 
 
+def validate_central_package_management() -> None:
+    props = ROOT / "Directory.Packages.props"
+    if not props.is_file():
+        report("Missing Directory.Packages.props")
+        return
+    try:
+        root = ET.parse(props).getroot()
+        values = [node.text for node in root.findall(".//ManagePackageVersionsCentrally")]
+        if values != ["true"]:
+            report("Directory.Packages.props must enable central package management")
+        if not root.findall(".//PackageVersion"):
+            report("Directory.Packages.props must define centrally managed package versions")
+    except ET.ParseError as exc:
+        report(f"Invalid Directory.Packages.props XML: {exc}")
+
+
 def main() -> int:
     validate_repository_layout()
+    validate_central_package_management()
     expected = {
         "core": set(),
         "cli": {"Infoconex.DotNetFramework.Core.csproj"},

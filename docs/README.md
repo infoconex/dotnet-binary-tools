@@ -4,7 +4,7 @@ This repository is in its **engineering-foundation phase**. No assembly-inspecti
 
 ## Governing documents
 
-- [Functional requirements](requirements/functional.md) and [nonfunctional requirements](requirements/non-functional.md): stable FR/NFR IDs, priority and original README REQ mapping.
+- [Functional requirements](requirements/functional.md) and [nonfunctional requirements](requirements/non-functional.md): stable FR/NFR IDs and priorities.
 - [Acceptance scenarios](scenarios/README.md): normative Given/When/Then specifications, one file per requirement.
 - [Scenario-to-test traceability](testing/traceability.md): execution status and observed evidence; no speculative passes.
 - [TDD and testing strategy](testing/strategy.md): test levels, fixtures, red/green/refactor, platform proof.
@@ -12,10 +12,6 @@ This repository is in its **engineering-foundation phase**. No assembly-inspecti
 - [ADR 0001](engineering/decisions/0001-core-cli-boundary.md): Core and CLI dependency boundaries.
 - [ADR 0002](engineering/decisions/0002-dotnet-11-aot-tools.md): .NET 11, AOT, RID-specific packaging, and command/package naming.
 - [Packaging and distribution](engineering/packaging.md): planned NuGet Tool and standalone executables.
-
-## Relationship to RecordSift
-
-The standards were adapted from [RecordSift](https://github.com/infoconex/RecordSift), including explicit requirements, TDD traceability, Microsoft C# naming enforcement, CI evidence and sole-maintainer release governance. RecordSift's Windows-only .NET Framework 4.8 build structure, CSV/XLSX implementation and release-specific scripts are intentionally not copied.
 
 ## Status semantics
 
