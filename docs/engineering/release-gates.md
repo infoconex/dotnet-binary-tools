@@ -9,7 +9,7 @@ Configure a GitHub ruleset for `main` to require PRs, prohibit force-pushes/dele
 ## Change acceptance
 
 - Requirement, scenarios, test coverage, failure cases and traceability are complete for the issue scope.
-- CI checks pass for the exact PR candidate SHA and supported OS matrix; failed or missing checks block acceptance.
+- Applicable CI checks pass for the exact PR candidate SHA. Documentation-only changes intentionally skip managed/NUnit/AOT jobs; skipped jobs are not proof of execution. Changed production/build configuration requires the applicable OS checks, while a release candidate requires explicitly executed full-matrix verification. Failed or missing applicable checks block acceptance.
 - Code style, XML API documentation, dependency inventory, security and mandatory ARCH-001–ARCH-008 inward-only architecture reviewed.
 - No unsupported claim of Native AOT, clean consumer install, cross-platform compatibility or actual runtime independence.
 - Explicit owner GO for merge after second-pass risk review.

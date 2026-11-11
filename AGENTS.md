@@ -23,4 +23,5 @@ Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities.md), and
 - For new functionality, write meaningful failing tests first, implement minimally, then refactor. Ensure independent architecture, component, integration and negative tests as appropriate.
 - Do not claim `inspect`/`scan` or lifecycle, config, JSON, AOT runtime-free or installation acceptance until actual code and observed evidence exist.
 - Use `python3 scripts/validate_docs.py`, `python3 scripts/validate_architecture.py`, `python3 scripts/validate_test_metadata.py`, `python3 scripts/validate_line_endings.py` in addition to build/NUnit/Native AOT checks.
+- CI uses `scripts/ci_change_scope.py` to gate documentation checks and expensive managed/Native AOT builds by affected paths. Test the classifier with `python3 -m unittest discover -s scripts/tests`; manual workflow dispatch runs the full matrix. NuGet global-package caching never replaces restore or the dependency audit.
 - Require accurate public XML documentation, safe error messages, non-sensitive synthetic fixtures, versioned JSON contracts and precise PR verification claims.

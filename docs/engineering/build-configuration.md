@@ -31,6 +31,25 @@ git diff --cached --check
 
 Review staged changes before committing; avoid broad formatting changes unrelated to EOL normalization. A successful CI EOL gate confirms the checked-out tracked files and index already meet the policy.
 
+## Change-aware CI and NuGet dependency caching
+
+All three GitHub Actions workflows still trigger on pull requests targeting `main`, pushes to `main`, and manual dispatch. A shared, tested `scripts/ci_change_scope.py` classifier evaluates the changed paths; checks are gated at **job or step level**, not with workflow-level `paths` filters. This preserves check results for branch rules: documentation-only PRs do not build .NET or run NUnit/AOT jobs, while source and build configuration changes do. A change-detection failure fails CI instead of silently skipping checks.
+
+| Change type | Documentation validation | Managed build/NUnit | Native AOT | Relevant engineering gates |
+| --- | --- | --- | --- | --- |
+| Documentation (`docs/**`, `README.md`, `AGENTS.md`, GitHub Markdown) | Yes | No | No | Scenario/test metadata where applicable; line endings |
+| Production source (`src/**`) | No, unless docs also change | Yes | Yes | Project dependency/architecture; line endings |
+| NUnit tests (`tests/**`) | No, unless docs also change | Yes | No | Scenario metadata and relevant project references |
+| Global build/NuGet/SDK configuration | No, unless docs also change | Yes | Yes | Architecture and line endings |
+| Specific workflow/validator changes | Only if documentation validator changes | As relevant to the changed workflow | As relevant to the changed workflow | Applicable validator |
+| Manual dispatch | Yes | Yes | Yes | All |
+
+The two .NET workflows use the existing pinned `actions/setup-dotnet` action's NuGet **global-packages** cache. Keys hash `Directory.Packages.props`, shared build properties/targets, `global.json`, `nuget.config` and all project files. The Native AOT workflow also includes its workflow definition in its key so its RID-specific dependency cache is distinct from the managed cache. Host operating systems are separated by the action's cache-key calculation.
+
+No new lock-file policy is introduced just for caching. Restores still execute and perform the configured NuGet audit; cached packages are a download optimization, **not** proof of dependency consistency. We do not cache `bin`, `obj`, compilation outputs, toolchains or entire build environments. AOT compiler prerequisites are verified on runners and installed only if missing.
+
+For a release candidate or any audit requiring full verification, use manual workflow dispatch to force the complete documentation, managed build/NUnit and Native AOT checks on the exact selected commit; do not treat an intentionally skipped job as evidence of execution.
+
 ## NuGet source isolation
 
 The root `nuget.config` clears inherited settings in four sections: `packageSources`, `disabledPackageSources`, `packageSourceMapping`, and `auditSources`. It then adds nuget.org as the sole approved package source and audit endpoint.
