@@ -9,10 +9,27 @@
 | `DotNetFramework.slnx` | .NET CLI and IDE | Single XML-format solution containing separate Domain, Application, Infrastructure, CLI and their test projects |
 | `global.json` | .NET SDK resolver | Selects the .NET 11 SDK baseline with feature-band roll-forward |
 | `.editorconfig` | C# analyzers and editors | Code style, whitespace and enforceable naming rules |
+| `.gitattributes` | Git | Normalize tracked text in the index and enforce LF checkout for cross-platform text; reserve CRLF for Windows command scripts |
 | `Directory.Build.props` | MSBuild, early import | Shared target framework, nullable analysis, warnings-as-errors, build determinism and NuGet auditing |
 | `Directory.Build.targets` | MSBuild, late import | XML documentation on production projects only, after test-project properties are known |
 | `Directory.Packages.props` | NuGet Central Package Management | Enables `ManagePackageVersionsCentrally` and pins all direct package versions |
 | `nuget.config` | NuGet restore/audit | Explicit approved feeds, clears inherited package sources, disabled-source settings, source mappings and audit sources |
+
+## Git line-ending policy
+
+The root `.editorconfig` defines editor behavior; `.gitattributes` governs Git's index normalization and checkout across Windows, Linux and macOS. Source code, scripts, documentation, and XML/JSON/YAML configuration use LF. Future `.bat` and `.cmd` scripts use CRLF in the working tree. Binary file patterns are explicitly excluded from conversion.
+
+The engineering workflow checks Git's indexed newline classification, effective attributes and checkout representation via `python3 scripts/validate_line_endings.py`. This makes line-ending consistency a versioned CI requirement, independent of each developer's `core.autocrlf` setting.
+
+If existing tracked text needs normalization after changing the policy, run:
+
+```shell
+git add --renormalize .
+git diff --cached --stat
+git diff --cached --check
+```
+
+Review staged changes before committing; avoid broad formatting changes unrelated to EOL normalization. A successful CI EOL gate confirms the checked-out tracked files and index already meet the policy.
 
 ## NuGet source isolation
 

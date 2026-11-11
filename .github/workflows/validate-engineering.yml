@@ -23,6 +23,8 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
+      - name: Verify tracked text normalization and checkout line endings
+        run: python3 scripts/validate_line_endings.py
       - name: Check documented requirement coverage and local links
         run: python3 scripts/validate_docs.py
       - name: Check project dependency graph and AOT package identity

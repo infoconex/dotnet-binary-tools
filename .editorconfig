@@ -95,3 +95,7 @@ indent_size = 2
 [*.md]
 # Preserve intentional Markdown hard-line breaks.
 trim_trailing_whitespace = false
+
+[*.{bat,cmd}]
+# Match the Git checkout policy for Windows command scripts.
+end_of_line = crlf
