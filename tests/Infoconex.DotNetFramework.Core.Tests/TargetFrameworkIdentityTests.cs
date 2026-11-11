@@ -17,11 +17,16 @@ public sealed class TargetFrameworkIdentityTests
         Assert.That(identity.Moniker, Is.EqualTo(Moniker));
     }
 
-    [TestCase(null)]
+    [Test]
+    public void NullMonikerThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => new TargetFrameworkIdentity(null!));
+    }
+
     [TestCase("")]
     [TestCase("  ")]
-    public void MissingMonikerIsRejected(string? moniker)
+    public void BlankMonikerThrowsArgumentException(string moniker)
     {
-        Assert.Throws<ArgumentException>(() => new TargetFrameworkIdentity(moniker!));
+        Assert.Throws<ArgumentException>(() => new TargetFrameworkIdentity(moniker));
     }
 }
