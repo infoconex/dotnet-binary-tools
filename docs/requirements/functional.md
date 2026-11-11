@@ -1,6 +1,6 @@
-# Approved functional requirements — CAP-001 Input Selection
+# Functional requirements — v0.1 approved baseline
 
-**Status: Approved (Decision 41).** Other capability boundaries are approved but their detailed FRs are not yet ratified. No feature acceptance has been demonstrated.
+**Status:** Approved v0.1 specification. CAP-001 requirements were previously approved; CAP-002–CAP-008 requirements were approved for inclusion in PR #1. **No functional acceptance has been demonstrated.**
 
 | ID | Capability | Requirement | Acceptance scenarios |
 | --- | --- | --- | --- |
@@ -12,13 +12,77 @@
 | FR-INP-006 | CAP-001 | Require explicit paths, without application-level wildcard expansion. | [Scenarios](../scenarios/functional/FR-INP-006.md) |
 | FR-INP-007 | CAP-001 | Produce actionable diagnostics identifying invalid inputs and validation failures. | [Scenarios](../scenarios/functional/FR-INP-007.md) |
 | FR-INP-008 | CAP-001 | Supply validated input information downstream without inspecting assembly contents or traversing directories. | [Scenarios](../scenarios/functional/FR-INP-008.md) |
+| FR-ASM-001 | CAP-002 | Statically inspect a selected file for PE/CLI metadata without loading, invoking, or executing the selected artifact. | [Scenarios](../scenarios/functional/FR-ASM-001.md) |
+| FR-ASM-002 | CAP-002 | Classify managed assembly, native/non-managed candidate, corrupt/unrecognized file, and unreadable file as distinguishable outcomes. | [Scenarios](../scenarios/functional/FR-ASM-002.md) |
+| FR-ASM-003 | CAP-002 | Extract the exact declared TargetFrameworkAttribute moniker, preserving its original value and evidence source. | [Scenarios](../scenarios/functional/FR-ASM-003.md) |
+| FR-ASM-004 | CAP-002 | Recognize declared .NET Framework, .NET Core, .NET 5+ and .NET Standard families and versions, while preserving unknown or future monikers. | [Scenarios](../scenarios/functional/FR-ASM-004.md) |
+| FR-ASM-005 | CAP-002 | Report a missing target-framework declaration as unknown and keep CLR metadata version separate; never infer a target from CLR version, references, APIs or filename. | [Scenarios](../scenarios/functional/FR-ASM-005.md) |
+| FR-ASM-006 | CAP-002 | Extract available assembly identity fields: simple name, assembly version, culture, public-key token and full assembly identity. | [Scenarios](../scenarios/functional/FR-ASM-006.md) |
+| FR-ASM-007 | CAP-002 | Report optional informational, file, company, product and description metadata only when present, without inventing defaults or treating these values as runtime targets. | [Scenarios](../scenarios/functional/FR-ASM-007.md) |
+| FR-ASM-008 | CAP-002 | Read PE machine architecture and managed execution flags, distinguishing metadata facts from actual process bitness or runtime capabilities. | [Scenarios](../scenarios/functional/FR-ASM-008.md) |
+| FR-ASM-009 | CAP-002 | Report declared entry-point presence and direct assembly references, without constructing a dependency graph or associating an application host with adjacent files. | [Scenarios](../scenarios/functional/FR-ASM-009.md) |
+| FR-ASM-010 | CAP-002 | Expose basic file facts and optional SHA-256 content hashing on explicit request, with hashing subject to resource and read-failure safeguards. | [Scenarios](../scenarios/functional/FR-ASM-010.md) |
+| FR-ASM-011 | CAP-002 | Preserve partial trustworthy metadata and record field-level problems when optional metadata is malformed, without converting unreadable content into confident findings. | [Scenarios](../scenarios/functional/FR-ASM-011.md) |
+| FR-CFG-001 | CAP-003 | Automatically discover only directly associated supported configuration filenames without searching neighboring application directories or guessing host relationships. | [Scenarios](../scenarios/functional/FR-CFG-001.md) |
+| FR-CFG-002 | CAP-003 | Accept an explicitly supplied supported configuration path for an individual inspection, validate that path, and distinguish it from automatic discovery. | [Scenarios](../scenarios/functional/FR-CFG-002.md) |
+| FR-CFG-003 | CAP-003 | Parse supported .NET Framework executable configuration runtime declarations including startup supportedRuntime version and sku when present, preserving raw values. | [Scenarios](../scenarios/functional/FR-CFG-003.md) |
+| FR-CFG-004 | CAP-003 | Parse modern .runtimeconfig.json runtimeOptions fields needed to describe TFM, framework/frameworks names and versions, and declared runtime-selection policies. | [Scenarios](../scenarios/functional/FR-CFG-004.md) |
+| FR-CFG-005 | CAP-003 | Represent configuration absence explicitly as not found; never infer a runtime requirement, installed runtime or actual execution environment from absence. | [Scenarios](../scenarios/functional/FR-CFG-005.md) |
+| FR-CFG-006 | CAP-003 | Represent malformed, unreadable or unsupported configuration as distinct findings with diagnostic context, without executing application code. | [Scenarios](../scenarios/functional/FR-CFG-006.md) |
+| FR-CFG-007 | CAP-003 | Keep each requested deployment runtime separate from the inspected assembly’s declared target, including when values disagree. | [Scenarios](../scenarios/functional/FR-CFG-007.md) |
+| FR-CFG-008 | CAP-003 | Preserve configuration provenance (path, association mode and field origin) and never claim that a requested runtime is installed or running. | [Scenarios](../scenarios/functional/FR-CFG-008.md) |
+| FR-LCY-001 | CAP-004 | Ship a local, versioned lifecycle reference dataset with identifiable authoritative sources, publication/update date and coverage. | [Scenarios](../scenarios/functional/FR-LCY-001.md) |
+| FR-LCY-002 | CAP-004 | Assess known .NET Framework, .NET Core and modern .NET target identities using dated published support information, subject to source-specific applicability limits. | [Scenarios](../scenarios/functional/FR-LCY-002.md) |
+| FR-LCY-003 | CAP-004 | Assess requested deployment runtime versions independently from assembly target lifecycles, never substituting one for the other. | [Scenarios](../scenarios/functional/FR-LCY-003.md) |
+| FR-LCY-004 | CAP-004 | Treat .NET Standard as an API specification rather than an installed runtime; handle unknown, unsupported-to-classify or future versions without making up dates. | [Scenarios](../scenarios/functional/FR-LCY-004.md) |
+| FR-LCY-005 | CAP-004 | Emit advisory, non-enforcing statuses with assessment date, source and limitations; do not decide actual application compliance or change CLI success based on lifecycle findings. | [Scenarios](../scenarios/functional/FR-LCY-005.md) |
+| FR-LCY-006 | CAP-004 | Expose lifecycle data provenance, dataset version, source publication/fetch dates, assessment date and freshness warnings wherever findings are emitted. | [Scenarios](../scenarios/functional/FR-LCY-006.md) |
+| FR-LCY-007 | CAP-004 | Refresh lifecycle data only when explicitly requested, obtain it from approved authoritative sources, validate and atomically replace cached data, and never allow network access in the default path. | [Scenarios](../scenarios/functional/FR-LCY-007.md) |
+| FR-LCY-008 | CAP-004 | On refresh failure, preserve last known valid data, warn about the failure and mark assessment provenance honestly; never install partial or untrusted data. | [Scenarios](../scenarios/functional/FR-LCY-008.md) |
+| FR-INV-001 | CAP-005 | Coordinate an inventory result for both an individual inspect request and a multi-root scan using shared aggregation and completion semantics. | [Scenarios](../scenarios/functional/FR-INV-001.md) |
+| FR-INV-002 | CAP-005 | Select DLL and EXE candidates during scanning by filename extension, using consistent ASCII case-insensitive extension matching without reading unrelated files. | [Scenarios](../scenarios/functional/FR-INV-002.md) |
+| FR-INV-003 | CAP-005 | Scan only selected directories by default, with explicit opt-in recursion; do not discover unrelated drives, processes or application installations. | [Scenarios](../scenarios/functional/FR-INV-003.md) |
+| FR-INV-004 | CAP-005 | Produce independently classified per-candidate entries and do not group binaries into inferred applications or treat a native apphost as its neighboring DLL. | [Scenarios](../scenarios/functional/FR-INV-004.md) |
+| FR-INV-005 | CAP-005 | Continue after per-candidate read, parse or permission failures, recording failure details and counts without discarding successful findings. | [Scenarios](../scenarios/functional/FR-INV-005.md) |
+| FR-INV-006 | CAP-005 | Skip discovered directory symbolic links and junctions by default, but honor explicitly selected linked roots regardless of the recursion setting. | [Scenarios](../scenarios/functional/FR-INV-006.md) |
+| FR-INV-007 | CAP-005 | When --follow-links is enabled, prevent traversal cycles and duplicate subtree visits and report what is skipped. | [Scenarios](../scenarios/functional/FR-INV-007.md) |
+| FR-INV-008 | CAP-005 | Enforce documented configurable defaults and explicit bounds for traversal depth, candidate file count and file size, plus mandatory parsing/time/memory safeguards. | [Scenarios](../scenarios/functional/FR-INV-008.md) |
+| FR-INV-009 | CAP-005 | Return available findings and mark coverage incomplete when resource limits stop the scan, without treating the valid scan as a command failure. | [Scenarios](../scenarios/functional/FR-INV-009.md) |
+| FR-INV-010 | CAP-005 | Aggregate accurate totals and distributions across managed, non-managed, unknown-target, failures, skipped paths, limits and applicable lifecycle findings. | [Scenarios](../scenarios/functional/FR-INV-010.md) |
+| FR-INV-011 | CAP-005 | Avoid duplicate candidate reporting from overlapping selected roots and followed links when the same physical path is encountered, recording deduplication. | [Scenarios](../scenarios/functional/FR-INV-011.md) |
+| FR-INV-012 | CAP-005 | Record the list of validated roots, traversal errors and explicit completion reasons so consumers can distinguish completed, partial and failed inventory work. | [Scenarios](../scenarios/functional/FR-INV-012.md) |
+| FR-RPT-001 | CAP-006 | Use one documented, versioned JSON envelope for inspect and scan, containing command, inputs, generation metadata, completion, summary, findings and applicable dataset provenance. | [Scenarios](../scenarios/functional/FR-RPT-001.md) |
+| FR-RPT-002 | CAP-006 | Provide concise human-readable output by default and expanded metadata output under --details without changing the underlying inspection. | [Scenarios](../scenarios/functional/FR-RPT-002.md) |
+| FR-RPT-003 | CAP-006 | Emit exactly one syntactically valid JSON document in JSON mode with no diagnostic prose mixed into stdout. | [Scenarios](../scenarios/functional/FR-RPT-003.md) |
+| FR-RPT-004 | CAP-006 | Support explicit per-assembly field projection through --fields for human and JSON formats, preserving envelope metadata, totals and completion unchanged. | [Scenarios](../scenarios/functional/FR-RPT-004.md) |
+| FR-RPT-005 | CAP-006 | Reject incompatible --details and --fields choices and report unsupported field names through the CLI’s validation contract. | [Scenarios](../scenarios/functional/FR-RPT-005.md) |
+| FR-RPT-006 | CAP-006 | Preserve explicit unknown, non-managed, skipped, malformed and failed results, including individual provenance and errors; never suppress incomplete-coverage warnings. | [Scenarios](../scenarios/functional/FR-RPT-006.md) |
+| FR-RPT-007 | CAP-006 | Write human or JSON results to stdout by default, or to a user-selected report file with --output; reserve stderr for diagnostics. | [Scenarios](../scenarios/functional/FR-RPT-007.md) |
+| FR-RPT-008 | CAP-006 | Never overwrite an existing report: use the requested filename when available or a UTC timestamped and collision-resistant suffix with exclusive creation. | [Scenarios](../scenarios/functional/FR-RPT-008.md) |
+| FR-RPT-009 | CAP-006 | Render large inventories without requiring every serialized item in memory at once, while treating output failure as an explicit reporting error rather than a successful report. | [Scenarios](../scenarios/functional/FR-RPT-009.md) |
+| FR-CLI-001 | CAP-007 | Expose the executable as dotnet-framework and, when installed as a .NET Tool, dotnet framework; support help, version, inspect and scan commands. | [Scenarios](../scenarios/functional/FR-CLI-001.md) |
+| FR-CLI-002 | CAP-007 | Interpret inspect with one file and scan with one or more directories, delegating path validation to CAP-001 and inventory work to the application. | [Scenarios](../scenarios/functional/FR-CLI-002.md) |
+| FR-CLI-003 | CAP-007 | Expose previously approved options for recursion, link traversal, configuration selection, format, details, fields, output, resource limits, optional hashes and explicit lifecycle refresh. | [Scenarios](../scenarios/functional/FR-CLI-003.md) |
+| FR-CLI-004 | CAP-007 | Validate unknown flags, missing option values, incompatible options and invalid input arity before starting costly processing; display actionable diagnostics. | [Scenarios](../scenarios/functional/FR-CLI-004.md) |
+| FR-CLI-005 | CAP-007 | Return exit code zero for successfully generated valid reports, including scans with per-file errors or resource-limit partial coverage; return nonzero for invalid inputs or unrecoverable command/report errors. | [Scenarios](../scenarios/functional/FR-CLI-005.md) |
+| FR-CLI-006 | CAP-007 | Write report data to stdout by default, diagnostics to stderr, avoid ANSI/progress noise in machine-readable output, and support --output without corrupting pipelines. | [Scenarios](../scenarios/functional/FR-CLI-006.md) |
+| FR-CLI-007 | CAP-007 | Expose documented usage and version information, including safety constraints, defaults, output formats and the explicit online refresh option. | [Scenarios](../scenarios/functional/FR-CLI-007.md) |
+| FR-CLI-008 | CAP-007 | Remain a thin adapter/composition root that invokes Application use cases through interfaces rather than implementing binary parsing, lifecycle rules or inventory logic. | [Scenarios](../scenarios/functional/FR-CLI-008.md) |
+| FR-DST-001 | CAP-008 | Ship independently runnable Native AOT standalone executables for Windows x64, Linux x64 and macOS x64, with correct host executable packaging. | [Scenarios](../scenarios/functional/FR-DST-001.md) |
+| FR-DST-002 | CAP-008 | Provide an installable, RID-aware NuGet .NET Tool package using the approved package ID and command dispatch on each supported platform. | [Scenarios](../scenarios/functional/FR-DST-002.md) |
+| FR-DST-003 | CAP-008 | Ensure the standalone executable and NuGet tool deliver identical functional CLI behavior and report contract for the same fixtures and version. | [Scenarios](../scenarios/functional/FR-DST-003.md) |
+| FR-DST-004 | CAP-008 | Publish versioned platform-specific artifacts with verifiable package contents, checksums and appropriate provenance, without claiming unsupported architectures. | [Scenarios](../scenarios/functional/FR-DST-004.md) |
+| FR-DST-005 | CAP-008 | Demonstrate standalone Native AOT runtime independence on clean consumers, and separately verify tool installation and invocation requirements. | [Scenarios](../scenarios/functional/FR-DST-005.md) |
+| FR-DST-006 | CAP-008 | Require real build, smoke execution and relevant feature acceptance on each supported RID in CI or equivalent recorded release validation, never substituting a managed build for AOT evidence. | [Scenarios](../scenarios/functional/FR-DST-006.md) |
+| FR-DST-007 | CAP-008 | Require separate owner approval before tagging, releasing or publishing packages and defer ARM64 until its own verified acceptance evidence exists. | [Scenarios](../scenarios/functional/FR-DST-007.md) |
 
-## Boundaries
+## Boundaries and interpretation
 
-- File contents and extension-based candidate selection are CAP-002/CAP-005 responsibilities, not CAP-001. A renamed assembly is still a valid `inspect` input.
-- A directory that does not exist is an invalid **explicit request**, rejected before traversal. A file failure discovered during a valid scan is an inventory finding and does not invalidate the input.
-- A directly selected link is accepted when its resolved destination is of the correct kind. Links *encountered during recursion* follow CAP-005's opt-in policy.
-- Shell expansion occurring before command invocation is outside application-level glob handling.
-- The retired draft `FR-001`–`FR-008` files do not form the approved functional catalog. IDs are never recycled.
+- CAP-001 validates explicitly supplied paths; CAP-002 classifies/inspects the file; CAP-003 interprets supported runtime configuration; CAP-004 provides informational lifecycle data; CAP-005 owns inventory coverage/aggregation; CAP-006 owns report generation; CAP-007 is a thin interface; CAP-008 owns product distribution.
+- Paths must be validated before scanning. File-level failures and resource-limit stops after valid inputs produce incomplete results without retroactively invalidating the user's request.
+- Never infer a missing target framework from CLR metadata, an executable host from a neighboring DLL, or a deployed/actually executing runtime from static configuration.
+- Static lifecycle advisories do not assert application compliance and do not control success exit codes.
+- Resource defaults, lifecycle freshness thresholds, canonical JSON property names and CLI option aliases still require explicit design/contract decisions before their implementation; see [open decisions](open-decisions.md).
+- Existing `FR-001`–`FR-008` drafts were superseded and their historical identifiers are not recycled.
 
-[Capabilities](../capabilities.md) · [Mandatory architecture](architecture.md) · [Acceptance scenarios](../scenarios/README.md) · [Verification traceability](../testing/traceability.md).
+[Capabilities](../capabilities.md) · [Architecture constraints](architecture.md) · [Scenario index](../scenarios/README.md) · [Traceability](../testing/traceability.md).

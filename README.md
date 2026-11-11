@@ -8,7 +8,7 @@
 
 - [CAP-001–CAP-008: product capabilities](docs/capabilities.md).
 - [ARCH-001–ARCH-008: mandatory SOLID and hexagonal architecture](docs/requirements/architecture.md).
-- [CAP-001 functional requirements](docs/requirements/functional.md), [Given/When/Then scenarios](docs/scenarios/README.md), and [scenario verification status](docs/testing/traceability.md).
+- [71 approved functional requirements](docs/requirements/functional.md), [102 focused Given/When/Then scenarios](docs/scenarios/README.md), and [scenario verification status](docs/testing/traceability.md).
 - [Engineering and development documentation](docs/README.md).
 
 ### Intended CLI (not implemented)
