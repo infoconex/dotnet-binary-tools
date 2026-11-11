@@ -45,12 +45,12 @@ jobs:
       - name: Restore for native RID
         shell: pwsh
         run: |
-          dotnet restore src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj -r ${{ matrix.rid }}
+          dotnet restore src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj -r ${{ matrix.rid }} --configfile nuget.config
           if ($LASTEXITCODE -ne 0) { throw "AOT restore failed" }
       - name: Publish native executable
         shell: pwsh
         run: |
-          dotnet publish src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj -c Release -r ${{ matrix.rid }} --no-restore -p:PublishAot=true -o artifacts/aot/${{ matrix.rid }}
+          dotnet publish src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj -c Release -r ${{ matrix.rid }} --configfile nuget.config --no-restore -p:PublishAot=true -o artifacts/aot/${{ matrix.rid }}
           if ($LASTEXITCODE -ne 0) { throw "AOT publish failed" }
       - name: Run native executable's help command
         shell: pwsh

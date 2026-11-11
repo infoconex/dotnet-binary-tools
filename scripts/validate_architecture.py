@@ -37,7 +37,38 @@ def props(root: ET.Element, name: str) -> list[str]:
     return [item.text.strip() for item in root.findall(".//" + name) if item.text]
 
 
+def validate_repository_layout() -> None:
+    solution = ROOT / "DotNetFramework.slnx"
+    if not solution.is_file():
+        report("Missing XML solution DotNetFramework.slnx")
+    else:
+        try:
+            root = ET.parse(solution).getroot()
+            expected_paths = {project.relative_to(ROOT).as_posix() for project in PROJECTS.values()}
+            actual_paths = {element.attrib.get("Path", "").replace("\\", "/")
+                            for element in root.iter("Project")}
+            if root.tag != "Solution" or actual_paths != expected_paths:
+                report(f"Invalid slnx root or project membership: {sorted(actual_paths)}")
+        except ET.ParseError as exc:
+            report(f"Invalid slnx XML: {exc}")
+    if (ROOT / "DotNetFramework.sln").exists():
+        report("Remove the legacy DotNetFramework.sln; use .slnx only")
+
+    config = ROOT / "nuget.config"
+    if not config.is_file():
+        report("Missing lowercase nuget.config")
+    else:
+        try:
+            if ET.parse(config).getroot().tag != "configuration":
+                report("nuget.config must have a configuration root")
+        except ET.ParseError as exc:
+            report(f"Invalid nuget.config XML: {exc}")
+    if (ROOT / "NuGet.Config").exists():
+        report("Remove uppercase NuGet.Config; use lowercase nuget.config only")
+
+
 def main() -> int:
+    validate_repository_layout()
     expected = {
         "core": set(),
         "cli": {"Infoconex.DotNetFramework.Core.csproj"},

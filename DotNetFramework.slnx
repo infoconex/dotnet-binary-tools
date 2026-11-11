@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solution>
+  <Project Path="src/Infoconex.DotNetFramework.Core/Infoconex.DotNetFramework.Core.csproj" />
+  <Project Path="src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj" />
+  <Project Path="tests/Infoconex.DotNetFramework.Core.Tests/Infoconex.DotNetFramework.Core.Tests.csproj" />
+  <Project Path="tests/Infoconex.DotNetFramework.Cli.Tests/Infoconex.DotNetFramework.Cli.Tests.csproj" />
+</Solution>

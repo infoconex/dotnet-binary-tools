@@ -34,11 +34,11 @@ jobs:
       - name: Record SDK environment
         run: dotnet --info
       - name: Restore and NuGet audit
-        run: dotnet restore DotNetFramework.sln --force-evaluate
+        run: dotnet restore DotNetFramework.slnx --configfile nuget.config --force-evaluate
       - name: Build Release
-        run: dotnet build DotNetFramework.sln --configuration Release --no-restore
+        run: dotnet build DotNetFramework.slnx --configuration Release --no-restore
       - name: Execute NUnit suites
-        run: dotnet test DotNetFramework.sln --configuration Release --no-build --no-restore --logger trx
+        run: dotnet test DotNetFramework.slnx --configuration Release --no-build --no-restore --logger trx
       - name: Check enforced Microsoft C# naming
         if: runner.os == 'Linux'
-        run: dotnet format style DotNetFramework.sln --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal
+        run: dotnet format style DotNetFramework.slnx --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal

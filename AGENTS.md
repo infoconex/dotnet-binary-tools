@@ -27,6 +27,7 @@ These instructions apply to the whole repository. Read [docs/README.md](docs/REA
 - Keep Core independent of CLI; CLI may reference Core. Tests for Core must not depend on CLI. Architectural rules are review requirements until backed by executable gates.
 - All external/public APIs require accurate XML comments; compiler warnings are errors.
 - Treat input files as hostile. Bound file reads and traversal; handle malformed metadata, OS errors and symlink cycles. Avoid dumping bytes or sensitive paths into CI logs.
+- Use `DotNetFramework.slnx` as the sole solution file and lowercase `nuget.config`; pass `--configfile nuget.config` to explicit restores for deterministic configuration.
 - Use explicit packages and centrally managed versions in `Directory.Packages.props`. Review licenses and vulnerability findings before adding dependencies.
 - `System.Text.Json` source generation is preferred for future Native AOT-compatible JSON contracts. JSON schema changes require contract tests and review.
 
@@ -42,7 +43,7 @@ These instructions apply to the whole repository. Read [docs/README.md](docs/REA
 
 ## Build and review
 
-- Typical checks: `dotnet restore DotNetFramework.sln`, `dotnet build DotNetFramework.sln -c Release --no-restore`, `dotnet test DotNetFramework.sln -c Release --no-build`, `dotnet format style DotNetFramework.sln --verify-no-changes --no-restore --diagnostics IDE1006 --severity error`.
+- Typical checks: `dotnet restore DotNetFramework.slnx --configfile nuget.config`, `dotnet build DotNetFramework.slnx -c Release --no-restore`, `dotnet test DotNetFramework.slnx -c Release --no-build`, `dotnet format style DotNetFramework.slnx --verify-no-changes --no-restore --diagnostics IDE1006 --severity error`.
 - Native AOT builds are separate platform-specific gates. Do not equate a managed build with successful AOT publication.
 - PRs include exact commands, observable counts, runs, scope exclusions, dependency changes, security impact, and any docs/traceability updates.
 - For a solo-maintainer project, distinguish an owner second-pass review from independent review; explicit owner GO is required for release and publication.
