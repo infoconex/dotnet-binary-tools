@@ -1,6 +1,6 @@
-name: Bug report
+name: Defect report
 description: Reproduce a defect with a minimal, sanitized assembly or CLI invocation.
-title: "Bug: "
+title: "Defect: "
 body:
   - type: textarea
     id: steps
