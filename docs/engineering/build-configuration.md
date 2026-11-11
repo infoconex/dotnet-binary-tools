@@ -1,0 +1,48 @@
+# Repository-wide .NET build configuration
+
+**Status:** Active engineering-foundation configuration. Modern .NET has several optional repository-level hooks; use the ones that solve a concrete problem rather than generating every possible file.
+
+## Central files in use
+
+| File | Owner or consumer | Purpose |
+| --- | --- | --- |
+| `DotNetFramework.slnx` | .NET CLI and IDE | Single XML-format solution containing Core, CLI and their test projects |
+| `global.json` | .NET SDK resolver | Selects the .NET 11 SDK baseline with feature-band roll-forward |
+| `.editorconfig` | C# analyzers and editors | Code style, whitespace and enforceable naming rules |
+| `Directory.Build.props` | MSBuild, early import | Shared target framework, nullable analysis, warnings-as-errors, build determinism and NuGet auditing |
+| `Directory.Build.targets` | MSBuild, late import | XML documentation on production projects only, after test-project properties are known |
+| `Directory.Packages.props` | NuGet Central Package Management | Enables `ManagePackageVersionsCentrally` and pins all direct package versions |
+| `nuget.config` | NuGet restore/audit | Explicit approved feeds, clears inherited package sources, disabled-source settings, source mappings and audit sources |
+
+## NuGet source isolation
+
+The root `nuget.config` clears inherited settings in four sections: `packageSources`, `disabledPackageSources`, `packageSourceMapping`, and `auditSources`. It then adds nuget.org as the sole approved package source and audit endpoint.
+
+This matters when a developer has globally disabled nuget.org or configured unrelated enterprise feeds and source mapping. Without clearing each relevant section, user-specific settings can influence repository restores. In CI, restore explicitly supplies the configuration:
+
+```shell
+dotnet restore DotNetFramework.slnx --configfile nuget.config --force-evaluate
+```
+
+A developer restoring from the solution root also gets this root NuGet configuration through standard NuGet discovery; explicit `--configfile` makes the source set unambiguous.
+
+## Central Package Management
+
+`ManagePackageVersionsCentrally` is declared in `Directory.Packages.props` alongside the `PackageVersion` items. Project files use versionless `PackageReference` declarations. `Directory.Build.props` does not duplicate the CPM activation setting.
+
+## Optional features not enabled
+
+- `Directory.Solution.props` and `Directory.Solution.targets`: solution-scoped MSBuild customization is unnecessary without solution-specific targets.
+- `Directory.Build.rsp`: global MSBuild command-line switches are not needed; shared properties and CI commands are explicit.
+- `.globalconfig`: unnecessary while the current analyzer and severity rules fit in `.editorconfig`.
+- `.config/dotnet-tools.json`: local tool manifest can be added when the project relies on repository-scoped development tools.
+- `packages.lock.json`: worth evaluating before release for locked transitive dependency graphs, but **not configured or claimed as implemented** on this branch. Runtime-specific restore and Native AOT tool packaging must be considered when adopting lock files.
+
+Adding files without a requirement would increase maintenance and the risk of settings overriding one another. The present baseline is centralized without unnecessary duplication.
+
+## Further references
+
+- [Microsoft: Customize the build by directory](https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-by-directory)
+- [Microsoft: NuGet Central Package Management](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management)
+- [Microsoft: nuget.config reference](https://learn.microsoft.com/en-us/nuget/reference/nuget-config-file)
+- [Microsoft: lock files and SDK selection](https://learn.microsoft.com/en-us/dotnet/core/install/upgrade)

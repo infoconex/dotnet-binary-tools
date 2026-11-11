@@ -18,7 +18,7 @@ This repository includes a **.NET 11 engineering foundation** and a help-only CL
 
 Engineering standards and the normative requirements are in [docs/README.md](docs/README.md), [the FR/NFR catalogs](docs/requirements/functional.md), [acceptance scenarios](docs/scenarios/README.md), and [traceability](docs/testing/traceability.md).
 
-The solution uses the XML-based `DotNetFramework.slnx` format, and the root NuGet configuration is `nuget.config` (lowercase). Explicitly supplying the configuration during restore keeps package sources consistent on every platform.
+The solution uses the XML-based `DotNetFramework.slnx` format and the lowercase root `nuget.config`. See [centralized build configuration](docs/engineering/build-configuration.md) for shared MSBuild, NuGet and analyzer settings. Explicitly supplying the configuration during restore keeps package sources consistent on every platform.
 
 To build this **source-only** branch after installing the .NET 11 SDK:
 

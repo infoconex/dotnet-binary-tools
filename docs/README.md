@@ -12,6 +12,7 @@ This repository is in its **engineering-foundation phase**. No assembly-inspecti
 - [ADR 0001](engineering/decisions/0001-core-cli-boundary.md): Core and CLI dependency boundaries.
 - [ADR 0002](engineering/decisions/0002-dotnet-11-aot-tools.md): .NET 11, AOT, RID-specific packaging, and command/package naming.
 - [Packaging and distribution](engineering/packaging.md): planned NuGet Tool and standalone executables.
+- [Centralized build configuration](engineering/build-configuration.md): .slnx, SDK selection, shared MSBuild properties, NuGet feeds and optional files.
 
 ## Status semantics
 

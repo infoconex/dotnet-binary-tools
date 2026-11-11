@@ -9,7 +9,7 @@
 5. Open a PR to `main`, document risks and limitations, and confirm required CI runs.
 6. Owner performs second-pass review, squash merges only after verification, and checks resulting `main` CI.
 
-Create a release branch later only when multiple ongoing feature branches or stabilization needs justify it; unlike RecordSift's release/0.2, this project does not need one on day one.
+Create a release branch only when multiple ongoing feature branches or stabilization requirements justify it; this project does not need one at its initial engineering milestone.
 
 ## Review ownership
 
