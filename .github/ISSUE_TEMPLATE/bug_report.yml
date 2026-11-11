@@ -1,0 +1,31 @@
+name: Bug report
+description: Reproduce a defect with a minimal, sanitized assembly or CLI invocation.
+title: "Bug: "
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps and minimal fixture
+      description: Never upload proprietary binaries or secrets without authorization.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Tool version, .NET SDK (if applicable), OS, architecture and deployment mode
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized output and failing regression test
