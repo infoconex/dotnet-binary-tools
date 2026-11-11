@@ -1,6 +1,6 @@
 # Approved layered architecture
 
-The production architecture follows mandatory [ARCH-001–ARCH-008](../requirements/architecture.md) and [ADR 0003](decisions/0003-hexagonal-project-boundaries.md). The prior Core/CLI proposal is [superseded](decisions/0001-core-cli-boundary.md).
+The production architecture follows mandatory [ARCH-001–ARCH-008](../requirements/architecture.md) and [ADR 0001](decisions/0001-hexagonal-project-boundaries.md).
 
 ```text
 CLI (outer adapter/composition root) -> Application -> Domain

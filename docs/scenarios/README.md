@@ -107,4 +107,4 @@
 - [NFR-006](non-functional/NFR-006.md)
 - [NFR-007](non-functional/NFR-007.md)
 
-The old `FR-001`–`FR-008` drafts remain superseded and are not included in this active list. Functional scenario IDs are separately stable by capability (`SC-INP-###`, `SC-ASM-###`, etc.), independent of requirement numbering.
+Functional scenario IDs are stable by capability (`SC-INP-###`, `SC-ASM-###`, etc.), independent of requirement numbering.

@@ -3,14 +3,14 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, 'setup/**', 'issue/**']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: aot-${{ github.workflow }}-${{ github.ref }}
+  group: aot-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:

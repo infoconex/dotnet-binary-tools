@@ -30,4 +30,4 @@ The eight capabilities are **what** the product provides, not a mandated class-p
 
 ## Specification state
 
-[All 71 v0.1 functional requirements](requirements/functional.md) across CAP-001–CAP-008 are approved for specification; [all 102 focused scenarios](scenarios/README.md) are defined but remain Planned until verified. [Scenarios](scenarios/README.md) and [traceability](testing/traceability.md) distinguish normative future behavior from actual executable evidence. Legacy `FR-001`–`FR-008` draft numbering is superseded and must not be reused.
+[All 71 v0.1 functional requirements](requirements/functional.md) across CAP-001–CAP-008 are approved for specification; [all 102 focused scenarios](scenarios/README.md) are defined but remain Planned until verified. [Scenarios](scenarios/README.md) and [traceability](testing/traceability.md) distinguish normative future behavior from actual executable evidence.

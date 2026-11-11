@@ -13,8 +13,8 @@
 
 ## Engineering documents
 
-- [Architecture](engineering/architecture.md) and [ADR 0003](engineering/decisions/0003-hexagonal-project-boundaries.md).
-- [Superseded ADR 0001](engineering/decisions/0001-core-cli-boundary.md) and [distribution ADR 0002](engineering/decisions/0002-dotnet-11-aot-tools.md).
+- [Architecture](engineering/architecture.md) and [ADR 0001](engineering/decisions/0001-hexagonal-project-boundaries.md).
+- [Distribution ADR 0002](engineering/decisions/0002-dotnet-11-aot-tools.md).
 - [Build configuration](engineering/build-configuration.md), [packaging](engineering/packaging.md), [release gates](engineering/release-gates.md), [workflow](engineering/workflow.md), and [style](engineering/csharp-style.md).
 
 **Planned** describes specified, unverified behavior. **Automated** requires a passing scenario-mapped run and exact SHA. Do not claim passing feature acceptance from foundation smoke tests.

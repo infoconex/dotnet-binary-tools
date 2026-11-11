@@ -83,6 +83,5 @@
 - Never infer a missing target framework from CLR metadata, an executable host from a neighboring DLL, or a deployed/actually executing runtime from static configuration.
 - Static lifecycle advisories do not assert application compliance and do not control success exit codes.
 - Resource defaults, lifecycle freshness thresholds, canonical JSON property names and CLI option aliases still require explicit design/contract decisions before their implementation; see [open decisions](open-decisions.md).
-- Existing `FR-001`–`FR-008` drafts were superseded and their historical identifiers are not recycled.
 
 [Capabilities](../capabilities.md) · [Architecture constraints](architecture.md) · [Scenario index](../scenarios/README.md) · [Traceability](../testing/traceability.md).

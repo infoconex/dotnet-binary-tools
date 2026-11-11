@@ -21,4 +21,4 @@ CLI (composition root) ----> Application ---> Domain
 
 All arrows represent **compile-time dependencies toward the center**, not runtime invocation direction. Infrastructure implements ports owned by Application and is composed at the outer entry point.
 
-Independent infrastructure adapter projects may be added when their boundaries justify it; do not create speculative abstraction layers. [Architecture details](../engineering/architecture.md) and [ADR 0003](../engineering/decisions/0003-hexagonal-project-boundaries.md).
+Independent infrastructure adapter projects may be added when their boundaries justify it; do not create speculative abstraction layers. [Architecture details](../engineering/architecture.md) and [ADR 0001](../engineering/decisions/0001-hexagonal-project-boundaries.md).

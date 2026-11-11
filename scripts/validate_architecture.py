@@ -78,8 +78,15 @@ def check_graph() -> None:
                 values = property_values(root, key)
                 if len(values) != 1 or set(values[0].split(";")) != {"win-x64", "linux-x64", "osx-x64"}:
                     errors.append(f"CLI: {key} must list three x64 RIDs")
-    if any((ROOT / "src/Infoconex.DotNetFramework.Core").rglob("*")) or any((ROOT / "tests/Infoconex.DotNetFramework.Core.Tests").rglob("*")):
-        errors.append("Superseded Core projects remain")
+    known = {p.resolve() for p in PROJECTS.values()}
+    unexpected = sorted(
+        p.relative_to(ROOT).as_posix()
+        for folder in ("src", "tests")
+        for p in (ROOT / folder).rglob("*.csproj")
+        if p.resolve() not in known
+    )
+    if unexpected:
+        errors.append(f"Unregistered .NET projects found: {unexpected}")
 
 
 def check_build_config() -> None:
