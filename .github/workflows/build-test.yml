@@ -1,0 +1,44 @@
+name: .NET 11 build, test and style
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'setup/**', 'issue/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Managed build and NUnit (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Install .NET 11 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '11.0.x'
+      - name: Record SDK environment
+        run: dotnet --info
+      - name: Restore and NuGet audit
+        run: dotnet restore DotNetFramework.sln --force-evaluate
+      - name: Build Release
+        run: dotnet build DotNetFramework.sln --configuration Release --no-restore
+      - name: Execute NUnit suites
+        run: dotnet test DotNetFramework.sln --configuration Release --no-build --no-restore --logger trx
+      - name: Check enforced Microsoft C# naming
+        if: runner.os == 'Linux'
+        run: dotnet format style DotNetFramework.sln --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal

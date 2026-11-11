@@ -1,0 +1,31 @@
+name: Validate engineering documentation
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'setup/**', 'issue/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engineering-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engineering:
+    name: Requirements and architecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Check documented requirement coverage and local links
+        run: python3 scripts/validate_docs.py
+      - name: Check project dependency graph and AOT package identity
+        run: python3 scripts/validate_architecture.py
+      - name: Check NUnit test scenario metadata
+        run: python3 scripts/validate_test_metadata.py
