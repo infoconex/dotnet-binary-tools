@@ -6,7 +6,28 @@
 
 > **Which .NET framework was this assembly built to target?**
 
-This repository starts with requirements and a proposed command-line contract. **The tool has not been implemented yet.** Commands and output shown below describe intended behavior, not currently available functionality.
+This repository includes a **.NET 11 engineering foundation** and a help-only CLI. **Assembly inspection, directory scanning, and JSON reporting have not been implemented yet.** Commands and example results below describe intended behavior, not currently available functionality.
+
+## Current engineering foundation
+
+- **Target:** .NET 11, modern SDK-style C# projects, NUnit and cross-platform CI.
+- **Distribution goal:** Native AOT executable and RID-specific NuGet Tool packages that do not require installing the .NET 11 runtime.
+- **Proposed package ID:** `Infoconex.DotNetFramework.Tools` (availability not reserved).
+- **CLI command:** `dotnet-framework` / `dotnet framework` when installed as a .NET Tool.
+- **Implementation status:** `--help` and `--version` work in the scaffold. `inspect` and `scan` deliberately return an unimplemented error.
+
+Engineering standards and the normative requirements are in [docs/README.md](docs/README.md), [the FR/NFR catalogs](docs/requirements/functional.md), [acceptance scenarios](docs/scenarios/README.md), and [traceability](docs/testing/traceability.md). The original twelve `REQ-###` identifiers below are maintained through an explicit mapping.
+
+To build this **source-only** branch after installing the .NET 11 SDK:
+
+```shell
+dotnet restore DotNetFramework.sln
+dotnet build DotNetFramework.sln -c Release --no-restore
+dotnet test DotNetFramework.sln -c Release --no-build
+dotnet run --project src/Infoconex.DotNetFramework.Cli -- --help
+```
+
+No package has been published. See [packaging](docs/engineering/packaging.md) for the planned distribution and verification gates.
 
 ## Why this tool?
 
@@ -60,24 +81,24 @@ Illustrative JSON output:
 
 Outputs must clearly distinguish **detected metadata** from an **unknown** or **inferred** result. The JSON shape is illustrative and will be finalized with automated contract tests.
 
-## Initial requirements: v0.1
+## Original requirements: v0.1 (mapped to FR/NFR catalog)
 
-The following IDs provide a starting point for implementation and test traceability.
+The following original IDs remain for historical context. The authoritative specifications now use stable FR/NFR IDs in [the engineering catalog](docs/README.md).
 
 | ID | Requirement |
 | --- | --- |
-| REQ-001 | Inspect a specified DLL or EXE file and determine whether it contains a readable managed .NET assembly. |
-| REQ-002 | Read the assembly's declared `TargetFrameworkAttribute`, when present, **without loading or executing the assembly**. |
-| REQ-003 | Preserve the original framework moniker and produce a human-readable framework name when it can be mapped reliably. |
-| REQ-004 | Recognize common declared targets across .NET Framework, .NET Standard, and modern .NET (`.NETCoreApp`). Do not hard-code an upper major-version limit. |
-| REQ-005 | Report a clear `unknown`, `not managed`, or `invalid/unreadable` result when the target cannot be established. Do not manufacture a target framework. |
-| REQ-006 | Support one-file inspection through `dotnet framework inspect <path>`. |
-| REQ-007 | Support directory inventory through `dotnet framework scan <directory>`, with optional recursive traversal of DLL and EXE files. |
-| REQ-008 | Provide readable console output and machine-readable JSON output suitable for scripting or CI use. |
-| REQ-009 | Handle missing files, invalid binaries, permission failures, and malformed metadata with actionable errors, without terminating an entire directory scan because of one bad file. |
-| REQ-010 | Work on Windows, Linux, and macOS for supported managed assembly formats, without requiring the inspected application's runtime or source code. |
-| REQ-011 | Be packaged as a standard .NET Tool using the command name `dotnet-framework`, with help and version information. |
-| REQ-012 | Include automated tests covering successful detection, unknown targets, invalid inputs, CLI output, and directory scans. |
+| REQ-001 → FR-001 | Inspect a specified DLL or EXE file and determine whether it contains a readable managed .NET assembly. |
+| REQ-002 → FR-002 | Read the assembly's declared `TargetFrameworkAttribute`, when present, **without loading or executing the assembly**. |
+| REQ-003 → FR-003 | Preserve the original framework moniker and produce a human-readable framework name when it can be mapped reliably. |
+| REQ-004 → FR-004 | Recognize common declared targets across .NET Framework, .NET Standard, and modern .NET (`.NETCoreApp`). Do not hard-code an upper major-version limit. |
+| REQ-005 → FR-005 | Report a clear `unknown`, `not managed`, or `invalid/unreadable` result when the target cannot be established. Do not manufacture a target framework. |
+| REQ-006 → FR-006 | Support one-file inspection through `dotnet framework inspect <path>`. |
+| REQ-007 → FR-007 | Support directory inventory through `dotnet framework scan <directory>`, with optional recursive traversal of DLL and EXE files. |
+| REQ-008 → FR-008 | Provide readable console output and machine-readable JSON output suitable for scripting or CI use. |
+| REQ-009 → NFR-001 | Handle missing files, invalid binaries, permission failures, and malformed metadata with actionable errors, without terminating an entire directory scan because of one bad file. |
+| REQ-010 → NFR-002 | Work on Windows, Linux, and macOS for supported managed assembly formats, without requiring the inspected application's runtime or source code. |
+| REQ-011 → NFR-003 | Be packaged as a standard .NET Tool using the command name `dotnet-framework`, with help and version information. |
+| REQ-012 → NFR-004 | Include automated tests covering successful detection, unknown targets, invalid inputs, CLI output, and directory scans. |
 
 ### Detection rules and limitations
 
@@ -157,4 +178,4 @@ These features are proposals, not commitments.
 
 ---
 
-**Project status:** Requirements baseline. No binaries, NuGet package, or functional CLI have been released.
+**Project status:** .NET 11 engineering scaffold available for review; no functioning assembly inspector, standalone binaries or NuGet package has been released.
