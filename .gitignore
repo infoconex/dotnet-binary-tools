@@ -1,0 +1,17 @@
+# .NET / Visual Studio / Rider
+.vs/
+.idea/
+.vscode/
+**/bin/
+**/obj/
+TestResults/
+coverage/
+*.user
+*.suo
+*.nupkg
+*.snupkg
+*.trx
+*.coverage
+*.coveragexml
+# Native AOT intermediate files are under obj/; keep publication outputs untracked
+artifacts/
