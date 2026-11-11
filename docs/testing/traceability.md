@@ -106,20 +106,14 @@
 | [SC-DST-007](../scenarios/functional/FR-DST-006.md) | CAP-008 | FR-DST-006 | Gate a supported RID | Not yet assigned | Planned | None |
 | [SC-DST-008](../scenarios/functional/FR-DST-007.md) | CAP-008 | FR-DST-007 | Block unauthorized publication | Not yet assigned | Planned | None |
 | [SC-DST-009](../scenarios/functional/FR-DST-007.md) | CAP-008 | FR-DST-007 | Avoid unsupported ARM64 claims | Not yet assigned | Planned | None |
-| [NFR-001-SC01](../scenarios/non-functional/NFR-001.md) | Proposed | NFR-001 | Single unreadable file yields useful failure | Not yet assigned | Planned | None |
-| [NFR-001-SC02](../scenarios/non-functional/NFR-001.md) | Proposed | NFR-001 | Directory scan isolates failures | Not yet assigned | Planned | None |
-| [NFR-002-SC01](../scenarios/non-functional/NFR-002.md) | Proposed | NFR-002 | Cross-platform fixture consistency | Not yet assigned | Planned | None |
-| [NFR-002-SC02](../scenarios/non-functional/NFR-002.md) | Proposed | NFR-002 | Independent of inspected runtime | Not yet assigned | Planned | None |
-| [NFR-003-SC01](../scenarios/non-functional/NFR-003.md) | Proposed | NFR-003 | Package command identity | Not yet assigned | Planned | None |
-| [NFR-003-SC02](../scenarios/non-functional/NFR-003.md) | Proposed | NFR-003 | Help and version exit successfully | Not yet assigned | Planned | None |
-| [NFR-004-SC01](../scenarios/non-functional/NFR-004.md) | Proposed | NFR-004 | Requirement scenario coverage | Not yet assigned | Planned | None |
-| [NFR-004-SC02](../scenarios/non-functional/NFR-004.md) | Proposed | NFR-004 | CI results are observable | Not yet assigned | Planned | None |
-| [NFR-005-SC01](../scenarios/non-functional/NFR-005.md) | Proposed | NFR-005 | Never execute untrusted assembly code | Not yet assigned | Planned | None |
-| [NFR-005-SC02](../scenarios/non-functional/NFR-005.md) | Proposed | NFR-005 | Do not use load-based inspection | Not yet assigned | Planned | None |
-| [NFR-006-SC01](../scenarios/non-functional/NFR-006.md) | Proposed | NFR-006 | AOT runs without the runtime | Not yet assigned | Planned | None |
-| [NFR-006-SC02](../scenarios/non-functional/NFR-006.md) | Proposed | NFR-006 | Tool package selects supported RID | Not yet assigned | Planned | None |
-| [NFR-007-SC01](../scenarios/non-functional/NFR-007.md) | Proposed | NFR-007 | Reject oversized or malformed input safely | Not yet assigned | Planned | None |
-| [NFR-007-SC02](../scenarios/non-functional/NFR-007.md) | Proposed | NFR-007 | Scan limits remain effective | Not yet assigned | Planned | None |
+| [NFR-001-SC01](../scenarios/non-functional/NFR-001.md) | Proposed | NFR-001 | Handle a file read failure safely | Not yet assigned | Planned | None |
+| [NFR-001-SC02](../scenarios/non-functional/NFR-001.md) | Proposed | NFR-001 | Contain individual scan failures | Not yet assigned | Planned | None |
+| [NFR-002-SC01](../scenarios/non-functional/NFR-002.md) | Proposed | NFR-002 | Interpret the same fixtures consistently | Not yet assigned | Planned | None |
+| [NFR-002-SC02](../scenarios/non-functional/NFR-002.md) | Proposed | NFR-002 | Avoid target-runtime prerequisites | Not yet assigned | Planned | None |
+| [NFR-003-SC01](../scenarios/non-functional/NFR-003.md) | Proposed | NFR-003 | Do not execute inspected code | Not yet assigned | Planned | None |
+| [NFR-003-SC02](../scenarios/non-functional/NFR-003.md) | Proposed | NFR-003 | Contain adversarial binary metadata | Not yet assigned | Planned | None |
+| [NFR-004-SC01](../scenarios/non-functional/NFR-004.md) | Proposed | NFR-004 | Bound parsing of oversized candidates | Not yet assigned | Planned | None |
+| [NFR-004-SC02](../scenarios/non-functional/NFR-004.md) | Proposed | NFR-004 | Bound recursive inventory | Not yet assigned | Planned | None |
 
 ## Evidence policy
 

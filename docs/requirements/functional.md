@@ -1,6 +1,6 @@
 # Functional requirements — v0.1 approved baseline
 
-**Status:** Approved v0.1 specification. CAP-001 requirements were previously approved; CAP-002–CAP-008 requirements were approved for inclusion in PR #1. **No functional acceptance has been demonstrated.**
+**Status:** Approved v0.1 functional specification across CAP-001–CAP-008. **No functional acceptance has been demonstrated.**
 
 | ID | Capability | Requirement | Acceptance scenarios |
 | --- | --- | --- | --- |

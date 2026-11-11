@@ -22,5 +22,5 @@ Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities.md), and
 - Use .NET 11, `DotNetFramework.slnx`, root lowercase `nuget.config`, centralized package versions, Microsoft-aligned `.editorconfig`, and Git-normalized `.gitattributes`.
 - For new functionality, write meaningful failing tests first, implement minimally, then refactor. Ensure independent architecture, component, integration and negative tests as appropriate.
 - Do not claim `inspect`/`scan` or lifecycle, config, JSON, AOT runtime-free or installation acceptance until actual code and observed evidence exist.
-- Use `python3 scripts/validate_docs.py`, `python3 scripts/validate_architecture.py`, `python3 scripts/validate_test_metadata.py` in addition to build/NUnit/Native AOT checks.
+- Use `python3 scripts/validate_docs.py`, `python3 scripts/validate_architecture.py`, `python3 scripts/validate_test_metadata.py`, `python3 scripts/validate_line_endings.py` in addition to build/NUnit/Native AOT checks.
 - Require accurate public XML documentation, safe error messages, non-sensitive synthetic fixtures, versioned JSON contracts and precise PR verification claims.

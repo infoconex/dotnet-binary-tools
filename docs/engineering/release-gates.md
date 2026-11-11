@@ -4,7 +4,7 @@
 
 ## Main branch controls
 
-Configure a GitHub ruleset for `main` to require PRs, prohibit force-pushes/deletions, enable squash-only merges and require the *actual* CI job contexts observed in this repository. A sole maintainer may require zero reviewer approvals but must document a second-pass owner review. The current new repository has **no ruleset**; this cannot be fixed by adding a file.
+Configure a GitHub ruleset for `main` to require PRs, prohibit force-pushes/deletions, enable squash-only merges and require the *actual* CI job contexts observed in this repository. A sole maintainer may require zero reviewer approvals but must document a second-pass owner review. Branch rules are managed in GitHub repository settings, not by committing a file. Verify the effective ruleset and required status contexts immediately before merge.
 
 ## Change acceptance
 

@@ -2,7 +2,7 @@
 
 **Specification:** 71 approved functional requirements across CAP-001–CAP-008; 102 active functional acceptance scenarios. **Execution:** all feature acceptance remains **Planned** until individually tested and evidenced. Focused scenarios are supplemented with detailed independently traceable edge/platform tests.
 
-## CAP-001 — Input Selection (previously approved)
+## CAP-001 — Input Selection
 
 - [FR-INP-001](functional/FR-INP-001.md)
 - [FR-INP-002](functional/FR-INP-002.md)
@@ -103,8 +103,5 @@
 - [NFR-002](non-functional/NFR-002.md)
 - [NFR-003](non-functional/NFR-003.md)
 - [NFR-004](non-functional/NFR-004.md)
-- [NFR-005](non-functional/NFR-005.md)
-- [NFR-006](non-functional/NFR-006.md)
-- [NFR-007](non-functional/NFR-007.md)
 
 Functional scenario IDs are stable by capability (`SC-INP-###`, `SC-ASM-###`, etc.), independent of requirement numbering.
