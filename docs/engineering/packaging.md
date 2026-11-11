@@ -1,25 +1,16 @@
 # Packaging and distribution plan
 
-**Not released. NuGet package name has not been reserved or verified as publishable.**
+**CAP-008 approved; no public release.** The proposed NuGet ID `Infoconex.DotNetFramework.Tools` is not reserved.
 
-- Proposed NuGet package ID: `Infoconex.DotNetFramework.Tools`.
-- Installed executable: `dotnet-framework`.
-- Invocations: `dotnet-framework --help` or `dotnet framework --help` after installation through the .NET CLI.
-- Planned distribution: matching versioned RID-specific Native AOT NuGet tool packages and GitHub Releases standalone binaries.
+Initial delivery includes both a standalone Native AOT executable and a NuGet .NET Tool with the same commands (`dotnet-framework` and, after tool installation, `dotnet framework`). Advertised platforms in v0.1 are **win-x64, linux-x64 and osx-x64**, not ARM64.
 
-Example **future** installation (not currently available):
+Future installation example (package not currently published):
 
 ```shell
 dotnet tool install --global Infoconex.DotNetFramework.Tools
-dotnet framework inspect MyLibrary.dll
+dotnet framework --help
 ```
 
-Before publishing:
-1. Confirm package-name availability and NuGet ownership and prefix policy.
-2. Pass all FR/NFR acceptance and CI gates.
-3. Build, inspect, and execute AOT artifacts on each advertised RID. Include a machine/container without the .NET 11 runtime in release acceptance.
-4. Generate checksums and a Software Bill of Materials or dependency list as applicable; audit advisories and licenses.
-5. Verify `dotnet tool install` and `dotnet framework` on clean consumers.
-6. Publish all RID packages of the **same version** first, then the NuGet pointer package; publish only after explicit owner GO.
+Release acceptance needs native build, execution and clean consumer verification without installed .NET, independent tool installation on each supported OS, checksums and provenance, dependency audit, and explicit owner GO. RID-specific packages must have matching versions and be published before the top-level package. Do not publish from PR CI.
 
-See [Microsoft RID-specific tool documentation](https://learn.microsoft.com/en-us/dotnet/core/tools/rid-specific-tools).
+See [ADR 0002](decisions/0002-dotnet-11-aot-tools.md) and [Microsoft RID-specific tools](https://learn.microsoft.com/en-us/dotnet/core/tools/rid-specific-tools).

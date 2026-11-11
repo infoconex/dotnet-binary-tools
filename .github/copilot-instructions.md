@@ -1,13 +1,11 @@
 # GitHub Copilot guidance
 
-Follow [AGENTS.md](../AGENTS.md) and [docs/README.md](../docs/README.md) as authoritative project guidance.
+Use [AGENTS.md](../AGENTS.md), [capabilities](../docs/capabilities.md) and [ARCH-001–ARCH-008](../docs/requirements/architecture.md).
 
-- Keep the project on .NET 11 with modern SDK-style builds and compatible language features.
-- Enforce Microsoft's C# conventions using `.editorconfig`, nullable reference types, meaningful XML API comments and scoped architecture boundaries.
-- Work in one issue-scoped PR; verify the exact current branch and avoid changes to `main` without review.
-- Trace FR/NFR scenario specifications to NUnit tests and actual GitHub Actions evidence. Use red/green/refactor for missing functionality.
-- Read compiled files through `System.Reflection.Metadata` and `PEReader` without executing them.
-- Keep Core vendor-agnostic and independent from CLI; ensure future JSON output uses AOT-compatible serialization.
-- Treat every binary as untrusted; bound traversal and resource consumption; do not disclose source bytes in logs.
-- Never claim Native AOT, CI, NuGet or production compatibility success without executable proof.
-- No package publication or GitHub release without explicit owner approval.
+- Follow SOLID and hexagonal Ports-and-Adapters; Domain, Application, Infrastructure and CLI are independent compiled projects with inward-only references.
+- CLI stays thin. Define ports with inner consuming use cases, and keep concrete filesystem/metadata/configuration/network/report adapters external.
+- Use .NET 11, Microsoft naming conventions, nullable and public XML documentation.
+- Work from approved CAP and FR/NFR/ARCH identifiers. CAP-001 uses `FR-INP-###` requirements and independent `SC-INP-###` scenario IDs. Earlier `FR-001` drafts are retired.
+- Use TDD for new functionality, cross-platform fixtures, security and negative tests. Record only actual passing CI evidence.
+- Never execute or load inspected binaries. Maintain AOT-compatible output contracts and no unsupported runtime-inference claims.
+- Do not merge, tag, publish or release without explicit owner authorization.

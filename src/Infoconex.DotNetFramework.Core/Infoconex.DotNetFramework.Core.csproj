@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <AssemblyName>Infoconex.DotNetFramework.Core</AssemblyName>
-    <RootNamespace>Infoconex.DotNetFramework.Core</RootNamespace>
-  </PropertyGroup>
-</Project>

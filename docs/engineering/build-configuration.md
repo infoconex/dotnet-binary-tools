@@ -6,7 +6,7 @@
 
 | File | Owner or consumer | Purpose |
 | --- | --- | --- |
-| `DotNetFramework.slnx` | .NET CLI and IDE | Single XML-format solution containing Core, CLI and their test projects |
+| `DotNetFramework.slnx` | .NET CLI and IDE | Single XML-format solution containing separate Domain, Application, Infrastructure, CLI and their test projects |
 | `global.json` | .NET SDK resolver | Selects the .NET 11 SDK baseline with feature-band roll-forward |
 | `.editorconfig` | C# analyzers and editors | Code style, whitespace and enforceable naming rules |
 | `Directory.Build.props` | MSBuild, early import | Shared target framework, nullable analysis, warnings-as-errors, build determinism and NuGet auditing |

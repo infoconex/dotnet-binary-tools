@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the small Core -> CLI dependency graph and AOT tool metadata."""
+"""Check approved hexagonal project references, solution membership and AOT identity."""
 from __future__ import annotations
 
 import sys
@@ -8,132 +8,119 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PROJECTS = {
-    "core": ROOT / "src/Infoconex.DotNetFramework.Core/Infoconex.DotNetFramework.Core.csproj",
+    "domain": ROOT / "src/Infoconex.DotNetFramework.Domain/Infoconex.DotNetFramework.Domain.csproj",
+    "application": ROOT / "src/Infoconex.DotNetFramework.Application/Infoconex.DotNetFramework.Application.csproj",
+    "infrastructure": ROOT / "src/Infoconex.DotNetFramework.Infrastructure/Infoconex.DotNetFramework.Infrastructure.csproj",
     "cli": ROOT / "src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj",
-    "core-tests": ROOT / "tests/Infoconex.DotNetFramework.Core.Tests/Infoconex.DotNetFramework.Core.Tests.csproj",
+    "domain-tests": ROOT / "tests/Infoconex.DotNetFramework.Domain.Tests/Infoconex.DotNetFramework.Domain.Tests.csproj",
     "cli-tests": ROOT / "tests/Infoconex.DotNetFramework.Cli.Tests/Infoconex.DotNetFramework.Cli.Tests.csproj",
 }
-ERRORS: list[str] = []
+EXPECTED = {
+    "domain": set(),
+    "application": {"domain"},
+    "infrastructure": {"application"},
+    "cli": {"application", "infrastructure"},
+    "domain-tests": {"domain"},
+    "cli-tests": {"cli"},
+}
+errors: list[str] = []
 
 
-def report(message: str) -> None:
-    ERRORS.append(message)
-
-
-def project(name: str) -> ET.Element | None:
-    path = PROJECTS[name]
-    if not path.exists():
-        report(f"Missing project {path.relative_to(ROOT)}")
+def parse(path: Path) -> ET.Element | None:
+    if not path.is_file():
+        errors.append(f"Missing {path.relative_to(ROOT)}")
         return None
-    return ET.parse(path).getroot()
-
-
-def project_refs(root: ET.Element) -> set[str]:
-    return {Path(item.attrib.get("Include", "").replace("\\", "/")).name
-            for item in root.findall(".//ProjectReference")}
-
-
-def props(root: ET.Element, name: str) -> list[str]:
-    return [item.text.strip() for item in root.findall(".//" + name) if item.text]
-
-
-def validate_repository_layout() -> None:
-    solution = ROOT / "DotNetFramework.slnx"
-    if not solution.is_file():
-        report("Missing XML solution DotNetFramework.slnx")
-    else:
-        try:
-            root = ET.parse(solution).getroot()
-            expected_paths = {project.relative_to(ROOT).as_posix() for project in PROJECTS.values()}
-            actual_paths = {element.attrib.get("Path", "").replace("\\", "/")
-                            for element in root.iter("Project")}
-            if root.tag != "Solution" or actual_paths != expected_paths:
-                report(f"Invalid slnx root or project membership: {sorted(actual_paths)}")
-        except ET.ParseError as exc:
-            report(f"Invalid slnx XML: {exc}")
-    if (ROOT / "DotNetFramework.sln").exists():
-        report("Remove the legacy DotNetFramework.sln; use .slnx only")
-
-    config = ROOT / "nuget.config"
-    if not config.is_file():
-        report("Missing lowercase nuget.config")
-    else:
-        try:
-            config_root = ET.parse(config).getroot()
-            if config_root.tag != "configuration":
-                report("nuget.config must have a configuration root")
-            for section in ("packageSources", "disabledPackageSources", "packageSourceMapping", "auditSources"):
-                node = config_root.find(section)
-                if node is None or node.find("clear") is None:
-                    report(f"nuget.config: {section} must clear inherited configuration")
-            sources = config_root.findall("./packageSources/add")
-            if len(sources) != 1 or sources[0].get("key") != "nuget.org" or sources[0].get("value") != "https://api.nuget.org/v3/index.json":
-                report("nuget.config must use only the official nuget.org package source")
-        except ET.ParseError as exc:
-            report(f"Invalid nuget.config XML: {exc}")
-    if (ROOT / "NuGet.Config").exists():
-        report("Remove uppercase NuGet.Config; use lowercase nuget.config only")
-
-
-def validate_central_package_management() -> None:
-    props = ROOT / "Directory.Packages.props"
-    if not props.is_file():
-        report("Missing Directory.Packages.props")
-        return
     try:
-        root = ET.parse(props).getroot()
-        values = [node.text for node in root.findall(".//ManagePackageVersionsCentrally")]
-        if values != ["true"]:
-            report("Directory.Packages.props must enable central package management")
-        if not root.findall(".//PackageVersion"):
-            report("Directory.Packages.props must define centrally managed package versions")
+        return ET.parse(path).getroot()
     except ET.ParseError as exc:
-        report(f"Invalid Directory.Packages.props XML: {exc}")
+        errors.append(f"Bad XML {path.relative_to(ROOT)}: {exc}")
+        return None
 
 
-def main() -> int:
-    validate_repository_layout()
-    validate_central_package_management()
-    expected = {
-        "core": set(),
-        "cli": {"Infoconex.DotNetFramework.Core.csproj"},
-        "core-tests": {"Infoconex.DotNetFramework.Core.csproj"},
-        "cli-tests": {"Infoconex.DotNetFramework.Cli.csproj"},
-    }
-    for name, required_refs in expected.items():
-        xml = project(name)
-        if xml is None:
+def property_values(root: ET.Element, name: str) -> list[str]:
+    return [n.text.strip() for n in root.findall(".//" + name) if n.text]
+
+
+def check_graph() -> None:
+    names = {path.name: label for label, path in PROJECTS.items()}
+    solution = parse(ROOT / "DotNetFramework.slnx")
+    if solution is not None:
+        actual = {n.attrib.get("Path", "").replace("\\", "/") for n in solution.findall(".//Project")}
+        required = {p.relative_to(ROOT).as_posix() for p in PROJECTS.values()}
+        if solution.tag != "Solution" or actual != required:
+            errors.append(f"Wrong solution membership: {sorted(actual)}")
+    for label, path in PROJECTS.items():
+        root = parse(path)
+        if root is None:
             continue
-        actual_refs = project_refs(xml)
-        if actual_refs != required_refs:
-            report(f"{name}: wrong ProjectReference set: {sorted(actual_refs)}")
-        if name == "core" and xml.findall(".//PackageReference"):
-            report("Core must not directly depend on third-party NuGet packages")
-        if name == "cli":
-            for key, value in {
+        actual = set()
+        for reference in root.findall(".//ProjectReference"):
+            filename = Path(reference.get("Include", "").replace("\\", "/")).name
+            if filename not in names:
+                errors.append(f"{label}: unknown reference {filename}")
+            else:
+                actual.add(names[filename])
+        if actual != EXPECTED[label]:
+            errors.append(f"{label}: outward or missing reference {sorted(actual)} != {sorted(EXPECTED[label])}")
+        if label == "domain" and root.findall(".//PackageReference"):
+            errors.append("Domain must not directly depend on packages")
+        if label == "cli":
+            for key, expected in {
                 "PackAsTool": "true",
                 "ToolCommandName": "dotnet-framework",
                 "PackageId": "Infoconex.DotNetFramework.Tools",
                 "PublishAot": "true",
                 "IsAotCompatible": "true",
             }.items():
-                if props(xml, key) != [value]:
-                    report(f"CLI {key} must be {value}")
-            rids = {"win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64"}
-            for rid_property in ("RuntimeIdentifiers", "ToolPackageRuntimeIdentifiers"):
-                values = props(xml, rid_property)
-                if len(values) != 1 or set(values[0].split(";")) != rids:
-                    report(f"CLI: {rid_property} must list six planned native RIDs")
+                if property_values(root, key) != [expected]:
+                    errors.append(f"CLI: {key} must be {expected}")
+            for key in ("RuntimeIdentifiers", "ToolPackageRuntimeIdentifiers"):
+                values = property_values(root, key)
+                if len(values) != 1 or set(values[0].split(";")) != {"win-x64", "linux-x64", "osx-x64"}:
+                    errors.append(f"CLI: {key} must list three x64 RIDs")
+    if any((ROOT / "src/Infoconex.DotNetFramework.Core").rglob("*")) or any((ROOT / "tests/Infoconex.DotNetFramework.Core.Tests").rglob("*")):
+        errors.append("Superseded Core projects remain")
+
+
+def check_build_config() -> None:
+    if (ROOT / "DotNetFramework.sln").exists():
+        errors.append("Legacy .sln is not allowed")
+    config = parse(ROOT / "nuget.config")
+    if config is not None:
+        if config.tag != "configuration":
+            errors.append("Bad nuget.config root")
+        for section in ("packageSources", "disabledPackageSources", "packageSourceMapping", "auditSources"):
+            node = config.find(section)
+            if node is None or node.find("clear") is None:
+                errors.append(f"nuget.config: {section} must clear inherited configuration")
+        sources = config.findall("./packageSources/add")
+        if len(sources) != 1 or sources[0].get("key") != "nuget.org" or sources[0].get("value") != "https://api.nuget.org/v3/index.json":
+            errors.append("nuget.config must select only nuget.org")
+    if (ROOT / "NuGet.Config").exists():
+        errors.append("Use lowercase nuget.config")
+    props = parse(ROOT / "Directory.Packages.props")
+    if props is not None:
+        if property_values(props, "ManagePackageVersionsCentrally") != ["true"] or not props.findall(".//PackageVersion"):
+            errors.append("Central package management is missing")
+
+
+def check_no_execution() -> None:
     for path in (ROOT / "src").rglob("*.cs"):
         source = path.read_text(encoding="utf-8")
         for expression in ("Assembly.Load(", "Assembly.LoadFrom(", "Assembly.LoadFile(", "AssemblyLoadContext.LoadFromAssemblyPath("):
             if expression in source:
-                report(f"{path.relative_to(ROOT)} uses execution-capable assembly loading: {expression}")
-    for err in ERRORS:
-        print(f"ERROR: {err}", file=sys.stderr)
-    if ERRORS:
+                errors.append(f"{path.relative_to(ROOT)}: execution-capable inspection API {expression}")
+
+
+def main() -> int:
+    check_graph()
+    check_build_config()
+    check_no_execution()
+    for message in errors:
+        print(f"ERROR: {message}", file=sys.stderr)
+    if errors:
         return 1
-    print("Validated Core/CLI project references and planned Native AOT metadata.")
+    print("Validated inward Domain/Application/Infrastructure/CLI project references and x64 Native AOT metadata.")
     return 0
 
 

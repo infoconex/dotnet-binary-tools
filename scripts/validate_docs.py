@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Validate requirement catalogs, normative scenarios, traceability and local Markdown links.
-
-Uses Python's standard library. This validates documentation structure,
-not C# behavior and not the execution state of planned scenarios.
-"""
+"""Validate active requirements, scenario traceability, capabilities and Markdown links."""
 from __future__ import annotations
 
 import re
@@ -12,107 +8,98 @@ from pathlib import Path
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
-REQUIREMENT_ROW = re.compile(r"^\|\s*((?:FR|NFR)-\d{3})\s*\|", re.M)
-SCENARIO_HEADING = re.compile(r"^###\s+((?:FR|NFR)-\d{3}-SC\d{2}):\s+(.+)$", re.M)
-TRACE_ROW = re.compile(r"^\|\s*\[((?:FR|NFR)-\d{3}-SC\d{2})\]\(", re.M)
-MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
-errors: list[str] = []
+REQ = re.compile(r"^\|\s*((?:FR-[A-Z]{3}-\d{3}|NFR-\d{3}))\s*\|", re.M)
+SC = re.compile(r"^###\s+((?:SC-[A-Z]{3}-\d{3}|NFR-\d{3}-SC\d{2})):\s+(.+)$", re.M)
+TRACE = re.compile(r"^\|\s*\[((?:SC-[A-Z]{3}-\d{3}|NFR-\d{3}-SC\d{2}))\]\(", re.M)
+LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+errors = []
 
 
-def error(message: str) -> None:
-    errors.append(message)
-
-
-def load(relative: str) -> str:
-    path = ROOT / relative
+def load(rel):
+    path = ROOT / rel
     if not path.is_file():
-        error(f"Missing required file: {relative}")
+        errors.append(f"Missing {rel}")
         return ""
     return path.read_text(encoding="utf-8")
 
 
-def catalog(prefix: str, name: str) -> set[str]:
-    rows = REQUIREMENT_ROW.findall(load(f"docs/requirements/{name}.md"))
-    found: set[str] = set()
-    for key in rows:
-        if not key.startswith(prefix + "-"):
-            error(f"docs/requirements/{name}.md: unexpected prefix {key}")
-        if key in found:
-            error(f"docs/requirements/{name}.md: duplicate {key}")
-        found.add(key)
-    if not found:
-        error(f"docs/requirements/{name}.md: no {prefix} requirements")
-    return found
+def catalog(prefix, name):
+    matches = REQ.findall(load(f"docs/requirements/{name}.md"))
+    if len(matches) != len(set(matches)) or not matches:
+        errors.append(f"Invalid or duplicate {prefix} catalog identifiers")
+    return {r for r in matches if r.startswith(prefix + "-")}
 
 
-def validate_scenarios(requirements: set[str]) -> set[str]:
-    found: set[str] = set()
-    for requirement in sorted(requirements):
+def scenarios(required):
+    ids = []
+    for requirement in sorted(required):
         folder = "functional" if requirement.startswith("FR-") else "non-functional"
-        relative = f"docs/scenarios/{folder}/{requirement}.md"
-        content = load(relative)
+        rel = f"docs/scenarios/{folder}/{requirement}.md"
+        content = load(rel)
         if not content.startswith(f"# {requirement}: "):
-            error(f"{relative}: incorrect title")
-        matches = SCENARIO_HEADING.findall(content)
+            errors.append(f"{rel}: invalid title")
+        matches = SC.findall(content)
         if not matches:
-            error(f"{relative}: no Given/When/Then scenarios")
-        for scenario, _ in matches:
-            if not scenario.startswith(requirement + "-SC"):
-                error(f"{relative}: unexpected scenario {scenario}")
-            if scenario in found:
-                error(f"Duplicate scenario: {scenario}")
-            found.add(scenario)
-            start = content.index("### " + scenario)
-            following = content.find("\n### ", start + 4)
-            section = content[start:following if following >= 0 else len(content)]
-            for marker in ("**Given**", "**When**", "**Then**"):
-                if marker not in section:
-                    error(f"{relative}: {scenario} missing {marker}")
-    return found
+            errors.append(f"{rel}: no scenarios")
+        for identity, _ in matches:
+            prefix = "SC-" + requirement[3:7] if folder == "functional" else requirement + "-SC"
+            if not identity.startswith(prefix):
+                errors.append(f"{rel}: incorrect scenario prefix for {identity}")
+            start = content.index("### " + identity)
+            end = content.find("\n### ", start + 4)
+            section = content[start:end if end >= 0 else len(content)]
+            if not all(word in section for word in ("**Given**", "**When**", "**Then**")):
+                errors.append(f"{rel}: {identity} missing Given/When/Then")
+            ids.append(identity)
+    if len(ids) != len(set(ids)):
+        errors.append("Duplicate scenario ID")
+    return set(ids)
 
 
-def validate_traceability(scenarios: set[str]) -> None:
-    text = load("docs/testing/traceability.md")
-    rows = TRACE_ROW.findall(text)
-    seen: set[str] = set()
-    for row in rows:
-        if row in seen:
-            error(f"Traceability: duplicate {row}")
-        seen.add(row)
-    for missing in sorted(scenarios - seen):
-        error(f"Traceability: missing {missing}")
-    for unknown in sorted(seen - scenarios):
-        error(f"Traceability: undocumented {unknown}")
+def check_traceability(expected):
+    rows = TRACE.findall(load("docs/testing/traceability.md"))
+    if len(rows) != len(set(rows)):
+        errors.append("Duplicate traceability row")
+    if set(rows) != expected:
+        errors.append(f"Traceability mismatch: missing {sorted(expected-set(rows))}; unknown {sorted(set(rows)-expected)}")
 
 
-def validate_links() -> None:
-    for path in sorted([ROOT / "README.md", ROOT / "AGENTS.md", *ROOT.glob("docs/**/*.md")]):
+def check_governance():
+    capabilities = load("docs/capabilities.md")
+    architecture = load("docs/requirements/architecture.md")
+    for n in range(1, 9):
+        if not re.search(rf"^\|\s*CAP-{n:03d}\s*\|",capabilities,re.M):
+            errors.append(f"Missing CAP-{n:03d}")
+        if not re.search(rf"^\|\s*ARCH-{n:03d}\s*\|",architecture,re.M):
+            errors.append(f"Missing ARCH-{n:03d}")
+
+
+def check_links():
+    for path in [ROOT/"README.md",ROOT/"AGENTS.md",*ROOT.glob("docs/**/*.md")]:
         if not path.is_file():
             continue
-        content = path.read_text(encoding="utf-8")
-        for target in MARKDOWN_LINK.findall(content):
-            url = unquote(target.strip().split(" ", 1)[0].strip("<>"))
-            if not url or url.startswith(("#", "http:", "https:", "mailto:")):
+        for target in LINK.findall(path.read_text(encoding="utf-8")):
+            url = unquote(target.strip().split(" ",1)[0].strip("<>"))
+            if not url or url.startswith(("#","http:","https:","mailto:")):
                 continue
-            relative_target = url.split("#", 1)[0].split("?", 1)[0]
-            if not relative_target:
-                continue
-            destination = (path.parent / relative_target).resolve()
-            if not destination.is_relative_to(ROOT.resolve()) or not destination.exists():
-                error(f"{path.relative_to(ROOT)}: broken local link {target}")
+            rel = url.split("#",1)[0].split("?",1)[0]
+            if rel:
+                dest = (path.parent/rel).resolve()
+                if not dest.is_relative_to(ROOT.resolve()) or not dest.exists():
+                    errors.append(f"{path.relative_to(ROOT)}: broken link {target}")
 
 
-def main() -> int:
-    requirements = catalog("FR", "functional") | catalog("NFR", "non-functional")
-    scenarios = validate_scenarios(requirements)
-    validate_traceability(scenarios)
-    validate_links()
-    for item in errors:
-        print(f"ERROR: {item}", file=sys.stderr)
+def main():
+    active = catalog("FR","functional") | catalog("NFR","non-functional")
+    found = scenarios(active)
+    check_traceability(found)
+    check_governance()
+    check_links()
+    for e in errors:
+        print(f"ERROR: {e}",file=sys.stderr)
     if errors:
-        print(f"Documentation validation failed: {len(errors)} problem(s).", file=sys.stderr)
         return 1
-    print(f"Validated {len(requirements)} requirements and {len(scenarios)} scenario rows; local links resolve.")
+    print(f"Validated {len(active)} active requirements, {len(found)} scenarios, capabilities and links.")
     return 0
 
 

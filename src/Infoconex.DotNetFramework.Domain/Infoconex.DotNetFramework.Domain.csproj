@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Infoconex.DotNetFramework.Domain</AssemblyName>
+    <RootNamespace>Infoconex.DotNetFramework.Domain</RootNamespace>
+  </PropertyGroup>
+</Project>

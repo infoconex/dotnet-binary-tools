@@ -1,33 +1,24 @@
-# Minimal metadata-inspection architecture
+# Approved layered architecture
 
-**Status:** Proposed architecture for the engineering foundation. See [ADR 0001](decisions/0001-core-cli-boundary.md).
+The production architecture follows mandatory [ARCH-001–ARCH-008](../requirements/architecture.md) and [ADR 0003](decisions/0003-hexagonal-project-boundaries.md). The prior Core/CLI proposal is [superseded](decisions/0001-core-cli-boundary.md).
 
 ```text
-dotnet-framework / dotnet framework
-           |
-  Infoconex.DotNetFramework.Cli
-      (arguments, output, JSON)
-           |
-           v
-  Infoconex.DotNetFramework.Core
-      (pure inspection contracts,
-       PE / metadata reading)
+CLI (outer adapter/composition root) -> Application -> Domain
+                   |                       ^
+                   +-----> Infrastructure --+
 ```
 
-## Project and test boundaries
+Arrows mean **compile-time** project references, not runtime call direction. Infrastructure implements ports defined in Application; at runtime application use cases invoke adapter implementations through those ports. Domain has no dependency on Infrastructure, Application or CLI.
 
-- `src/Infoconex.DotNetFramework.Core`: metadata-only managed assembly detection, declared target moniker and normalized result. Uses Microsoft `System.Reflection.Metadata` and `PEReader` once FR implementation starts. No dependency on CLI.
-- `src/Infoconex.DotNetFramework.Cli`: command routing, filesystem scanning, exit codes, console/JSON output, .NET Tool packaging; depends on Core. In this baseline only help and version operate.
-- `tests/Infoconex.DotNetFramework.Core.Tests`: unit and boundary tests without CLI references.
-- `tests/Infoconex.DotNetFramework.Cli.Tests`: CLI behavior and future integration/snapshot tests, referencing CLI and Core transitively.
+| Project | Responsibility |
+| --- | --- |
+| `Infoconex.DotNetFramework.Domain` | Domain invariants and metadata facts; currently contains the raw target-framework moniker value object. |
+| `Infoconex.DotNetFramework.Application` | Future application use cases, coordination and required ports. |
+| `Infoconex.DotNetFramework.Infrastructure` | Future external adapters; split into distinct adapter projects when required. |
+| `Infoconex.DotNetFramework.Cli` | Help/version skeleton now; future thin command adapter and composition root. |
+| `Infoconex.DotNetFramework.Domain.Tests` | Domain unit tests. |
+| `Infoconex.DotNetFramework.Cli.Tests` | Current CLI scaffold tests. |
 
-Use readable, immutable result contracts and explicit status values. Do not force a full Domain/Application/Infrastructure assembly split unless requirements justify it.
+Metadata and binary parsing, filesystem I/O, deployment configuration, HTTP reference updates and report writing must remain outside Domain. Never load or execute inspected candidate binaries. Preserve explicit unknown vs non-managed results, and keep declared targets distinct from configuration and lifecycle assessments.
 
-## Security and Native AOT constraints
-
-- Inspected binaries are data, never executable code; forbid `Assembly.Load`, `Assembly.LoadFrom`, `AssemblyLoadContext` for candidate binaries.
-- Validate the PE container and metadata bounds before extracting attributes. Do not infer target framework from CLR runtime version.
-- Preserve raw declared monikers and distinguish unknown from not-managed/corrupt/unreadable.
-- Provide bounded scanning, explicit symlink policy, controlled output and safe diagnostic messages.
-- Use source-generated JSON serializers for Native AOT compatibility once JSON output exists.
-- A release is not portable merely because `dotnet build` passes. Each supported native RID needs observed AOT build and execution on its target OS.
+**Implementation status:** This is structural preparation. `inspect`, `scan`, lifecycle assessment, configuration and JSON reporting remain unimplemented. Architectural tests and reviews for real ports/adapters will accompany their accepted requirements.

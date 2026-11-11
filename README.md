@@ -1,26 +1,37 @@
 # dotnet-framework
 
-**Inspect compiled .NET assemblies to identify their declared target frameworks, without source code or executing the assemblies.**
+**A planned cross-platform CLI for static inspection of compiled .NET binaries, declared targets, requested deployment runtimes and informational framework lifecycle findings.**
 
-`dotnet-framework` is a planned cross-platform .NET CLI extension for inspecting managed DLL and EXE files. Its initial purpose is to answer a simple question:
+**Implementation status:** .NET 11 engineering scaffold only. CLI help/version and a small domain value object are implemented. **`inspect`, `scan`, configuration inspection, lifecycle assessment and JSON reporting are not implemented or released.** Commands below describe the approved v0.1 design, not working behavior.
 
-> **Which .NET framework was this assembly built to target?**
+## Approved specification
 
-This repository includes a **.NET 11 engineering foundation** and a help-only CLI. **Assembly inspection, directory scanning, and JSON reporting have not been implemented yet.** Commands and example results below describe intended behavior, not currently available functionality.
+- [CAP-001–CAP-008: product capabilities](docs/capabilities.md).
+- [ARCH-001–ARCH-008: mandatory SOLID and hexagonal architecture](docs/requirements/architecture.md).
+- [CAP-001 functional requirements](docs/requirements/functional.md), [Given/When/Then scenarios](docs/scenarios/README.md), and [scenario verification status](docs/testing/traceability.md).
+- [Engineering and development documentation](docs/README.md).
 
-## Current engineering foundation
+### Intended CLI (not implemented)
 
-- **Target:** .NET 11, modern SDK-style C# projects, NUnit and cross-platform CI.
-- **Distribution goal:** Native AOT executable and RID-specific NuGet Tool packages that do not require installing the .NET 11 runtime.
-- **Proposed package ID:** `Infoconex.DotNetFramework.Tools` (availability not reserved).
-- **CLI command:** `dotnet-framework` / `dotnet framework` when installed as a .NET Tool.
-- **Implementation status:** `--help` and `--version` work in the scaffold. `inspect` and `scan` deliberately return an unimplemented error.
+```shell
+dotnet framework inspect ./bin/MyLibrary.dll
+dotnet framework inspect ./bin/MyApplication.exe --details
+dotnet framework scan ./publish ./legacy --recursive
+dotnet framework scan ./publish --format json --output inventory.json
+dotnet framework inspect ./bin/MyLibrary.dll --format json --fields name,version,targetFramework
+```
 
-Engineering standards and the normative requirements are in [docs/README.md](docs/README.md), [the FR/NFR catalogs](docs/requirements/functional.md), [acceptance scenarios](docs/scenarios/README.md), and [traceability](docs/testing/traceability.md).
+`inspect` will accept one explicit regular file regardless of extension; `scan` will accept one or more explicitly selected directories and inventory DLL/EXE candidates. Invalid explicitly selected roots will reject the entire command. The app will not expand wildcard patterns. Explicit valid links are accepted, while directory links found recursively are skipped by default (`--follow-links` is opt-in).
 
-The solution uses the XML-based `DotNetFramework.slnx` format and the lowercase root `nuget.config`. See [centralized build configuration](docs/engineering/build-configuration.md) for shared MSBuild, NuGet and analyzer settings. Explicitly supplying the configuration during restore keeps package sources consistent on every platform.
+Results will separate declared assembly target, requested deployment runtime, and actual observed runtime (not measured in v0.1), report non-managed binaries and unknown targets without guessing, and provide offline, dated lifecycle findings. Scans will preserve per-file errors and partial/incomplete coverage, including when resource limits are reached.
 
-To build this **source-only** branch after installing the .NET 11 SDK:
+Both commands will share one versioned JSON report envelope; `--fields` will filter only per-assembly properties. Results will go to stdout by default or `--output`, using non-overwriting UTC timestamped collision-safe filenames. Diagnostics go to stderr.
+
+Initial release goal: both standalone Native AOT executables and NuGet .NET Tool (`Infoconex.DotNetFramework.Tools`) on **Windows x64, Linux x64, macOS x64**; ARM64 is deferred. No NuGet package or standalone executable has been published.
+
+## Engineering scaffold
+
+The architecture requires distinct compiled **Domain, Application, Infrastructure and CLI** layers, with compile-time project references pointing inward. The CLI is an outer adapter and composition root. No implementation of an inspector is claimed by creating the projects.
 
 ```shell
 dotnet restore DotNetFramework.slnx --configfile nuget.config
@@ -29,140 +40,10 @@ dotnet test DotNetFramework.slnx -c Release --no-build
 dotnet run --project src/Infoconex.DotNetFramework.Cli -- --help
 ```
 
-No package has been published. See [packaging](docs/engineering/packaging.md) for the planned distribution and verification gates.
+Commands above are build instructions, not verified run evidence in this document. Source files must be safe for inspection: do not load or execute selected binaries.
 
-## Why this tool?
+## Sources
 
-A developer may have a compiled DLL or EXE but no project file, source repository, or reliable build records. Before planning modernization or an upgrade, they need to know whether an assembly declares a target such as:
-
-- .NET Framework 4.8
-- .NET Standard 2.0
-- .NET 8, .NET 10, or .NET 11
-
-The information is often available in the assembly's `System.Runtime.Versioning.TargetFrameworkAttribute`. Microsoft's IL Disassembler (`ildasm.exe`) can expose it, but the goal here is a simple, scriptable CLI that can inspect one file or inventory many files.
-
-**Scope matters:** an assembly's *target framework* is not necessarily the runtime version actually executing an application. It is also not the SDK version used to compile the assembly. This tool must not conflate those concepts.
-
-## Proposed CLI experience
-
-The intended command name is `dotnet-framework`, which supports invocation through the .NET CLI as `dotnet framework` when installed as a .NET Tool.
-
-```shell
-dotnet framework inspect ./bin/MyLibrary.dll
-dotnet framework inspect ./bin/MyApplication.exe
-dotnet framework scan ./publish --recursive
-dotnet framework scan ./publish --recursive --format json
-dotnet framework --help
-```
-
-The command name and options are **proposed for v0.1** and should be verified before a public package is published.
-
-Illustrative output for a single assembly:
-
-```text
-File:              MyLibrary.dll
-Managed assembly:  Yes
-Target framework:  .NET Framework 4.8
-Framework moniker: .NETFramework,Version=v4.8
-Detection source:  TargetFrameworkAttribute
-```
-
-Illustrative JSON output:
-
-```json
-{
-  "file": "MyLibrary.dll",
-  "managed": true,
-  "targetFramework": {
-    "moniker": ".NETFramework,Version=v4.8",
-    "displayName": ".NET Framework 4.8",
-    "source": "TargetFrameworkAttribute"
-  }
-}
-```
-
-Outputs must clearly distinguish **detected metadata** from an **unknown** or **inferred** result. The JSON shape is illustrative and will be finalized with automated contract tests.
-
-## Requirements and acceptance
-
-The v0.1 specification is maintained in the [functional requirements](docs/requirements/functional.md), [nonfunctional requirements](docs/requirements/non-functional.md), [Given/When/Then scenarios](docs/scenarios/README.md), and [scenario-to-test traceability](docs/testing/traceability.md). These are the authoritative sources for requirement identifiers, acceptance criteria, and verification evidence.
-
-### Detection rules and limitations
-
-1. **Prefer explicit assembly metadata.** The primary evidence is the assembly-level `TargetFrameworkAttribute`. Report the raw moniker so callers can see exactly what was declared.
-2. **Do not infer a target from the CLR metadata version.** For example, `v4.0.30319` does not mean that an assembly targets .NET Framework 4.0; multiple .NET Framework releases use that CLR version.
-3. **Handle missing attributes honestly.** Some legacy or specially compiled managed assemblies do not include `TargetFrameworkAttribute`. The initial tool reports the target as unknown rather than guessing from assembly references or API usage.
-4. **Differentiate managed assemblies from native launchers.** A modern .NET `.exe` may be a native apphost rather than a managed assembly, and Native AOT output does not necessarily contain inspectable managed assembly metadata. The tool must not claim a target it cannot read. Investigation of adjacent `.dll` and `.runtimeconfig.json` files is a possible later enhancement.
-5. **Treat declared metadata as evidence, not proof of build history.** The attribute can be customized, omitted, or inconsistent with packaging. Report what is actually present.
-6. **Never execute an inspected artifact.** Inspection must remain read-only. Avoid `Assembly.Load`, `Assembly.LoadFrom`, or any approach requiring arbitrary application code to run.
-
-A directory scan should not follow symbolic-link cycles. File count, file size, and other resource limits should be evaluated during implementation to keep scans reliable on large or untrusted directories.
-
-## Acceptance scenarios for v0.1
-
-| Scenario | Expected result |
-| --- | --- |
-| Inspect a managed assembly declaring `.NETFramework,Version=v4.8` | Reports .NET Framework 4.8 and preserves the original moniker. |
-| Inspect a managed assembly declaring `.NETStandard,Version=v2.0` | Reports .NET Standard 2.0 and preserves the original moniker. |
-| Inspect a managed assembly declaring `.NETCoreApp,Version=v10.0` | Reports .NET 10 and preserves the original moniker. |
-| Inspect a managed assembly with no target-framework attribute | Reports target framework as unknown; does not use `v4.0.30319` as a substitute. |
-| Inspect a native executable or an invalid file | Identifies it as non-managed or unreadable, as applicable, without executing it. |
-| Recursively scan a directory containing mixed binaries | Produces one result per candidate file, including failures, and does not stop after one unreadable file. |
-| Request JSON output | Produces parseable, deterministic fields with a documented schema; diagnostics do not corrupt standard output. |
-| Run the same fixtures on supported operating systems | Produces equivalent detection results. |
-
-Automated tests should use known fixture assemblies with explicitly documented targets. Tests must verify **the tool's output and its failure behavior**, not only that parsing completes.
-
-## Engineering approach
-
-- **Language and platform:** C# and .NET 11, using the SDK selected by `global.json`.
-- **Metadata reader:** Prefer Microsoft's `System.Reflection.Metadata` and `System.Reflection.PortableExecutable` APIs to inspect binary metadata directly.
-- **Architecture:** Keep binary inspection separate from CLI argument parsing, formatting, and directory traversal so the detection logic can be tested independently.
-- **Portability:** Use cross-platform APIs and paths. Do not depend on Visual Studio or Windows-only SDK utilities for normal operation.
-- **Safety:** Read input files without running or dynamically loading their code. Avoid changing or writing to inspected files.
-- **Quality:** Use test-driven development, automated validation, clear errors, and GitHub Actions across supported environments.
-- **Releases:** Version the CLI and JSON contract; document any breaking behavior before publishing packages.
-
-## Out of scope for v0.1
-
-These are **not** the same as target-framework detection and should not delay the first implementation:
-
-- Determining the exact runtime patch currently executing an application.
-- Detecting the SDK or C# compiler version originally used to build a binary.
-- Claiming that an assembly is compatible with a particular runtime based only on its target moniker.
-- Finding the transitive dependency graph or checking package vulnerabilities.
-- Reading every possible deployment format, including Native AOT and bundled single-file executables.
-- Making changes to assemblies, projects, or installed SDKs.
-- Upgrading, retargeting, rebuilding, or migrating applications.
-
-## Potential follow-on capabilities
-
-Once v0.1 is accurate and tested, evaluate these separately:
-
-- **Deployment context:** Read adjacent `*.runtimeconfig.json` and `*.deps.json` to report requested runtimes and dependencies, while distinguishing them from the assembly's declared target.
-- **Support lifecycle:** Compare detected framework targets with Microsoft's current support metadata; display the evaluation date and source, and distinguish unsupported *targets* from the actual deployed runtime.
-- **Inventory reporting:** Add CSV, richer JSON summaries, filtering, and optional CI policies.
-- **Dependency analysis:** Identify referenced assemblies and incompatible or uncertain target combinations.
-- **Native hosts and single-file deployments:** Investigate what can be determined reliably without executing the file.
-
-These features are proposals, not commitments.
-
-## Proposed implementation milestones
-
-1. **Baseline:** Establish the .NET solution, CLI project, test project, fixtures, and GitHub Actions validation.
-2. **Single-file inspection:** Implement metadata-only target-framework detection through tests for `inspect`.
-3. **Inventory and reporting:** Implement `scan`, recursive traversal, robust errors, and structured JSON output.
-4. **Package and document:** Publish a versioned .NET Tool package, command reference, and tested usage examples.
-
-## Microsoft references
-
-- [TargetFrameworkAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.versioning.targetframeworkattribute)
+- [Microsoft TargetFrameworkAttribute](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.versioning.targetframeworkattribute)
 - [System.Reflection.Metadata](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.metadata)
-- [System.Reflection.PortableExecutable](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.portableexecutable)
-- [IL Disassembler (Ildasm.exe)](https://learn.microsoft.com/en-us/dotnet/framework/tools/ildasm-exe-il-disassembler)
-- [Create a .NET Tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools-how-to-create)
-- [Manage .NET tools](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools)
-
----
-
-**Project status:** .NET 11 engineering scaffold available for review; no functioning assembly inspector, standalone binaries or NuGet package has been released.
+- [Native AOT .NET tools](https://learn.microsoft.com/en-us/dotnet/core/tools/rid-specific-tools)

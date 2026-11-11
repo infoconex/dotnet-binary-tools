@@ -2,7 +2,7 @@
 
 ## Ordinary changes
 
-1. Define one FR/NFR or engineering issue and its normative acceptance scenarios.
+1. Start from an approved CAP ID, then define one independently testable FR/NFR or engineering issue and its acceptance scenarios.
 2. Branch from current `main` as `issue/<number>-<slug>`. Initial engineering-baseline work uses `setup/engineering-foundation-dotnet11`.
 3. Write a failing test for missing/defective functionality, then implement, refactor, and run all affected tests.
 4. Update test traceability with **observed** execution evidence and exact SHA.

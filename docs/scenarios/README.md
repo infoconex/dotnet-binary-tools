@@ -1,24 +1,28 @@
 # Acceptance scenarios
 
-Authoritative Given/When/Then specifications. Each ID is stable and never recycled. Specifications are maintained independently from observed execution status; consult [traceability](../testing/traceability.md).
+**Approach approved:** Focused, independently traceable Given/When/Then scenarios and detailed automated tests for edge cases, Unicode, spaces, permissions and platform-specific path behavior. Approval of a scenario does not mean it has passed.
 
-## Functional
+## Approved CAP-001 functional scenarios
 
-- [FR-001: Detect managed assemblies](functional/FR-001.md)
-- [FR-002: Read declared target-framework metadata](functional/FR-002.md)
-- [FR-003: Preserve and display target monikers](functional/FR-003.md)
-- [FR-004: Recognize framework families](functional/FR-004.md)
-- [FR-005: Classify absent or unreadable targets](functional/FR-005.md)
-- [FR-006: Single-file inspect command](functional/FR-006.md)
-- [FR-007: Directory scans](functional/FR-007.md)
-- [FR-008: Human and JSON output](functional/FR-008.md)
+- [FR-INP-001](functional/FR-INP-001.md)
+- [FR-INP-002](functional/FR-INP-002.md)
+- [FR-INP-003](functional/FR-INP-003.md)
+- [FR-INP-004](functional/FR-INP-004.md)
+- [FR-INP-005](functional/FR-INP-005.md)
+- [FR-INP-006](functional/FR-INP-006.md)
+- [FR-INP-007](functional/FR-INP-007.md)
+- [FR-INP-008](functional/FR-INP-008.md)
 
-## Nonfunctional
+Each functional scenario has its own stable `SC-INP-###` ID that is **not derived** from its requirement ID. Requirements trace to CAP-001; scenario mappings and actual test evidence live in [traceability](../testing/traceability.md).
 
-- [NFR-001: Resilient error handling](non-functional/NFR-001.md)
-- [NFR-002: Cross-platform support](non-functional/NFR-002.md)
-- [NFR-003: NuGet .NET Tool packaging](non-functional/NFR-003.md)
-- [NFR-004: Automated acceptance and evidence](non-functional/NFR-004.md)
-- [NFR-005: Safe metadata-only inspection](non-functional/NFR-005.md)
-- [NFR-006: Runtime-free Native AOT distribution](non-functional/NFR-006.md)
-- [NFR-007: Bounded resource consumption](non-functional/NFR-007.md)
+## Proposed nonfunctional scenarios
+
+- [NFR-001](non-functional/NFR-001.md)
+- [NFR-002](non-functional/NFR-002.md)
+- [NFR-003](non-functional/NFR-003.md)
+- [NFR-004](non-functional/NFR-004.md)
+- [NFR-005](non-functional/NFR-005.md)
+- [NFR-006](non-functional/NFR-006.md)
+- [NFR-007](non-functional/NFR-007.md)
+
+The legacy draft `FR-001`–`FR-008` scenarios are superseded; the approved functional requirement scheme is `FR-INP-###`. Their historical IDs are not recycled.

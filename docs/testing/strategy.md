@@ -1,35 +1,23 @@
 # Testing strategy and TDD policy
 
-This document establishes the requirements-driven testing and TDD policy for dotnet-framework.
+The authoritative product baseline is [CAP-001–CAP-008](../capabilities.md) and the mandatory architecture rules are [ARCH-001–ARCH-008](../requirements/architecture.md).
 
-## Red / Green / Refactor
+## Test-first workflow
 
-For each FR/NFR, read the authoritative `docs/scenarios/<category>/<ID>.md` and classify work as:
-- **New capability:** create a meaningful failing test, implement minimally, refactor with all tests green.
-- **Defect:** capture a reproducible failing regression test before fixing the behavior.
-- **Acceptance verification only:** if the behavior exists, add independent evidence without manufacturing an intentionally failing test.
-- **Engineering foundation:** small tests can verify project wiring and honest CLI help behavior, but must not claim feature acceptance.
-
-Scenarios use `FR-###-SC##` and `NFR-###-SC##`. Traceability captures exact test name, observed result, workflow run, and SHA. No status is upgraded to Automated merely because test source exists.
+For a new approved requirement, begin with a meaningful failing test, implement the minimum behavior, then refactor with a passing suite. For defects, capture a reproducing regression. For pre-existing behavior, verification-only tests are acceptable if clearly identified; do not manufacture red tests. Record **observed** acceptance evidence in [traceability](traceability.md), including exact test name, run URL and commit SHA.
 
 ## Test levels
 
-| Level | Purpose |
+| Level | Focus |
 | --- | --- |
-| Unit | Target moniker parsing, normalized mapping, status and error-code rules |
-| Component | In-memory synthetic managed PE and metadata-reader tests |
-| Integration | Real synthetic DLL/EXE fixtures, single-file CLI behavior and directory traversal |
-| Contract | Stable output JSON schema, exit codes, error isolation, public Core APIs |
-| Negative/security | Corrupt/truncated/oversized binaries, malformed metadata, symlink cycles, restricted file access |
-| Cross-platform | Equivalent test fixtures on Windows, Linux and macOS |
-| Deployment | AOT executable and NuGet Tool install on supported RIDs, including runtime-free consumer |
+| Domain unit | Invariants, immutable facts and honest unknown-target states. |
+| Application unit | Input resolution and use-case behavior against ports, independent of the CLI. |
+| Adapter component | Filesystem, metadata and configuration operations with controlled fixtures. |
+| CLI integration | Argument validation, stdout/stderr, stable JSON, report file behavior and exit semantics. |
+| Negative/security | Corrupt binaries, malformed metadata, oversized data, access failures, symlink loops, and resource limits. |
+| Cross-platform | Windows, Linux and macOS x64 behavior, including platform-specific path/link rules. |
+| Distribution | Native AOT execution without installed .NET and NuGet tool installation on clean consumers. |
 
-Tests should be deterministic, use no customer/proprietary binaries or secrets, and avoid hidden dependence on local SDKs or current time. Preserve test fixture origins and hashes.
+The approved scenario strategy is a **focused** set of normative Given/When/Then cases plus independently traceable tests for Unicode and spaces in paths, case sensitivity, permissions, links, and other boundary variations.
 
-## Smoke baseline vs acceptance
-
-The engineering-foundation branch tests a raw-moniker value object and a deliberately unimplemented CLI. **It has not satisfied FR-001 through FR-008.** The scenario traceability matrix remains Planned until real implementation and execution evidence exist.
-
-## AOT release proof
-
-Treat managed Debug/Release tests and AOT smoke tests as distinct gates. AOT compilation on a CI runner that has .NET installed does **not** prove that the resulting binary works on a host without .NET; include a separate clean consumer test before release.
+Architectural checks enforce compiled-layer dependency direction. They complement but do not replace SOLID review, component tests or functional acceptance. The current CLI supports only help/version; its tests do not establish inspection behavior.

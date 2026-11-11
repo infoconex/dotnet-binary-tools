@@ -1,13 +1,13 @@
 name: Individual requirement
 description: Track an independently testable feature, quality requirement or engineering change.
-title: "FR-###: "
+title: "FR-INP-###: "
 body:
   - type: input
     id: requirement
     attributes:
       label: Stable requirement or engineering identifier
-      placeholder: FR-001
-      description: Use an existing ID from docs/requirements or explain the engineering change.
+      placeholder: FR-INP-001
+      description: Use approved requirement and CAP IDs, or explain a separately scoped engineering change.
     validations:
       required: true
   - type: dropdown

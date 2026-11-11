@@ -1,8 +1,9 @@
 ## Primary issue and intended change
 
 Issue: #<!-- number or explain setup exception -->
-Requirements: `FR-###` / `NFR-###` / engineering issue
-Scenarios: `FR-###-SC##` / `NFR-###-SC##`
+Capability: `CAP-###`
+Requirements/constraints: `FR-INP-###` / `NFR-###` / `ARCH-###`
+Scenarios: `SC-INP-###` / `NFR-###-SC##` (or future independent IDs)
 
 Describe the smallest behavior or engineering improvement delivered.
 
@@ -20,7 +21,7 @@ Describe the smallest behavior or engineering improvement delivered.
 
 ## Architecture, security and release review
 
-- [ ] Core remains independent of CLI; dependency changes are intentional.
+- [ ] ARCH-001–ARCH-008 respected, including Domain/Application/Infrastructure/CLI inward-only references.
 - [ ] New dependencies were reviewed for license, version and vulnerabilities.
 - [ ] Public API and JSON schema compatibility were reviewed.
 - [ ] Binary inputs are read-only, untrusted and not executed; diagnostic data is safe.

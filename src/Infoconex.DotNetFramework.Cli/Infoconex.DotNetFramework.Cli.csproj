@@ -17,11 +17,12 @@
     <RepositoryUrl>https://github.com/infoconex/dotnet-framework</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>dotnet;cli;tool;framework;assembly;metadata;nativeaot</PackageTags>
-    <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
-    <ToolPackageRuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</ToolPackageRuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
+    <ToolPackageRuntimeIdentifiers>win-x64;linux-x64;osx-x64</ToolPackageRuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../Infoconex.DotNetFramework.Core/Infoconex.DotNetFramework.Core.csproj" />
+    <ProjectReference Include="../Infoconex.DotNetFramework.Application/Infoconex.DotNetFramework.Application.csproj" />
+    <ProjectReference Include="../Infoconex.DotNetFramework.Infrastructure/Infoconex.DotNetFramework.Infrastructure.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>

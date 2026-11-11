@@ -1,6 +1,6 @@
 # Nonfunctional requirements: v0.1 quality baseline
 
-**Status:** Proposed for review. Quality requirements include security, cross-platform support, Native AOT distribution, and resource limits. A declared target does not prove runtime compatibility.
+**Status:** Proposed for future review; not yet ratified. [Approved capabilities](../capabilities.md) and [mandatory architecture](architecture.md) are separate governing specifications. Quality requirements include security, cross-platform support, Native AOT distribution, and resource limits. A declared target does not prove runtime compatibility.
 
 | ID | Quality obligation | Acceptance scenarios |
 | --- | --- | --- |
