@@ -59,27 +59,57 @@ def columns(line: str) -> list[str]:
 def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
     functional: dict[str, tuple[str, str]] = {}
     quality: dict[str, str] = {}
-    source = "docs/requirements/functional.md"
-    for line in load(source).splitlines():
-        if not line.startswith("| FR-"):
+    # The capability requirement tables are the authoritative approved source.
+    expected_counts = {
+        "INP": 8, "ASM": 11, "CFG": 8, "LCY": 8,
+        "INV": 12, "RPT": 9, "CLI": 8, "DST": 7,
+    }
+    for prefix, capability in CAPABILITIES.items():
+        source = f"docs/capabilities/{capability}.md"
+        text = load(source)
+        section = re.search(
+            r"^## Requirement coverage\n([\s\S]*?)(?=^## Verification status\n)",
+            text, re.M,
+        )
+        if section is None:
+            error(f"{source}: missing requirement coverage table")
             continue
-        cells = columns(line)
-        if len(cells) != 4:
-            error(f"{source}: malformed requirement row: {line}")
-            continue
-        identity, capability, description, link = cells
-        match = FR_ID.fullmatch(identity)
-        if match is None or match.group(1) not in CAPABILITIES:
-            error(f"{source}: invalid requirement ID {identity}")
-            continue
-        expected_cap = CAPABILITIES[match.group(1)]
-        if capability != expected_cap:
-            error(f"{identity}: expected {expected_cap}, found {capability}")
-        if link != f"[Scenarios](../scenarios/functional/{CAPABILITY_FOLDERS[match.group(1)]}/{identity}.md)":
-            error(f"{identity}: requirement scenario link is incorrect")
-        if identity in functional:
-            error(f"Duplicate functional requirement {identity}")
-        functional[identity] = (capability, description)
+        for line in section.group(1).splitlines():
+            if not line.startswith("| [FR-"):
+                continue
+            match = re.fullmatch(
+                r"\| \[(FR-[A-Z]{3}-\d{3})\]\(([^)]+)\) \| ([^|]+) \| (.+) \|",
+                line,
+            )
+            if match is None:
+                error(f"{source}: malformed requirement row: {line}")
+                continue
+            identity, target, title, purpose = match.groups()
+            if not identity.startswith(f"FR-{prefix}-"):
+                error(f"{source}: requirement in wrong capability: {identity}")
+            expected_path = (
+                f"../scenarios/functional/{CAPABILITY_FOLDERS[prefix]}/{identity}.md"
+            )
+            if target != expected_path:
+                error(f"{source}: invalid scenario link for {identity}")
+            if not title.strip() or not purpose.strip():
+                error(f"{source}: missing requirement title or purpose: {identity}")
+            if identity in functional:
+                error(f"Duplicate functional requirement {identity}")
+            functional[identity] = (capability, purpose.strip().replace(r"\|", "|"))
+
+        expected_ids = {
+            f"FR-{prefix}-{number:03d}"
+            for number in range(1, expected_counts[prefix] + 1)
+        }
+        actual_ids = {
+            identity for identity, (cap, _) in functional.items() if cap == capability
+        }
+        if actual_ids != expected_ids:
+            error(
+                f"{source}: missing={sorted(expected_ids - actual_ids)}, "
+                f"unexpected={sorted(actual_ids - expected_ids)}"
+            )
     if len(functional) != 71:
         error(f"Expected 71 functional requirements, found {len(functional)}")
 
@@ -106,17 +136,19 @@ def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
     return functional, quality
 
 def check_functional_area_navigation(functional: dict[str, tuple[str, str]]) -> None:
-    """Ensure functional catalog navigation matches capability names and requirements."""
+    """Ensure this page is an index of the authoritative capability requirements."""
     relative = "docs/requirements/functional.md"
     source = load(relative)
     section = re.search(
-        r"^## Functional areas\n([\s\S]*?)(?=^## Requirements\n)",
+        r"^## Functional areas\n([\s\S]*?)(?=^## Boundaries and interpretation\n)",
         source,
         re.M,
     )
     if section is None:
         error(f"{relative}: missing functional areas navigation")
         return
+    if re.search(r"^\| FR-[A-Z]{3}-\d{3}\s*\|", source, re.M):
+        error(f"{relative}: individual requirements must live in capability files")
     area_rows = [
         line for line in section.group(1).splitlines()
         if line.startswith("| CAP-")
@@ -125,18 +157,21 @@ def check_functional_area_navigation(functional: dict[str, tuple[str, str]]) -> 
     for prefix, capability in CAPABILITIES.items():
         heading = load(f"docs/capabilities/{capability}.md").splitlines()
         expected_prefix = f"# {capability}: "
-        title = heading[0].removeprefix(expected_prefix) if heading and heading[0].startswith(expected_prefix) else ""
+        title = (
+            heading[0].removeprefix(expected_prefix)
+            if heading and heading[0].startswith(expected_prefix) else ""
+        )
         count = sum(1 for assigned, _ in functional.values() if assigned == capability)
         expected_rows.append(
-            f"| {capability} | [{title}](../scenarios/functional/"
-            f"{CAPABILITY_FOLDERS[prefix]}/README.md) | {count} |"
+            f"| {capability} | `FR-{prefix}-XXX` | [{title}](../capabilities/{capability}.md) "
+            f"| {count} | [Scenarios](../scenarios/functional/"
+            f"{CAPABILITY_FOLDERS[prefix]}/README.md) |"
         )
     if area_rows != expected_rows:
         error(
-            f"{relative}: functional area navigation must match the eight "
-            "approved capability titles, scenario folder links and requirement counts"
+            f"{relative}: navigation must match all eight capability titles, "
+            "authoritative documents, scenario indexes and requirement counts"
         )
-
 
 
 def check_scenarios(

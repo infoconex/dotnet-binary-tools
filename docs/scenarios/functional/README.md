@@ -15,4 +15,4 @@
 | [CAP-007: Command-Line Interface](../../capabilities/CAP-007.md) | [command-line-interface/](command-line-interface/README.md) | 8 | 11 |
 | [CAP-008: Distribution](../../capabilities/CAP-008.md) | [distribution/](distribution/README.md) | 7 | 9 |
 
-The [functional requirements catalog](../../requirements/functional.md) is authoritative for approved behavior; the [traceability matrix](../../testing/traceability.md) records implementation evidence.
+The [capability requirement tables](../../capabilities/README.md) contain the approved requirement wording, and the [functional requirements index](../../requirements/functional.md) links to each area; the [traceability matrix](../../testing/traceability.md) records implementation evidence.

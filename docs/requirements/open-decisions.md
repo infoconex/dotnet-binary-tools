@@ -1,6 +1,6 @@
 # V0.1 design decisions to finalize before implementation
 
-**Status:** Open technical decisions. The functional behaviors in [the requirements catalog](functional.md) are approved, but these numerical and contract details are **not** silently invented by the specification.
+**Status:** Open technical decisions. The functional behaviors linked from the [requirements index](functional.md) and defined in the [capability specifications](../capabilities/README.md) are approved, but these numerical and contract details are **not** silently invented by the specification.
 
 1. **Inventory resource limits:** Select numerical default maximum depth, candidate count, and candidate/file size. Define command option names, override bounds and safeguards for CPU, metadata parsing and memory.
 2. **Lifecycle reference freshness:** Select an observable stale-data threshold, source allowlist, refresh signature/integrity rules, and cache behavior. Default execution remains offline.

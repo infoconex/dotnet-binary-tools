@@ -22,4 +22,4 @@
 - [NFR-003](non-functional/NFR-003.md)
 - [NFR-004](non-functional/NFR-004.md)
 
-See the [requirements catalog](../requirements/functional.md) and [test traceability](../testing/traceability.md) to distinguish approved scenarios from actual execution evidence.
+See the [functional requirements index](../requirements/functional.md), the [capability requirement tables](../capabilities/README.md) and [test traceability](../testing/traceability.md) to distinguish approved scenarios from actual execution evidence.

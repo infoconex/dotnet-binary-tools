@@ -10,7 +10,7 @@ The planned inspection covers **.NET Framework, .NET Core, modern .NET, and .NET
 
 - [CAP-001–CAP-008: product capabilities](docs/capabilities/README.md).
 - [ARCH-001–ARCH-008: mandatory SOLID and hexagonal architecture](docs/requirements/architecture.md).
-- [71 approved functional requirements](docs/requirements/functional.md), [102 focused Given/When/Then scenarios](docs/scenarios/README.md), and [scenario verification status](docs/testing/traceability.md).
+- [Functional requirements index (71 approved)](docs/requirements/functional.md), [102 focused Given/When/Then scenarios](docs/scenarios/README.md), and [scenario verification status](docs/testing/traceability.md).
 - [Engineering and development documentation](docs/README.md).
 
 ### Intended CLI (not implemented)
