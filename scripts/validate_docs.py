@@ -239,9 +239,22 @@ def check_governance(functional: dict[str, tuple[str, str]]) -> None:
             if f"## {heading}\n" not in source:
                 error(f"{relative}: missing section {heading}")
 
-        linked = re.findall(
-            r"^- \[(FR-[A-Z]{3}-\d{3})\]\(([^)]+)\)$",
+        section_match = re.search(
+            r"^## Requirement coverage\n([\s\S]*?)(?=^## Verification status\n)",
             source,
+            re.M,
+        )
+        if section_match is None:
+            error(f"{relative}: missing requirement coverage table")
+            coverage = ""
+        else:
+            coverage = section_match.group(1)
+        if "| Requirement | Title | Purpose |" not in coverage:
+            error(f"{relative}: missing requirement coverage table headers")
+
+        linked = re.findall(
+            r"^\| \[(FR-[A-Z]{3}-\d{3})\]\(([^)]+)\) \| ([^|]+) \| (.+) \|$",
+            coverage,
             re.M,
         )
         expected_requirements = {
@@ -249,18 +262,23 @@ def check_governance(functional: dict[str, tuple[str, str]]) -> None:
             for identity, (capability, _) in functional.items()
             if capability == cap
         }
-        found_requirements = [identity for identity, _ in linked]
+        found_requirements = [identity for identity, _, _, _ in linked]
         if len(found_requirements) != len(set(found_requirements)):
-            error(f"{relative}: duplicate requirement links")
+            error(f"{relative}: duplicate requirement table rows")
         if set(found_requirements) != expected_requirements:
             error(
                 f"{relative}: requirement coverage mismatch; "
                 f"missing={sorted(expected_requirements - set(found_requirements))}, "
                 f"incorrect={sorted(set(found_requirements) - expected_requirements)}"
             )
-        for identity, target in linked:
+        for identity, target, title, purpose in linked:
             if target != f"../scenarios/functional/{identity}.md":
                 error(f"{relative}: incorrect scenario link for {identity}: {target}")
+            if not title.strip():
+                error(f"{relative}: missing requirement title for {identity}")
+            expected = functional.get(identity)
+            if expected is not None and purpose.strip().replace(r"\|", "|") != expected[1]:
+                error(f"{relative}: purpose differs from approved catalog for {identity}")
         if not re.search(r"\bPlanned\b", source):
             error(f"{relative}: missing unverified acceptance status")
         if not re.search(rf"^\|\s*ARCH-{number:03d}\s*\|", architecture, re.M):
