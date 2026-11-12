@@ -4,7 +4,7 @@
 
 ## Governing specifications
 
-- [Approved capability baseline](capabilities.md): CAP-001–CAP-008.
+- [Approved capability baseline](capabilities/README.md): CAP-001–CAP-008.
 - [Approved architectural constraints](requirements/architecture.md): ARCH-001–ARCH-008, including SOLID, hexagonal architecture, distinct projects and inward-only references.
 - [Approved functional requirements](requirements/functional.md): 71 FRs across all eight capabilities; [102 functional acceptance scenarios](scenarios/README.md) are defined and remain unverified.
 - [Four proposed cross-cutting nonfunctional requirements](requirements/non-functional.md): quality criteria remain draft, not ratified; distribution and evidence governance are specified separately.

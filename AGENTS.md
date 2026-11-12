@@ -1,6 +1,6 @@
 # Repository instructions for human and AI contributions
 
-Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities.md), and [mandatory architecture](docs/requirements/architecture.md) before changes.
+Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities/README.md), and [mandatory architecture](docs/requirements/architecture.md) before changes.
 
 ## Governance
 

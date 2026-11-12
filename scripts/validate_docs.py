@@ -193,16 +193,74 @@ def check_traceability(mapping: dict[str, tuple[str, str, str]]) -> None:
         error(f"{relative}: scenarios missing from traceability: {sorted(set(mapping) - documented)}")
 
 
-def check_governance() -> None:
-    capabilities = load("docs/capabilities.md")
+def check_governance(functional: dict[str, tuple[str, str]]) -> None:
+    """Verify the README capability index and one detailed file per approved CAP."""
+    index = load("docs/capabilities/README.md")
     architecture = load("docs/requirements/architecture.md")
-    for index in range(1, 9):
-        cap = f"CAP-{index:03d}"
-        arch = f"ARCH-{index:03d}"
-        if not re.search(rf"^\|\s*{cap}\s*\|", capabilities, re.M):
-            error(f"Missing {cap} from capability catalog")
-        if not re.search(rf"^\|\s*{arch}\s*\|", architecture, re.M):
-            error(f"Missing {arch} from architectural constraints")
+    capability_folder = ROOT / "docs/capabilities"
+    expected_ids = [f"CAP-{number:03d}" for number in range(1, 9)]
+    expected_files = {"README.md"} | {f"{cap}.md" for cap in expected_ids}
+    actual_files = {path.name for path in capability_folder.glob("*.md")}
+    if actual_files != expected_files:
+        error(
+            "docs/capabilities: incorrect file set; "
+            f"missing={sorted(expected_files - actual_files)}, "
+            f"orphaned={sorted(actual_files - expected_files)}"
+        )
+    if (ROOT / "docs/capabilities.md").exists():
+        error("Obsolete docs/capabilities.md: use docs/capabilities/README.md")
+
+    indexed = re.findall(r"^\|\s*\[(CAP-\d{3})\]\(([^)]+)\)\s*\|", index, re.M)
+    expected_index = [(cap, f"{cap}.md") for cap in expected_ids]
+    if indexed != expected_index:
+        error(
+            "docs/capabilities/README.md: expected exactly one ordered linked "
+            f"index row per capability; found {indexed}"
+        )
+
+    for number, cap in enumerate(expected_ids, start=1):
+        relative = f"docs/capabilities/{cap}.md"
+        source = load(relative)
+        if not re.match(rf"^# {cap}: \S[^\n]*\n", source):
+            error(f"{relative}: missing capability ID and title")
+        for heading in (
+            "Purpose",
+            "Approved behavior",
+            "Inputs and outputs",
+            "Boundaries and exclusions",
+            "Failure and completeness behavior",
+            "Requirement coverage",
+            "Verification status",
+        ):
+            if f"## {heading}\n" not in source:
+                error(f"{relative}: missing section {heading}")
+
+        linked = re.findall(
+            r"^- \[(FR-[A-Z]{3}-\d{3})\]\(([^)]+)\)$",
+            source,
+            re.M,
+        )
+        expected_requirements = {
+            identity
+            for identity, (capability, _) in functional.items()
+            if capability == cap
+        }
+        found_requirements = [identity for identity, _ in linked]
+        if len(found_requirements) != len(set(found_requirements)):
+            error(f"{relative}: duplicate requirement links")
+        if set(found_requirements) != expected_requirements:
+            error(
+                f"{relative}: requirement coverage mismatch; "
+                f"missing={sorted(expected_requirements - set(found_requirements))}, "
+                f"incorrect={sorted(set(found_requirements) - expected_requirements)}"
+            )
+        for identity, target in linked:
+            if target != f"../scenarios/functional/{identity}.md":
+                error(f"{relative}: incorrect scenario link for {identity}: {target}")
+        if not re.search(r"\bPlanned\b", source):
+            error(f"{relative}: missing unverified acceptance status")
+        if not re.search(rf"^\|\s*ARCH-{number:03d}\s*\|", architecture, re.M):
+            error(f"Missing ARCH-{number:03d} from architectural constraints")
 
 
 def check_links_and_retired_refs() -> None:
@@ -217,6 +275,7 @@ def check_links_and_retired_refs() -> None:
         "Infoconex.DotNetFramework",
         "DotNetFramework.slnx",
         "dotnet-framework",
+        "docs/capabilities.md",
         "0001-core-cli-boundary.md",
         "0003-hexagonal-project-boundaries.md",
         "docs/scenarios/functional/FR-001.md",
@@ -245,7 +304,7 @@ def main() -> int:
     functional, quality = read_catalog()
     mapping = check_scenarios(functional, quality)
     check_traceability(mapping)
-    check_governance()
+    check_governance(functional)
     check_links_and_retired_refs()
     for problem in ERRORS:
         print(f"ERROR: {problem}", file=sys.stderr)
