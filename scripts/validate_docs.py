@@ -105,6 +105,39 @@ def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
         error(f"Expected four proposed NFRs {sorted(expected_quality)}, found {sorted(quality)}")
     return functional, quality
 
+def check_functional_area_navigation(functional: dict[str, tuple[str, str]]) -> None:
+    """Ensure functional catalog navigation matches capability names and requirements."""
+    relative = "docs/requirements/functional.md"
+    source = load(relative)
+    section = re.search(
+        r"^## Functional areas\n([\s\S]*?)(?=^## Requirements\n)",
+        source,
+        re.M,
+    )
+    if section is None:
+        error(f"{relative}: missing functional areas navigation")
+        return
+    area_rows = [
+        line for line in section.group(1).splitlines()
+        if line.startswith("| CAP-")
+    ]
+    expected_rows = []
+    for prefix, capability in CAPABILITIES.items():
+        heading = load(f"docs/capabilities/{capability}.md").splitlines()
+        expected_prefix = f"# {capability}: "
+        title = heading[0].removeprefix(expected_prefix) if heading and heading[0].startswith(expected_prefix) else ""
+        count = sum(1 for assigned, _ in functional.values() if assigned == capability)
+        expected_rows.append(
+            f"| {capability} | [{title}](../scenarios/functional/"
+            f"{CAPABILITY_FOLDERS[prefix]}/README.md) | {count} |"
+        )
+    if area_rows != expected_rows:
+        error(
+            f"{relative}: functional area navigation must match the eight "
+            "approved capability titles, scenario folder links and requirement counts"
+        )
+
+
 
 def check_scenarios(
     functional: dict[str, tuple[str, str]], quality: dict[str, str]
@@ -374,6 +407,7 @@ def check_links_and_retired_refs() -> None:
 
 def main() -> int:
     functional, quality = read_catalog()
+    check_functional_area_navigation(functional)
     mapping = check_scenarios(functional, quality)
     check_traceability(mapping)
     check_governance(functional)

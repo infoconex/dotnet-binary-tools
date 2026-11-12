@@ -2,6 +2,23 @@
 
 **Status:** Approved v0.1 functional specification across CAP-001–CAP-008. **No functional acceptance has been demonstrated.**
 
+## Functional areas
+
+Select an area to browse its requirement titles and Given/When/Then acceptance scenarios.
+
+| Capability | Functional area | Requirements |
+| --- | --- | ---: |
+| CAP-001 | [Input Selection](../scenarios/functional/input-selection/README.md) | 8 |
+| CAP-002 | [Assembly Inspection](../scenarios/functional/assembly-inspection/README.md) | 11 |
+| CAP-003 | [Deployment Configuration](../scenarios/functional/deployment-configuration/README.md) | 8 |
+| CAP-004 | [Lifecycle Assessment](../scenarios/functional/lifecycle-assessment/README.md) | 8 |
+| CAP-005 | [Inspection Inventory](../scenarios/functional/inspection-inventory/README.md) | 12 |
+| CAP-006 | [Results and Reporting](../scenarios/functional/results-and-reporting/README.md) | 9 |
+| CAP-007 | [Command-Line Interface](../scenarios/functional/command-line-interface/README.md) | 8 |
+| CAP-008 | [Distribution](../scenarios/functional/distribution/README.md) | 7 |
+
+## Requirements
+
 | ID | Capability | Requirement | Acceptance scenarios |
 | --- | --- | --- | --- |
 | FR-INP-001 | CAP-001 | Accept exactly one explicitly selected regular file for `inspect`, regardless of filename extension. | [Scenarios](../scenarios/functional/input-selection/FR-INP-001.md) |
