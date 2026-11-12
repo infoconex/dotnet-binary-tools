@@ -1,7 +1,7 @@
-using Infoconex.DotNetFramework.Domain.Models;
+using Infoconex.DotNetBinary.Domain.Models;
 using NUnit.Framework;
 
-namespace Infoconex.DotNetFramework.Domain.Tests;
+namespace Infoconex.DotNetBinary.Domain.Tests;
 
 [TestFixture]
 [Category("Unit")]

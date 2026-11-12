@@ -14,7 +14,7 @@ from typing import Iterable
 
 OUTPUTS = ("documentation", "managed", "aot", "architecture", "test_metadata", "line_endings")
 FULL_BUILD_CONFIG = {
-    "DotNetFramework.slnx",
+    "DotNetBinary.slnx",
     "Directory.Build.props",
     "Directory.Build.targets",
     "Directory.Packages.props",

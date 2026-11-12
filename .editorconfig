@@ -1,4 +1,4 @@
-# Infoconex.DotNetFramework.Tools: .NET 11, modern C# and Microsoft naming rules.
+# Infoconex.DotNetBinary.Tools: .NET 11, modern C# and Microsoft naming rules.
 # Naming is enforced by Roslyn and dotnet format in cross-platform CI.
 root = true
 

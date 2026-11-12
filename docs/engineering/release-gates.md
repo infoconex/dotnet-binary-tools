@@ -1,6 +1,6 @@
 # Release promotion and publication gates
 
-**Status:** Proposed governance for dotnet-framework, including CI, sole-maintainer reviews, and publication approval.
+**Status:** Proposed governance for dotnet-binary, including CI, sole-maintainer reviews, and publication approval.
 
 ## Main branch controls
 

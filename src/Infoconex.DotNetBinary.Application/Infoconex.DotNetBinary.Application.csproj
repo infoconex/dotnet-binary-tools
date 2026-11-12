@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Infoconex.DotNetBinary.Application</AssemblyName>
+    <RootNamespace>Infoconex.DotNetBinary.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Infoconex.DotNetBinary.Domain/Infoconex.DotNetBinary.Domain.csproj" />
+  </ItemGroup>
+</Project>

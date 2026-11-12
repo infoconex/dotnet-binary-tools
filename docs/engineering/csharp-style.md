@@ -19,7 +19,7 @@ Project coding conventions for .NET 11, aligned with Microsoft's C# coding-style
 - Private instance fields: `_camelCase`.
 - Private static nonconstant fields: `s_camelCase`.
 - All constants: PascalCase, regardless of accessibility.
-- Namespaces reflect the compiled layers: `Infoconex.DotNetFramework.Domain`, `.Application`, `.Infrastructure`, `.Cli`, and their subnamespaces.
+- Namespaces reflect the compiled layers: `Infoconex.DotNetBinary.Domain`, `.Application`, `.Infrastructure`, `.Cli`, and their subnamespaces.
 
 The root `.editorconfig` declares Roslyn naming rules. CI runs `dotnet format style --diagnostics IDE1006 --verify-no-changes`, not merely editor suggestions.
 

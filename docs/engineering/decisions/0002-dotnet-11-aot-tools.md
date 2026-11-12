@@ -2,7 +2,7 @@
 
 **Status: Approved distribution goal; release acceptance not verified.**
 
-The tool targets `net11.0` in source and supports **both** standalone Native AOT executables and the NuGet .NET Tool (`Infoconex.DotNetFramework.Tools`, executable `dotnet-framework`, `dotnet framework` invocation).
+The tool targets `net11.0` in source and supports **both** standalone Native AOT executables and the NuGet .NET Tool (`Infoconex.DotNetBinary.Tools`, executable `dotnet-binary`, `dotnet binary` invocation).
 
 **Initial release RIDs:** `win-x64`, `linux-x64`, `osx-x64`. ARM64 is deferred pending separate evidence. The same feature contract must be available through both distributions.
 

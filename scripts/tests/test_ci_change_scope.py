@@ -26,14 +26,14 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertFalse(result["aot"])
 
     def test_source_change_triggers_managed_aot_and_architecture(self):
-        result = classify(["src/Infoconex.DotNetFramework.Domain/Models/TargetFrameworkIdentity.cs"])
+        result = classify(["src/Infoconex.DotNetBinary.Domain/Models/TargetFrameworkIdentity.cs"])
         self.assertFalse(result["documentation"])
         self.assertTrue(result["managed"])
         self.assertTrue(result["aot"])
         self.assertTrue(result["architecture"])
 
     def test_test_change_does_not_require_native_aot(self):
-        result = classify(["tests/Infoconex.DotNetFramework.Domain.Tests/TargetFrameworkIdentityTests.cs"])
+        result = classify(["tests/Infoconex.DotNetBinary.Domain.Tests/TargetFrameworkIdentityTests.cs"])
         self.assertTrue(result["managed"])
         self.assertTrue(result["test_metadata"])
         self.assertFalse(result["aot"])
@@ -46,7 +46,7 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertTrue(result["architecture"])
 
     def test_combined_docs_and_source_runs_both(self):
-        result = classify(["docs/README.md", "src/Infoconex.DotNetFramework.Cli/Program.cs"])
+        result = classify(["docs/README.md", "src/Infoconex.DotNetBinary.Cli/Program.cs"])
         self.assertTrue(result["documentation"])
         self.assertTrue(result["managed"])
         self.assertTrue(result["aot"])

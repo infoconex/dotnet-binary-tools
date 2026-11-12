@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solution>
+  <Project Path="src/Infoconex.DotNetBinary.Domain/Infoconex.DotNetBinary.Domain.csproj" />
+  <Project Path="src/Infoconex.DotNetBinary.Application/Infoconex.DotNetBinary.Application.csproj" />
+  <Project Path="src/Infoconex.DotNetBinary.Infrastructure/Infoconex.DotNetBinary.Infrastructure.csproj" />
+  <Project Path="src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj" />
+  <Project Path="tests/Infoconex.DotNetBinary.Domain.Tests/Infoconex.DotNetBinary.Domain.Tests.csproj" />
+  <Project Path="tests/Infoconex.DotNetBinary.Cli.Tests/Infoconex.DotNetBinary.Cli.Tests.csproj" />
+</Solution>

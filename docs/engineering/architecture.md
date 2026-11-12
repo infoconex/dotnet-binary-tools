@@ -12,12 +12,12 @@ Arrows mean **compile-time** project references, not runtime call direction. Inf
 
 | Project | Responsibility |
 | --- | --- |
-| `Infoconex.DotNetFramework.Domain` | Domain invariants and metadata facts; currently contains the raw target-framework moniker value object. |
-| `Infoconex.DotNetFramework.Application` | Future application use cases, coordination and required ports. |
-| `Infoconex.DotNetFramework.Infrastructure` | Future external adapters; split into distinct adapter projects when required. |
-| `Infoconex.DotNetFramework.Cli` | Help/version skeleton now; future thin command adapter and composition root. |
-| `Infoconex.DotNetFramework.Domain.Tests` | Domain unit tests. |
-| `Infoconex.DotNetFramework.Cli.Tests` | Current CLI scaffold tests. |
+| `Infoconex.DotNetBinary.Domain` | Domain invariants and metadata facts; currently contains the raw target-framework moniker value object. |
+| `Infoconex.DotNetBinary.Application` | Future application use cases, coordination and required ports. |
+| `Infoconex.DotNetBinary.Infrastructure` | Future external adapters; split into distinct adapter projects when required. |
+| `Infoconex.DotNetBinary.Cli` | Help/version skeleton now; future thin command adapter and composition root. |
+| `Infoconex.DotNetBinary.Domain.Tests` | Domain unit tests. |
+| `Infoconex.DotNetBinary.Cli.Tests` | Current CLI scaffold tests. |
 
 Metadata and binary parsing, filesystem I/O, deployment configuration, HTTP reference updates and report writing must remain outside Domain. Never load or execute inspected candidate binaries. Preserve explicit unknown vs non-managed results, and keep declared targets distinct from configuration and lifecycle assessments.
 

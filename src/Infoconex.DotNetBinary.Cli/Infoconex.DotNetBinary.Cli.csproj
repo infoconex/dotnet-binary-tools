@@ -1,28 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>dotnet-framework</AssemblyName>
-    <RootNamespace>Infoconex.DotNetFramework.Cli</RootNamespace>
+    <AssemblyName>dotnet-binary</AssemblyName>
+    <RootNamespace>Infoconex.DotNetBinary.Cli</RootNamespace>
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>dotnet-framework</ToolCommandName>
-    <PackageId>Infoconex.DotNetFramework.Tools</PackageId>
+    <ToolCommandName>dotnet-binary</ToolCommandName>
+    <PackageId>Infoconex.DotNetBinary.Tools</PackageId>
     <Version>0.1.0-preview.1</Version>
     <Authors>Infoconex</Authors>
     <Description>Cross-platform, metadata-only inspection of compiled .NET binaries, deployment runtime configuration, and framework lifecycle information.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageProjectUrl>https://github.com/infoconex/dotnet-framework</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/infoconex/dotnet-framework</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/infoconex/dotnet-binary-tools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/infoconex/dotnet-binary-tools</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>dotnet;cli;tool;framework;assembly;metadata;nativeaot</PackageTags>
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <ToolPackageRuntimeIdentifiers>win-x64;linux-x64;osx-x64</ToolPackageRuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../Infoconex.DotNetFramework.Application/Infoconex.DotNetFramework.Application.csproj" />
-    <ProjectReference Include="../Infoconex.DotNetFramework.Infrastructure/Infoconex.DotNetFramework.Infrastructure.csproj" />
+    <ProjectReference Include="../Infoconex.DotNetBinary.Application/Infoconex.DotNetBinary.Application.csproj" />
+    <ProjectReference Include="../Infoconex.DotNetBinary.Infrastructure/Infoconex.DotNetBinary.Infrastructure.csproj" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>

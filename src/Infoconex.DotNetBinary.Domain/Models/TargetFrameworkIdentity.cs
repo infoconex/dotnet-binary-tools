@@ -1,4 +1,4 @@
-namespace Infoconex.DotNetFramework.Domain.Models;
+namespace Infoconex.DotNetBinary.Domain.Models;
 
 /// <summary>
 /// Preserves a target-framework moniker as declared by assembly metadata.

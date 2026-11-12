@@ -1,7 +1,7 @@
-using Infoconex.DotNetFramework.Cli;
+using Infoconex.DotNetBinary.Cli;
 using NUnit.Framework;
 
-namespace Infoconex.DotNetFramework.Cli.Tests;
+namespace Infoconex.DotNetBinary.Cli.Tests;
 
 [TestFixture]
 [Category("Unit")]
@@ -36,6 +36,7 @@ public sealed class CliApplicationTests
         Assert.Multiple(() =>
         {
             Assert.That(code, Is.Zero);
+            Assert.That(output.ToString(), Does.Contain("Usage: dotnet binary <command> [options]"));
             Assert.That(output.ToString(), Does.Contain("inspect <file>"));
             Assert.That(output.ToString(), Does.Contain("any extension"));
             Assert.That(output.ToString(), Does.Contain("scan <directory> [<directory> ...]"));

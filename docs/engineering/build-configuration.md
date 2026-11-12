@@ -6,7 +6,7 @@
 
 | File | Owner or consumer | Purpose |
 | --- | --- | --- |
-| `DotNetFramework.slnx` | .NET CLI and IDE | Single XML-format solution containing separate Domain, Application, Infrastructure, CLI and their test projects |
+| `DotNetBinary.slnx` | .NET CLI and IDE | Single XML-format solution containing separate Domain, Application, Infrastructure, CLI and their test projects |
 | `global.json` | .NET SDK resolver | Selects the .NET 11 SDK baseline with feature-band roll-forward |
 | `.editorconfig` | C# analyzers and editors | Code style, whitespace and enforceable naming rules |
 | `.gitattributes` | Git | Normalize tracked text in the index and enforce LF checkout for cross-platform text; reserve CRLF for Windows command scripts |
@@ -57,7 +57,7 @@ The root `nuget.config` clears inherited settings in four sections: `packageSour
 This matters when a developer has globally disabled nuget.org or configured unrelated enterprise feeds and source mapping. Without clearing each relevant section, user-specific settings can influence repository restores. In CI, restore explicitly supplies the configuration:
 
 ```shell
-dotnet restore DotNetFramework.slnx --configfile nuget.config --force-evaluate
+dotnet restore DotNetBinary.slnx --configfile nuget.config --force-evaluate
 ```
 
 A developer restoring from the solution root also gets this root NuGet configuration through standard NuGet discovery; explicit `--configfile` makes the source set unambiguous.

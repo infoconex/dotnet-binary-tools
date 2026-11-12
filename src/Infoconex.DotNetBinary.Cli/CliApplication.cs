@@ -1,4 +1,4 @@
-namespace Infoconex.DotNetFramework.Cli;
+namespace Infoconex.DotNetBinary.Cli;
 
 /// <summary>
 /// Provides the foundational command-line entry point.
@@ -22,8 +22,8 @@ public static class CliApplication
         if (arguments.Count == 0 ||
             (arguments.Count == 1 && arguments[0] is "--help" or "-h" or "help"))
         {
-            output.WriteLine("dotnet-framework: static .NET binary inspection (planned)");
-            output.WriteLine("Usage: dotnet framework <command> [options]");
+            output.WriteLine("dotnet-binary: static .NET binary inspection (planned)");
+            output.WriteLine("Usage: dotnet binary <command> [options]");
             output.WriteLine("Planned: inspect <file> [options] (one regular file, any extension)");
             output.WriteLine("         scan <directory> [<directory> ...] [options]");
             output.WriteLine("Status: engineering foundation; inspection commands not implemented yet.");

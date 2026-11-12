@@ -1,6 +1,6 @@
 ---
 name: tdd-coach
-description: Guides a single dotnet-framework issue through scenario-driven red-green-refactor with observed evidence.
+description: Guides a single dotnet-binary issue through scenario-driven red-green-refactor with observed evidence.
 tools: ["read", "search", "edit", "execute"]
 ---
 

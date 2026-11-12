@@ -14,9 +14,9 @@ Provide an installable, RID-aware NuGet .NET Tool package using the approved pac
 
 **Given** a published test package for the host RID and a compatible dotnet tool installation environment
 
-**When** the user installs Infoconex.DotNetFramework.Tools
+**When** the user installs Infoconex.DotNetBinary.Tools
 
-**Then** the dotnet framework command becomes available and dispatches to the installed native tool.
+**Then** the dotnet binary command becomes available and dispatches to the installed native tool.
 
 ## Verification
 

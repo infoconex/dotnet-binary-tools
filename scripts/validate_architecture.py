@@ -8,12 +8,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PROJECTS = {
-    "domain": ROOT / "src/Infoconex.DotNetFramework.Domain/Infoconex.DotNetFramework.Domain.csproj",
-    "application": ROOT / "src/Infoconex.DotNetFramework.Application/Infoconex.DotNetFramework.Application.csproj",
-    "infrastructure": ROOT / "src/Infoconex.DotNetFramework.Infrastructure/Infoconex.DotNetFramework.Infrastructure.csproj",
-    "cli": ROOT / "src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj",
-    "domain-tests": ROOT / "tests/Infoconex.DotNetFramework.Domain.Tests/Infoconex.DotNetFramework.Domain.Tests.csproj",
-    "cli-tests": ROOT / "tests/Infoconex.DotNetFramework.Cli.Tests/Infoconex.DotNetFramework.Cli.Tests.csproj",
+    "domain": ROOT / "src/Infoconex.DotNetBinary.Domain/Infoconex.DotNetBinary.Domain.csproj",
+    "application": ROOT / "src/Infoconex.DotNetBinary.Application/Infoconex.DotNetBinary.Application.csproj",
+    "infrastructure": ROOT / "src/Infoconex.DotNetBinary.Infrastructure/Infoconex.DotNetBinary.Infrastructure.csproj",
+    "cli": ROOT / "src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj",
+    "domain-tests": ROOT / "tests/Infoconex.DotNetBinary.Domain.Tests/Infoconex.DotNetBinary.Domain.Tests.csproj",
+    "cli-tests": ROOT / "tests/Infoconex.DotNetBinary.Cli.Tests/Infoconex.DotNetBinary.Cli.Tests.csproj",
 }
 EXPECTED = {
     "domain": set(),
@@ -43,7 +43,7 @@ def property_values(root: ET.Element, name: str) -> list[str]:
 
 def check_graph() -> None:
     names = {path.name: label for label, path in PROJECTS.items()}
-    solution = parse(ROOT / "DotNetFramework.slnx")
+    solution = parse(ROOT / "DotNetBinary.slnx")
     if solution is not None:
         actual = {n.attrib.get("Path", "").replace("\\", "/") for n in solution.findall(".//Project")}
         required = {p.relative_to(ROOT).as_posix() for p in PROJECTS.values()}
@@ -67,8 +67,12 @@ def check_graph() -> None:
         if label == "cli":
             for key, expected in {
                 "PackAsTool": "true",
-                "ToolCommandName": "dotnet-framework",
-                "PackageId": "Infoconex.DotNetFramework.Tools",
+                "AssemblyName": "dotnet-binary",
+                "RootNamespace": "Infoconex.DotNetBinary.Cli",
+                "ToolCommandName": "dotnet-binary",
+                "PackageId": "Infoconex.DotNetBinary.Tools",
+                "RepositoryUrl": "https://github.com/infoconex/dotnet-binary-tools",
+                "PackageProjectUrl": "https://github.com/infoconex/dotnet-binary-tools",
                 "PublishAot": "true",
                 "IsAotCompatible": "true",
             }.items():
@@ -90,7 +94,7 @@ def check_graph() -> None:
 
 
 def check_build_config() -> None:
-    if (ROOT / "DotNetFramework.sln").exists():
+    if (ROOT / "DotNetBinary.sln").exists():
         errors.append("Legacy .sln is not allowed")
     config = parse(ROOT / "nuget.config")
     if config is not None:

@@ -213,7 +213,10 @@ def check_links_and_retired_refs() -> None:
         *ROOT.glob(".github/**/*.md"),
     ]
     retired = (
-        "Infoconex.DotNetFramework.Core",
+        "Infoconex.DotNetBinary.Core",
+        "Infoconex.DotNetFramework",
+        "DotNetFramework.slnx",
+        "dotnet-framework",
         "0001-core-cli-boundary.md",
         "0003-hexagonal-project-boundaries.md",
         "docs/scenarios/functional/FR-001.md",

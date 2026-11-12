@@ -6,6 +6,6 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />
-    <ProjectReference Include="../../src/Infoconex.DotNetFramework.Cli/Infoconex.DotNetFramework.Cli.csproj" />
+    <ProjectReference Include="../../src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj" />
   </ItemGroup>
 </Project>
