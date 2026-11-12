@@ -1,6 +1,6 @@
 # FR-RPT-005: Reject incompatible --details and --fields choices and report unsupported field names through the CLI’s validation contract.
 
-**Capability:** [CAP-006 — Results and Reporting](../../capabilities.md)  
+**Capability:** [CAP-006 — Results and Reporting](../../capabilities/CAP-006.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

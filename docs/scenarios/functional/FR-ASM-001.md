@@ -1,6 +1,6 @@
 # FR-ASM-001: Statically inspect a selected file for PE/CLI metadata without loading, invoking, or executing the selected artifact.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../capabilities.md)  
+**Capability:** [CAP-002 — Assembly Inspection](../../capabilities/CAP-002.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

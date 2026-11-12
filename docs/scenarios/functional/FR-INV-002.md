@@ -1,6 +1,6 @@
 # FR-INV-002: Select DLL and EXE candidates during scanning by filename extension, using consistent ASCII case-insensitive extension matching without reading unrelated files.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

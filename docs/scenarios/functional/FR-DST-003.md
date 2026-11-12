@@ -1,6 +1,6 @@
 # FR-DST-003: Ensure the standalone executable and NuGet tool deliver identical functional CLI behavior and report contract for the same fixtures and version.
 
-**Capability:** [CAP-008 — Distribution](../../capabilities.md)  
+**Capability:** [CAP-008 — Distribution](../../capabilities/CAP-008.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

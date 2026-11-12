@@ -1,6 +1,6 @@
 # FR-CFG-004: Parse modern .runtimeconfig.json runtimeOptions fields needed to describe TFM, framework/frameworks names and versions, and declared runtime-selection policies.
 
-**Capability:** [CAP-003 — Deployment Configuration](../../capabilities.md)  
+**Capability:** [CAP-003 — Deployment Configuration](../../capabilities/CAP-003.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

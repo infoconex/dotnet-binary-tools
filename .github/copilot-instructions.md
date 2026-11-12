@@ -1,6 +1,6 @@
 # GitHub Copilot guidance
 
-Use [AGENTS.md](../AGENTS.md), [capabilities](../docs/capabilities.md) and [ARCH-001–ARCH-008](../docs/requirements/architecture.md).
+Use [AGENTS.md](../AGENTS.md), [capabilities](../docs/capabilities/README.md) and [ARCH-001–ARCH-008](../docs/requirements/architecture.md).
 
 - Follow SOLID and hexagonal Ports-and-Adapters; Domain, Application, Infrastructure and CLI are independent compiled projects with inward-only references.
 - CLI stays thin. Define ports with inner consuming use cases, and keep concrete filesystem/metadata/configuration/network/report adapters external.

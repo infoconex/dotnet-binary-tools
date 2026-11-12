@@ -1,6 +1,6 @@
 # FR-INV-012: Record the list of validated roots, traversal errors and explicit completion reasons so consumers can distinguish completed, partial and failed inventory work.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

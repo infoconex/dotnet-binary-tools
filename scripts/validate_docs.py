@@ -120,6 +120,10 @@ def check_scenarios(
         source = load(relative)
         if not source.startswith(f"# {identity}: "):
             error(f"{relative}: incorrect title")
+        if is_fr:
+            capability = functional[identity][0]
+            if f"](../../capabilities/{capability}.md)" not in source:
+                error(f"{relative}: missing direct link to {capability} specification")
         if is_fr and not identity.startswith("FR-INP-"):
             description = functional[identity][1]
             if f"## Requirement\n\n{description}\n" not in source:

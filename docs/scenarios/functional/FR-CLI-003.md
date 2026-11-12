@@ -1,6 +1,6 @@
 # FR-CLI-003: Expose previously approved options for recursion, link traversal, configuration selection, format, details, fields, output, resource limits, optional hashes and explicit lifecycle refresh.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../capabilities.md)  
+**Capability:** [CAP-007 — Command-Line Interface](../../capabilities/CAP-007.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

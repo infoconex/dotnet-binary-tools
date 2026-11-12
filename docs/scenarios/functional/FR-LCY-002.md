@@ -1,6 +1,6 @@
 # FR-LCY-002: Assess known .NET Framework, .NET Core and modern .NET target identities using dated published support information, subject to source-specific applicability limits.
 
-**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities.md)  
+**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities/CAP-004.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

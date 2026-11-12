@@ -1,6 +1,6 @@
 # FR-CLI-002: Interpret inspect with one file and scan with one or more directories, delegating path validation to CAP-001 and inventory work to the application.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../capabilities.md)  
+**Capability:** [CAP-007 — Command-Line Interface](../../capabilities/CAP-007.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

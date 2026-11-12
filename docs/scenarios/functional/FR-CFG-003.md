@@ -1,6 +1,6 @@
 # FR-CFG-003: Parse supported .NET Framework executable configuration runtime declarations including startup supportedRuntime version and sku when present, preserving raw values.
 
-**Capability:** [CAP-003 — Deployment Configuration](../../capabilities.md)  
+**Capability:** [CAP-003 — Deployment Configuration](../../capabilities/CAP-003.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

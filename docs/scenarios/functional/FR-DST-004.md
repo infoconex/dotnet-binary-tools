@@ -1,6 +1,6 @@
 # FR-DST-004: Publish versioned platform-specific artifacts with verifiable package contents, checksums and appropriate provenance, without claiming unsupported architectures.
 
-**Capability:** [CAP-008 — Distribution](../../capabilities.md)  
+**Capability:** [CAP-008 — Distribution](../../capabilities/CAP-008.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

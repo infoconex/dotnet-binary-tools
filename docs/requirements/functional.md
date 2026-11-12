@@ -84,4 +84,4 @@
 - Static lifecycle advisories do not assert application compliance and do not control success exit codes.
 - Resource defaults, lifecycle freshness thresholds, canonical JSON property names and CLI option aliases still require explicit design/contract decisions before their implementation; see [open decisions](open-decisions.md).
 
-[Capabilities](../capabilities.md) · [Architecture constraints](architecture.md) · [Scenario index](../scenarios/README.md) · [Traceability](../testing/traceability.md).
+[Capabilities](../capabilities/README.md) · [Architecture constraints](architecture.md) · [Scenario index](../scenarios/README.md) · [Traceability](../testing/traceability.md).

@@ -1,6 +1,6 @@
 # FR-INP-001: Select exactly one file
 
-**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../capabilities.md)
+**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../capabilities/CAP-001.md)
 
 [Functional requirements](../../requirements/functional.md)
 

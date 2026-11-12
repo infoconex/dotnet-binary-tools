@@ -1,6 +1,6 @@
 # FR-RPT-003: Emit exactly one syntactically valid JSON document in JSON mode with no diagnostic prose mixed into stdout.
 
-**Capability:** [CAP-006 — Results and Reporting](../../capabilities.md)  
+**Capability:** [CAP-006 — Results and Reporting](../../capabilities/CAP-006.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

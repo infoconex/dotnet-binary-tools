@@ -1,6 +1,6 @@
 # FR-LCY-005: Emit advisory, non-enforcing statuses with assessment date, source and limitations; do not decide actual application compliance or change CLI success based on lifecycle findings.
 
-**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities.md)  
+**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities/CAP-004.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

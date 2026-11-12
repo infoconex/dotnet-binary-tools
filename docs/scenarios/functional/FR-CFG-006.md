@@ -1,6 +1,6 @@
 # FR-CFG-006: Represent malformed, unreadable or unsupported configuration as distinct findings with diagnostic context, without executing application code.
 
-**Capability:** [CAP-003 — Deployment Configuration](../../capabilities.md)  
+**Capability:** [CAP-003 — Deployment Configuration](../../capabilities/CAP-003.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

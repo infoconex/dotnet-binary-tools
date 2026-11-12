@@ -1,6 +1,6 @@
 # FR-INV-004: Produce independently classified per-candidate entries and do not group binaries into inferred applications or treat a native apphost as its neighboring DLL.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

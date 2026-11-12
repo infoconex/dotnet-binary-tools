@@ -1,6 +1,6 @@
 # FR-LCY-007: Refresh lifecycle data only when explicitly requested, obtain it from approved authoritative sources, validate and atomically replace cached data, and never allow network access in the default path.
 
-**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities.md)  
+**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities/CAP-004.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

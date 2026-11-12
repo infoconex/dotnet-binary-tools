@@ -1,6 +1,6 @@
 # FR-RPT-009: Render large inventories without requiring every serialized item in memory at once, while treating output failure as an explicit reporting error rather than a successful report.
 
-**Capability:** [CAP-006 — Results and Reporting](../../capabilities.md)  
+**Capability:** [CAP-006 — Results and Reporting](../../capabilities/CAP-006.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

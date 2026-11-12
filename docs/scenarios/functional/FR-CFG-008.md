@@ -1,6 +1,6 @@
 # FR-CFG-008: Preserve configuration provenance (path, association mode and field origin) and never claim that a requested runtime is installed or running.
 
-**Capability:** [CAP-003 — Deployment Configuration](../../capabilities.md)  
+**Capability:** [CAP-003 — Deployment Configuration](../../capabilities/CAP-003.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

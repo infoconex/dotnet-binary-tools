@@ -1,6 +1,6 @@
 # FR-CLI-001: Expose the executable as dotnet-binary and, when installed as a .NET Tool, dotnet binary; support help, version, inspect and scan commands.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../capabilities.md)  
+**Capability:** [CAP-007 — Command-Line Interface](../../capabilities/CAP-007.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

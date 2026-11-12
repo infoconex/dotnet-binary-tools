@@ -1,6 +1,6 @@
 # FR-CLI-004: Validate unknown flags, missing option values, incompatible options and invalid input arity before starting costly processing; display actionable diagnostics.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../capabilities.md)  
+**Capability:** [CAP-007 — Command-Line Interface](../../capabilities/CAP-007.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

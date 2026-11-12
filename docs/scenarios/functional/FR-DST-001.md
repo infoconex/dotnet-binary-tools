@@ -1,6 +1,6 @@
 # FR-DST-001: Ship independently runnable Native AOT standalone executables for Windows x64, Linux x64 and macOS x64, with correct host executable packaging.
 
-**Capability:** [CAP-008 — Distribution](../../capabilities.md)  
+**Capability:** [CAP-008 — Distribution](../../capabilities/CAP-008.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

@@ -1,6 +1,6 @@
 # FR-ASM-007: Report optional informational, file, company, product and description metadata only when present, without inventing defaults or treating these values as runtime targets.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../capabilities.md)  
+**Capability:** [CAP-002 — Assembly Inspection](../../capabilities/CAP-002.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

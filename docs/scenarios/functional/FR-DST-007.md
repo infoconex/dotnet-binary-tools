@@ -1,6 +1,6 @@
 # FR-DST-007: Require separate owner approval before tagging, releasing or publishing packages and defer ARM64 until its own verified acceptance evidence exists.
 
-**Capability:** [CAP-008 — Distribution](../../capabilities.md)  
+**Capability:** [CAP-008 — Distribution](../../capabilities/CAP-008.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

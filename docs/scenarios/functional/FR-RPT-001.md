@@ -1,6 +1,6 @@
 # FR-RPT-001: Use one documented, versioned JSON envelope for inspect and scan, containing command, inputs, generation metadata, completion, summary, findings and applicable dataset provenance.
 
-**Capability:** [CAP-006 — Results and Reporting](../../capabilities.md)  
+**Capability:** [CAP-006 — Results and Reporting](../../capabilities/CAP-006.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

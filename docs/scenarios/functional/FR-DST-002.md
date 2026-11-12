@@ -1,6 +1,6 @@
 # FR-DST-002: Provide an installable, RID-aware NuGet .NET Tool package using the approved package ID and command dispatch on each supported platform.
 
-**Capability:** [CAP-008 — Distribution](../../capabilities.md)  
+**Capability:** [CAP-008 — Distribution](../../capabilities/CAP-008.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

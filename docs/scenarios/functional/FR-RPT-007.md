@@ -1,6 +1,6 @@
 # FR-RPT-007: Write human or JSON results to stdout by default, or to a user-selected report file with --output; reserve stderr for diagnostics.
 
-**Capability:** [CAP-006 — Results and Reporting](../../capabilities.md)  
+**Capability:** [CAP-006 — Results and Reporting](../../capabilities/CAP-006.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

@@ -1,6 +1,6 @@
 # FR-ASM-009: Report declared entry-point presence and direct assembly references, without constructing a dependency graph or associating an application host with adjacent files.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../capabilities.md)  
+**Capability:** [CAP-002 — Assembly Inspection](../../capabilities/CAP-002.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

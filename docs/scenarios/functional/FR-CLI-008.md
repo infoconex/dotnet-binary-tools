@@ -1,6 +1,6 @@
 # FR-CLI-008: Remain a thin adapter/composition root that invokes Application use cases through interfaces rather than implementing binary parsing, lifecycle rules or inventory logic.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../capabilities.md)  
+**Capability:** [CAP-007 — Command-Line Interface](../../capabilities/CAP-007.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

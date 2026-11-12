@@ -1,6 +1,6 @@
 # FR-CFG-007: Keep each requested deployment runtime separate from the inspected assembly’s declared target, including when values disagree.
 
-**Capability:** [CAP-003 — Deployment Configuration](../../capabilities.md)  
+**Capability:** [CAP-003 — Deployment Configuration](../../capabilities/CAP-003.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

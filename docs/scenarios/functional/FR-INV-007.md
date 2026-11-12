@@ -1,6 +1,6 @@
 # FR-INV-007: When --follow-links is enabled, prevent traversal cycles and duplicate subtree visits and report what is skipped.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

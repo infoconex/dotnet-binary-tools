@@ -1,6 +1,6 @@
 # FR-RPT-008: Never overwrite an existing report: use the requested filename when available or a UTC timestamped and collision-resistant suffix with exclusive creation.
 
-**Capability:** [CAP-006 — Results and Reporting](../../capabilities.md)  
+**Capability:** [CAP-006 — Results and Reporting](../../capabilities/CAP-006.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

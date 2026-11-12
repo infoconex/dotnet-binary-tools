@@ -1,6 +1,6 @@
 # FR-INP-003: Resolve file system paths
 
-**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../capabilities.md)
+**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../capabilities/CAP-001.md)
 
 [Functional requirements](../../requirements/functional.md)
 

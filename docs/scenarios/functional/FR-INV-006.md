@@ -1,6 +1,6 @@
 # FR-INV-006: Skip discovered directory symbolic links and junctions by default, but honor explicitly selected linked roots regardless of the recursion setting.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

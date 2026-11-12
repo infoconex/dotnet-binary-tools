@@ -1,6 +1,6 @@
 # FR-DST-005: Demonstrate standalone Native AOT runtime independence on clean consumers, and separately verify tool installation and invocation requirements.
 
-**Capability:** [CAP-008 — Distribution](../../capabilities.md)  
+**Capability:** [CAP-008 — Distribution](../../capabilities/CAP-008.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

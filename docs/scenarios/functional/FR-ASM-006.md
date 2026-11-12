@@ -1,6 +1,6 @@
 # FR-ASM-006: Extract available assembly identity fields: simple name, assembly version, culture, public-key token and full assembly identity.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../capabilities.md)  
+**Capability:** [CAP-002 — Assembly Inspection](../../capabilities/CAP-002.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

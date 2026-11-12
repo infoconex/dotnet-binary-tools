@@ -1,6 +1,6 @@
 # Testing strategy and TDD policy
 
-The approved 71 functional requirements and 102 Planned scenarios map to the authoritative product baseline [CAP-001–CAP-008](../capabilities.md) and the mandatory architecture rules are [ARCH-001–ARCH-008](../requirements/architecture.md).
+The approved 71 functional requirements and 102 Planned scenarios map to the authoritative product baseline [CAP-001–CAP-008](../capabilities/README.md) and the mandatory architecture rules are [ARCH-001–ARCH-008](../requirements/architecture.md).
 
 ## Test-first workflow
 

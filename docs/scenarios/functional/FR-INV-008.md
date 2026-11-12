@@ -1,6 +1,6 @@
 # FR-INV-008: Enforce documented configurable defaults and explicit bounds for traversal depth, candidate file count and file size, plus mandatory parsing/time/memory safeguards.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

@@ -1,6 +1,6 @@
 # FR-LCY-001: Ship a local, versioned lifecycle reference dataset with identifiable authoritative sources, publication/update date and coverage.
 
-**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities.md)  
+**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities/CAP-004.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

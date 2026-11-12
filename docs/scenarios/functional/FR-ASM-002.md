@@ -1,6 +1,6 @@
 # FR-ASM-002: Classify managed assembly, native/non-managed candidate, corrupt/unrecognized file, and unreadable file as distinguishable outcomes.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../capabilities.md)  
+**Capability:** [CAP-002 — Assembly Inspection](../../capabilities/CAP-002.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

@@ -1,6 +1,6 @@
 # FR-INV-005: Continue after per-candidate read, parse or permission failures, recording failure details and counts without discarding successful findings.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

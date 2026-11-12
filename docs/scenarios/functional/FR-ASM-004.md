@@ -1,6 +1,6 @@
 # FR-ASM-004: Recognize declared .NET Framework, .NET Core, .NET 5+ and .NET Standard families and versions, while preserving unknown or future monikers.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../capabilities.md)  
+**Capability:** [CAP-002 — Assembly Inspection](../../capabilities/CAP-002.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

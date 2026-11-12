@@ -1,6 +1,6 @@
 # FR-LCY-006: Expose lifecycle data provenance, dataset version, source publication/fetch dates, assessment date and freshness warnings wherever findings are emitted.
 
-**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities.md)  
+**Capability:** [CAP-004 — Lifecycle Assessment](../../capabilities/CAP-004.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

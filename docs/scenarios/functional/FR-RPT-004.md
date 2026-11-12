@@ -1,6 +1,6 @@
 # FR-RPT-004: Support explicit per-assembly field projection through --fields for human and JSON formats, preserving envelope metadata, totals and completion unchanged.
 
-**Capability:** [CAP-006 — Results and Reporting](../../capabilities.md)  
+**Capability:** [CAP-006 — Results and Reporting](../../capabilities/CAP-006.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

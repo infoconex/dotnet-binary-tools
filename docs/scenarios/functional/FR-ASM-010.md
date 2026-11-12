@@ -1,6 +1,6 @@
 # FR-ASM-010: Expose basic file facts and optional SHA-256 content hashing on explicit request, with hashing subject to resource and read-failure safeguards.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../capabilities.md)  
+**Capability:** [CAP-002 — Assembly Inspection](../../capabilities/CAP-002.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

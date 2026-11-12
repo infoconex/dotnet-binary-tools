@@ -1,6 +1,6 @@
 # FR-CLI-005: Return exit code zero for successfully generated valid reports, including scans with per-file errors or resource-limit partial coverage; return nonzero for invalid inputs or unrecoverable command/report errors.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../capabilities.md)  
+**Capability:** [CAP-007 — Command-Line Interface](../../capabilities/CAP-007.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

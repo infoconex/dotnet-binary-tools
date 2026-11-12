@@ -1,6 +1,6 @@
 # FR-INV-001: Coordinate an inventory result for both an individual inspect request and a multi-root scan using shared aggregation and completion semantics.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

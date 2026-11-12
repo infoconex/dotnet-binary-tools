@@ -1,6 +1,6 @@
 # FR-INV-011: Avoid duplicate candidate reporting from overlapping selected roots and followed links when the same physical path is encountered, recording deduplication.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../capabilities.md)  
+**Capability:** [CAP-005 — Inspection Inventory](../../capabilities/CAP-005.md)  
 **Requirement status:** Approved for v0.1 specification  
 **Acceptance evidence:** Planned — not implemented or verified
 

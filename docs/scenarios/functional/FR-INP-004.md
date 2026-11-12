@@ -1,6 +1,6 @@
 # FR-INP-004: Validate the complete request
 
-**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../capabilities.md)
+**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../capabilities/CAP-001.md)
 
 [Functional requirements](../../requirements/functional.md)
 
