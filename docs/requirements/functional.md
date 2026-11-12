@@ -6,18 +6,18 @@ The authoritative requirement titles and wording appear in the **Requirement cov
 
 ## Functional areas
 
-Select a capability to review its approved requirements, or open its scenario index for the Given/When/Then acceptance scenarios.
+Select a functional area to open its requirement-level Given/When/Then acceptance scenarios. The authoritative requirement wording remains in the [capability specifications](../capabilities/README.md).
 
-| Capability | Requirement prefix | Functional area | Requirements | Acceptance scenarios |
-| --- | --- | --- | ---: | --- |
-| CAP-001 | `FR-INP-XXX` | [Input Selection](../capabilities/CAP-001.md) | 8 | [Scenarios](../scenarios/functional/input-selection/README.md) |
-| CAP-002 | `FR-ASM-XXX` | [Assembly Inspection](../capabilities/CAP-002.md) | 11 | [Scenarios](../scenarios/functional/assembly-inspection/README.md) |
-| CAP-003 | `FR-CFG-XXX` | [Deployment Configuration](../capabilities/CAP-003.md) | 8 | [Scenarios](../scenarios/functional/deployment-configuration/README.md) |
-| CAP-004 | `FR-LCY-XXX` | [Lifecycle Assessment](../capabilities/CAP-004.md) | 8 | [Scenarios](../scenarios/functional/lifecycle-assessment/README.md) |
-| CAP-005 | `FR-INV-XXX` | [Inspection Inventory](../capabilities/CAP-005.md) | 12 | [Scenarios](../scenarios/functional/inspection-inventory/README.md) |
-| CAP-006 | `FR-RPT-XXX` | [Results and Reporting](../capabilities/CAP-006.md) | 9 | [Scenarios](../scenarios/functional/results-and-reporting/README.md) |
-| CAP-007 | `FR-CLI-XXX` | [Command-Line Interface](../capabilities/CAP-007.md) | 8 | [Scenarios](../scenarios/functional/command-line-interface/README.md) |
-| CAP-008 | `FR-DST-XXX` | [Distribution](../capabilities/CAP-008.md) | 7 | [Scenarios](../scenarios/functional/distribution/README.md) |
+| Capability | Requirement prefix | Functional area | Requirements |
+| --- | --- | --- | ---: |
+| CAP-001 | `FR-INP-XXX` | [Input Selection](../scenarios/functional/input-selection/README.md) | 8 |
+| CAP-002 | `FR-ASM-XXX` | [Assembly Inspection](../scenarios/functional/assembly-inspection/README.md) | 11 |
+| CAP-003 | `FR-CFG-XXX` | [Deployment Configuration](../scenarios/functional/deployment-configuration/README.md) | 8 |
+| CAP-004 | `FR-LCY-XXX` | [Lifecycle Assessment](../scenarios/functional/lifecycle-assessment/README.md) | 8 |
+| CAP-005 | `FR-INV-XXX` | [Inspection Inventory](../scenarios/functional/inspection-inventory/README.md) | 12 |
+| CAP-006 | `FR-RPT-XXX` | [Results and Reporting](../scenarios/functional/results-and-reporting/README.md) | 9 |
+| CAP-007 | `FR-CLI-XXX` | [Command-Line Interface](../scenarios/functional/command-line-interface/README.md) | 8 |
+| CAP-008 | `FR-DST-XXX` | [Distribution](../scenarios/functional/distribution/README.md) | 7 |
 
 ## Boundaries and interpretation
 
