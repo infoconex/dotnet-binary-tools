@@ -136,22 +136,26 @@ def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
     return functional, quality
 
 def check_functional_area_navigation(functional: dict[str, tuple[str, str]]) -> None:
-    """Ensure this page is an index of the authoritative capability requirements."""
+    """Ensure this page indexes authoritative capability requirements."""
     relative = "docs/requirements/functional.md"
     source = load(relative)
     section = re.search(
-        r"^## Functional areas\n([\s\S]*?)(?=^## Boundaries and interpretation\n)",
+        r"^## Functional areas\n([\s\S]*)\Z",
         source,
         re.M,
     )
     if section is None:
         error(f"{relative}: missing functional areas navigation")
         return
+    if "**Status:**" in source or "## Boundaries and interpretation" in source:
+        error(f"{relative}: navigation index contains removed status or boundaries")
     if re.search(r"^\| FR-[A-Z]{3}-\d{3}\s*\|", source, re.M):
         error(f"{relative}: individual requirements must live in capability files")
+    if "| Capability | Requirement prefix | Functional area | Requirements |" not in section.group(1):
+        error(f"{relative}: incorrect functional area navigation headers")
     area_rows = [
         line for line in section.group(1).splitlines()
-        if line.startswith("| CAP-")
+        if line.startswith("| [CAP-")
     ]
     expected_rows = []
     for prefix, capability in CAPABILITIES.items():
@@ -163,14 +167,14 @@ def check_functional_area_navigation(functional: dict[str, tuple[str, str]]) -> 
         )
         count = sum(1 for assigned, _ in functional.values() if assigned == capability)
         expected_rows.append(
-            f"| {capability} | `FR-{prefix}-XXX` | [{title}](../capabilities/{capability}.md) "
-            f"| {count} | [Scenarios](../scenarios/functional/"
-            f"{CAPABILITY_FOLDERS[prefix]}/README.md) |"
+            f"| [{capability}](../capabilities/{capability}.md) "
+            f"| `FR-{prefix}-XXX` | [{title}](../scenarios/functional/"
+            f"{CAPABILITY_FOLDERS[prefix]}/README.md) | {count} |"
         )
     if area_rows != expected_rows:
         error(
             f"{relative}: navigation must match all eight capability titles, "
-            "authoritative documents, scenario indexes and requirement counts"
+            "authoritative documents, scenario indexes, prefixes and requirement counts"
         )
 
 
