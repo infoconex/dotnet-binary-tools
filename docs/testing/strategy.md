@@ -20,4 +20,4 @@ For a new approved requirement, begin with a meaningful failing test, implement 
 
 The approved scenario strategy is a **focused** set of normative Given/When/Then cases plus independently traceable tests for Unicode and spaces in paths, case sensitivity, permissions, links, and other boundary variations.
 
-Architectural checks enforce compiled-layer dependency direction. They complement but do not replace SOLID review, component tests or functional acceptance. The current CLI supports only help/version; its tests do not establish inspection behavior.
+Architectural checks enforce compiled-layer dependency direction. They complement but do not replace SOLID review, component tests or functional acceptance. Scenario-level implementation and acceptance evidence belongs in [traceability](traceability.md), not in documentation summaries or build-only smoke test results.

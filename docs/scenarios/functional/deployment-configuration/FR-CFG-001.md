@@ -1,8 +1,6 @@
 # FR-CFG-001: Automatically discover only directly associated supported configuration filenames without searching neighboring application directories or guessing host relationships.
 
-**Capability:** [CAP-003 — Deployment Configuration](../../../capabilities/CAP-003.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-003 — Deployment Configuration](../../../capabilities/CAP-003.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Automatically discover only directly associated supported configuration filename
 **When** configuration discovery runs
 
 **Then** the unrelated config is not attributed to MyApp.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

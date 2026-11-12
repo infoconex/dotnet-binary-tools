@@ -1,8 +1,6 @@
 # FR-INV-003: Scan only selected directories by default, with explicit opt-in recursion; do not discover unrelated drives, processes or application installations.
 
-**Capability:** [CAP-005 — Inspection Inventory](../../../capabilities/CAP-005.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-005 — Inspection Inventory](../../../capabilities/CAP-005.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Scan only selected directories by default, with explicit opt-in recursion; do no
 **When** scan runs with --recursive
 
 **Then** nested candidates within the selected root are visited.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

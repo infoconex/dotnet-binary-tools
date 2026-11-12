@@ -1,6 +1,6 @@
 # Repository-wide .NET build configuration
 
-**Status:** Active engineering-foundation configuration. Modern .NET has several optional repository-level hooks; use the ones that solve a concrete problem rather than generating every possible file.
+Modern .NET has several optional repository-level hooks; use the ones that solve a concrete problem rather than generating every possible file.
 
 ## Central files in use
 
@@ -72,7 +72,7 @@ A developer restoring from the solution root also gets this root NuGet configura
 - `Directory.Build.rsp`: global MSBuild command-line switches are not needed; shared properties and CI commands are explicit.
 - `.globalconfig`: unnecessary while the current analyzer and severity rules fit in `.editorconfig`.
 - `.config/dotnet-tools.json`: local tool manifest can be added when the project relies on repository-scoped development tools.
-- `packages.lock.json`: worth evaluating before release for locked transitive dependency graphs, but **not configured or claimed as implemented** on this branch. Runtime-specific restore and Native AOT tool packaging must be considered when adopting lock files.
+- `packages.lock.json`: evaluate locked transitive dependency graphs before release where needed. Consider runtime-specific restore and Native AOT tool packaging when adopting lock files.
 
 Adding files without a requirement would increase maintenance and the risk of settings overriding one another. The present baseline is centralized without unnecessary duplication.
 

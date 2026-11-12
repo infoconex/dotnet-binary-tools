@@ -1,6 +1,6 @@
 # FR-INP-005: Accept explicitly selected links
 
-**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../../capabilities/CAP-001.md)
+**Capability:** [CAP-001](../../../capabilities/CAP-001.md) · [Verification evidence](../../../testing/traceability.md)
 
 [Functional requirements](../../../requirements/functional.md)
 
@@ -33,7 +33,3 @@ Follow directly requested links while leaving recursive traversal policy to CAP-
 **When** the user invokes `inspect` or `scan` with that link
 
 **Then** input validation rejects the path without examining or traversing its missing destination.
-
-## Verification notes
-
-Use synthetic and cross-platform fixtures. Scenario approval does **not** establish that tests or command behavior exist. Record exact test names, execution results, CI run URLs and commit SHAs in [traceability](../../../testing/traceability.md).

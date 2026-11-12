@@ -1,6 +1,6 @@
 # ADR 0002: .NET 11 and Native AOT distribution
 
-**Status: Approved distribution goal; release acceptance not verified.**
+**Status: Approved distribution goal.**
 
 The tool targets `net11.0` in source and supports **both** standalone Native AOT executables and the NuGet .NET Tool (`Infoconex.DotNetBinary.Tools`, executable `dotnet-binary`, `dotnet binary` invocation).
 

@@ -1,8 +1,6 @@
 # CAP-005: Inspection Inventory — functional scenarios
 
-[Functional scenarios index](../README.md) · [Capability specification](../../../capabilities/CAP-005.md)
-
-**Status:** 12 approved requirements, 16 focused acceptance scenarios. All scenarios are **Planned**; no feature acceptance is verified.
+[Functional scenarios index](../README.md) · [Acceptance evidence](../../../testing/traceability.md) · [Capability specification](../../../capabilities/CAP-005.md)
 
 Each requirement has its own document containing the approved Given/When/Then scenarios. The titles below mirror the requirement-coverage table in the capability specification.
 
@@ -21,4 +19,3 @@ Each requirement has its own document containing the approved Given/When/Then sc
 | [FR-INV-011](FR-INV-011.md) | Deduplicate overlapping physical paths | `SC-INV-015` |
 | [FR-INV-012](FR-INV-012.md) | Record roots, errors, and completion reasons | `SC-INV-016` |
 
-Actual test-to-scenario evidence is maintained in [traceability](../../../testing/traceability.md); a written scenario is not proof of implementation.

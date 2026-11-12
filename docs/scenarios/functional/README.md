@@ -1,8 +1,6 @@
 # Functional acceptance scenarios
 
-[All acceptance scenarios](../README.md)
-
-**Status:** All 71 approved functional requirements and their 102 focused Given/When/Then acceptance scenarios remain **Planned** until verified. The grouping below follows the approved capability names; requirement and scenario IDs remain stable.
+[All acceptance scenarios](../README.md) · [Verification evidence](../../testing/traceability.md)
 
 | Capability | Scenario folder | Requirements | Scenarios |
 | --- | --- | ---: | ---: |
@@ -14,5 +12,3 @@
 | [CAP-006: Results and Reporting](../../capabilities/CAP-006.md) | [results-and-reporting/](results-and-reporting/README.md) | 9 | 14 |
 | [CAP-007: Command-Line Interface](../../capabilities/CAP-007.md) | [command-line-interface/](command-line-interface/README.md) | 8 | 11 |
 | [CAP-008: Distribution](../../capabilities/CAP-008.md) | [distribution/](distribution/README.md) | 7 | 9 |
-
-The [capability requirement tables](../../capabilities/README.md) contain the approved requirement wording, and the [functional requirements index](../../requirements/functional.md) links to each area; the [traceability matrix](../../testing/traceability.md) records implementation evidence.

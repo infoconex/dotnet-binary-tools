@@ -1,10 +1,10 @@
 # .NET Binary Tools
 
-**A planned cross-platform CLI for static inspection of compiled .NET binaries, declared targets, requested deployment runtimes and informational framework lifecycle findings.**
+**A cross-platform CLI specification for static inspection of compiled .NET binaries, declared targets, requested deployment runtimes and informational framework lifecycle findings.**
 
 The planned inspection covers **.NET Framework, .NET Core, modern .NET, and .NET Standard metadata**; the name refers to compiled binaries, not to any one .NET runtime family.
 
-**Implementation status:** .NET 11 engineering scaffold only. CLI help/version and a small domain value object are implemented. **`inspect`, `scan`, configuration inspection, lifecycle assessment and JSON reporting are not implemented or released.** Commands below describe the approved v0.1 design, not working behavior.
+For verified implementation progress, consult the [scenario traceability matrix](docs/testing/traceability.md); command examples illustrate approved interfaces rather than proof of availability.
 
 ## Approved specification
 
@@ -13,7 +13,7 @@ The planned inspection covers **.NET Framework, .NET Core, modern .NET, and .NET
 - [Functional requirements index (71 approved)](docs/requirements/functional.md), [102 focused Given/When/Then scenarios](docs/scenarios/README.md), and [scenario verification status](docs/testing/traceability.md).
 - [Engineering and development documentation](docs/README.md).
 
-### Intended CLI (not implemented)
+### Intended CLI design
 
 ```shell
 dotnet binary inspect ./bin/MyLibrary.dll

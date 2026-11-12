@@ -1,6 +1,6 @@
 # Acceptance scenarios
 
-**Specification:** 71 approved functional requirements across CAP-001–CAP-008 and 102 focused functional acceptance scenarios. All functional feature acceptance is **Planned**, not yet implemented or verified. Scenario IDs are stable, independent of requirement file locations.
+[Verification evidence](../testing/traceability.md)
 
 ## Functional scenarios
 
@@ -15,11 +15,11 @@
 - [CAP-007: Command-Line Interface](functional/command-line-interface/README.md) — 8 requirements, 11 scenarios
 - [CAP-008: Distribution](functional/distribution/README.md) — 7 requirements, 9 scenarios
 
-## Proposed nonfunctional scenarios (not yet approved)
+## Nonfunctional scenarios
+
+[Quality requirements and approval status](../requirements/non-functional.md)
 
 - [NFR-001](non-functional/NFR-001.md)
 - [NFR-002](non-functional/NFR-002.md)
 - [NFR-003](non-functional/NFR-003.md)
 - [NFR-004](non-functional/NFR-004.md)
-
-See the [functional requirements index](../requirements/functional.md), the [capability requirement tables](../capabilities/README.md) and [test traceability](../testing/traceability.md) to distinguish approved scenarios from actual execution evidence.

@@ -1,8 +1,6 @@
 # FR-RPT-008: Never overwrite an existing report: use the requested filename when available or a UTC timestamped and collision-resistant suffix with exclusive creation.
 
-**Capability:** [CAP-006 — Results and Reporting](../../../capabilities/CAP-006.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-006 — Results and Reporting](../../../capabilities/CAP-006.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Never overwrite an existing report: use the requested filename when available or
 **When** both attempt file creation
 
 **Then** each creates a distinct file or reports a safe failure, with no clobbered output.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

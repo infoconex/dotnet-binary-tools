@@ -7,7 +7,7 @@ Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities/README.m
 - Work through reviewed branches and issue-scoped changes; do not commit directly to `main` without approval.
 - Do not merge, tag, release or publish NuGet packages without explicit owner authorization.
 - Maintain independent stable CAP, FR/NFR, ARCH and scenario IDs; trace scenarios to tests and **observed** exact-SHA CI evidence. Draft scenarios are not passing tests.
-- All eight capabilities now have an approved specification baseline: 71 functional requirements and 102 independently numbered acceptance scenarios (`SC-INP-###`, `SC-ASM-###`, etc.). Every scenario remains Planned until verified.
+- All eight capabilities now have an approved specification baseline: 71 functional requirements and 102 independently numbered acceptance scenarios (`SC-INP-###`, `SC-ASM-###`, etc.). Scenario-level verification state and supporting evidence are maintained in [traceability](docs/testing/traceability.md).
 
 ## Architecture
 

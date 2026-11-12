@@ -1,8 +1,6 @@
 # CAP-008: Distribution — functional scenarios
 
-[Functional scenarios index](../README.md) · [Capability specification](../../../capabilities/CAP-008.md)
-
-**Status:** 7 approved requirements, 9 focused acceptance scenarios. All scenarios are **Planned**; no feature acceptance is verified.
+[Functional scenarios index](../README.md) · [Acceptance evidence](../../../testing/traceability.md) · [Capability specification](../../../capabilities/CAP-008.md)
 
 Each requirement has its own document containing the approved Given/When/Then scenarios. The titles below mirror the requirement-coverage table in the capability specification.
 
@@ -16,4 +14,3 @@ Each requirement has its own document containing the approved Given/When/Then sc
 | [FR-DST-006](FR-DST-006.md) | Require per-platform release evidence | `SC-DST-007` |
 | [FR-DST-007](FR-DST-007.md) | Require owner authorization for release | `SC-DST-008`, `SC-DST-009` |
 
-Actual test-to-scenario evidence is maintained in [traceability](../../../testing/traceability.md); a written scenario is not proof of implementation.

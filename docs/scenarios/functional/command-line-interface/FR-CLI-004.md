@@ -1,8 +1,6 @@
 # FR-CLI-004: Validate unknown flags, missing option values, incompatible options and invalid input arity before starting costly processing; display actionable diagnostics.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../../capabilities/CAP-007.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-007 — Command-Line Interface](../../../capabilities/CAP-007.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Validate unknown flags, missing option values, incompatible options and invalid 
 **When** the CLI validates arguments
 
 **Then** a nonzero validation result explains the conflict without producing misleading output.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

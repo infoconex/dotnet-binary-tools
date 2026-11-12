@@ -1,8 +1,6 @@
 # FR-LCY-002: Assess known .NET Framework, .NET Core and modern .NET target identities using dated published support information, subject to source-specific applicability limits.
 
-**Capability:** [CAP-004 — Lifecycle Assessment](../../../capabilities/CAP-004.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-004 — Lifecycle Assessment](../../../capabilities/CAP-004.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Assess known .NET Framework, .NET Core and modern .NET target identities using d
 **When** assessment runs without host OS evidence
 
 **Then** the output states the applicability limitation rather than universally claiming the deployment is supported.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

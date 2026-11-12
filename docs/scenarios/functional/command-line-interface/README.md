@@ -1,8 +1,6 @@
 # CAP-007: Command-Line Interface — functional scenarios
 
-[Functional scenarios index](../README.md) · [Capability specification](../../../capabilities/CAP-007.md)
-
-**Status:** 8 approved requirements, 11 focused acceptance scenarios. All scenarios are **Planned**; no feature acceptance is verified.
+[Functional scenarios index](../README.md) · [Acceptance evidence](../../../testing/traceability.md) · [Capability specification](../../../capabilities/CAP-007.md)
 
 Each requirement has its own document containing the approved Given/When/Then scenarios. The titles below mirror the requirement-coverage table in the capability specification.
 
@@ -17,4 +15,3 @@ Each requirement has its own document containing the approved Given/When/Then sc
 | [FR-CLI-007](FR-CLI-007.md) | Provide accurate help and version output | `SC-CLI-010` |
 | [FR-CLI-008](FR-CLI-008.md) | Keep CLI as a thin application adapter | `SC-CLI-011` |
 
-Actual test-to-scenario evidence is maintained in [traceability](../../../testing/traceability.md); a written scenario is not proof of implementation.

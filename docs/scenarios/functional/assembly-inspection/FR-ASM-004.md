@@ -1,8 +1,6 @@
 # FR-ASM-004: Recognize declared .NET Framework, .NET Core, .NET 5+ and .NET Standard families and versions, while preserving unknown or future monikers.
 
-**Capability:** [CAP-002 — Assembly Inspection](../../../capabilities/CAP-002.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-002 — Assembly Inspection](../../../capabilities/CAP-002.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Recognize declared .NET Framework, .NET Core, .NET 5+ and .NET Standard families
 **When** the target is interpreted
 
 **Then** the raw value is retained and the normalized identity is reported as unrecognized rather than guessed.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

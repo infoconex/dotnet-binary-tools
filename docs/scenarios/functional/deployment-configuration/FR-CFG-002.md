@@ -1,8 +1,6 @@
 # FR-CFG-002: Accept an explicitly supplied supported configuration path for an individual inspection, validate that path, and distinguish it from automatic discovery.
 
-**Capability:** [CAP-003 — Deployment Configuration](../../../capabilities/CAP-003.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-003 — Deployment Configuration](../../../capabilities/CAP-003.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Accept an explicitly supplied supported configuration path for an individual ins
 **When** the CLI validates the explicit selection
 
 **Then** an actionable input error is returned rather than silently falling back to auto-discovery.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

@@ -1,8 +1,6 @@
 # FR-CLI-003: Expose previously approved options for recursion, link traversal, configuration selection, format, details, fields, output, resource limits, optional hashes and explicit lifecycle refresh.
 
-**Capability:** [CAP-007 — Command-Line Interface](../../../capabilities/CAP-007.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-007 — Command-Line Interface](../../../capabilities/CAP-007.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Expose previously approved options for recursion, link traversal, configuration 
 **When** the command is parsed
 
 **Then** the application request preserves each user selection without performing refresh during parsing.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

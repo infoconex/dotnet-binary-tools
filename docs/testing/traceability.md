@@ -1,6 +1,6 @@
 # Scenario-to-test traceability
 
-**Current verification status:** All 102 active v0.1 functional acceptance scenarios are **Planned**. The NFR scenarios also remain proposed and unverified. Existing NUnit tests verify only the domain identity value object and help/version scaffold; there is no production implementation of inspect, scan or other product capabilities.
+The **Status** and **Evidence** columns are the authoritative record of each acceptance scenario's verification state. Update them only when supported by recorded test evidence.
 
 | Scenario | Capability | Requirement | Acceptance outcome | Verification/test | Status | Evidence |
 | --- | --- | --- | --- | --- | --- | --- |

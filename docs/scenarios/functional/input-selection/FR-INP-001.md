@@ -1,6 +1,6 @@
 # FR-INP-001: Select exactly one file
 
-**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../../capabilities/CAP-001.md)
+**Capability:** [CAP-001](../../../capabilities/CAP-001.md) · [Verification evidence](../../../testing/traceability.md)
 
 [Functional requirements](../../../requirements/functional.md)
 
@@ -25,7 +25,3 @@ Accept an explicitly selected single regular file, without deciding its binary f
 **When** the user supplies both to a single `inspect` invocation
 
 **Then** the request is rejected before inspection and a diagnostic explains that one file is required.
-
-## Verification notes
-
-Use synthetic and cross-platform fixtures. Scenario approval does **not** establish that tests or command behavior exist. Record exact test names, execution results, CI run URLs and commit SHAs in [traceability](../../../testing/traceability.md).

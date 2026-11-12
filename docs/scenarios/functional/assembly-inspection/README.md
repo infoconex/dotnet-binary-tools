@@ -1,8 +1,6 @@
 # CAP-002: Assembly Inspection — functional scenarios
 
-[Functional scenarios index](../README.md) · [Capability specification](../../../capabilities/CAP-002.md)
-
-**Status:** 11 approved requirements, 17 focused acceptance scenarios. All scenarios are **Planned**; no feature acceptance is verified.
+[Functional scenarios index](../README.md) · [Acceptance evidence](../../../testing/traceability.md) · [Capability specification](../../../capabilities/CAP-002.md)
 
 Each requirement has its own document containing the approved Given/When/Then scenarios. The titles below mirror the requirement-coverage table in the capability specification.
 
@@ -20,4 +18,3 @@ Each requirement has its own document containing the approved Given/When/Then sc
 | [FR-ASM-010](FR-ASM-010.md) | Report file facts and opt-in SHA-256 | `SC-ASM-015`, `SC-ASM-016` |
 | [FR-ASM-011](FR-ASM-011.md) | Preserve trustworthy partial metadata | `SC-ASM-017` |
 
-Actual test-to-scenario evidence is maintained in [traceability](../../../testing/traceability.md); a written scenario is not proof of implementation.

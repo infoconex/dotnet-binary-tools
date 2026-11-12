@@ -1,8 +1,6 @@
 # FR-DST-005: Demonstrate standalone Native AOT runtime independence on clean consumers, and separately verify tool installation and invocation requirements.
 
-**Capability:** [CAP-008 — Distribution](../../../capabilities/CAP-008.md)  
-**Requirement status:** Approved for v0.1 specification  
-**Acceptance evidence:** Planned — not implemented or verified
+**Capability:** [CAP-008 — Distribution](../../../capabilities/CAP-008.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
@@ -25,7 +23,3 @@ Demonstrate standalone Native AOT runtime independence on clean consumers, and s
 **When** the NuGet tool is installed and invoked
 
 **Then** the documented installation and native execution expectations are separately verified.
-
-## Verification
-
-Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

@@ -1,8 +1,6 @@
 # CAP-004: Lifecycle Assessment — functional scenarios
 
-[Functional scenarios index](../README.md) · [Capability specification](../../../capabilities/CAP-004.md)
-
-**Status:** 8 approved requirements, 11 focused acceptance scenarios. All scenarios are **Planned**; no feature acceptance is verified.
+[Functional scenarios index](../README.md) · [Acceptance evidence](../../../testing/traceability.md) · [Capability specification](../../../capabilities/CAP-004.md)
 
 Each requirement has its own document containing the approved Given/When/Then scenarios. The titles below mirror the requirement-coverage table in the capability specification.
 
@@ -17,4 +15,3 @@ Each requirement has its own document containing the approved Given/When/Then sc
 | [FR-LCY-007](FR-LCY-007.md) | Refresh reference data explicitly | `SC-LCY-009`, `SC-LCY-010` |
 | [FR-LCY-008](FR-LCY-008.md) | Preserve valid data after refresh failure | `SC-LCY-011` |
 
-Actual test-to-scenario evidence is maintained in [traceability](../../../testing/traceability.md); a written scenario is not proof of implementation.

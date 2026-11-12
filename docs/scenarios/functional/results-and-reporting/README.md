@@ -1,8 +1,6 @@
 # CAP-006: Results and Reporting — functional scenarios
 
-[Functional scenarios index](../README.md) · [Capability specification](../../../capabilities/CAP-006.md)
-
-**Status:** 9 approved requirements, 14 focused acceptance scenarios. All scenarios are **Planned**; no feature acceptance is verified.
+[Functional scenarios index](../README.md) · [Acceptance evidence](../../../testing/traceability.md) · [Capability specification](../../../capabilities/CAP-006.md)
 
 Each requirement has its own document containing the approved Given/When/Then scenarios. The titles below mirror the requirement-coverage table in the capability specification.
 
@@ -18,4 +16,3 @@ Each requirement has its own document containing the approved Given/When/Then sc
 | [FR-RPT-008](FR-RPT-008.md) | Create reports without overwriting | `SC-RPT-011`, `SC-RPT-012` |
 | [FR-RPT-009](FR-RPT-009.md) | Stream large reports and surface write errors | `SC-RPT-013`, `SC-RPT-014` |
 
-Actual test-to-scenario evidence is maintained in [traceability](../../../testing/traceability.md); a written scenario is not proof of implementation.

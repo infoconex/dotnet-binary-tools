@@ -1,6 +1,6 @@
 # FR-INP-004: Validate the complete request
 
-**Requirement:** Approved · **Acceptance verification:** Planned · **Capability:** [CAP-001](../../../capabilities/CAP-001.md)
+**Capability:** [CAP-001](../../../capabilities/CAP-001.md) · [Verification evidence](../../../testing/traceability.md)
 
 [Functional requirements](../../../requirements/functional.md)
 
@@ -25,7 +25,3 @@ Reject invalid explicit inputs before starting inventory or inspection.
 **When** the user supplies the directory to `inspect` or the file to `scan`
 
 **Then** the operation is rejected before inspecting or traversing the input.
-
-## Verification notes
-
-Use synthetic and cross-platform fixtures. Scenario approval does **not** establish that tests or command behavior exist. Record exact test names, execution results, CI run URLs and commit SHAs in [traceability](../../../testing/traceability.md).

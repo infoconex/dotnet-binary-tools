@@ -1,8 +1,6 @@
 # CAP-003: Deployment Configuration — functional scenarios
 
-[Functional scenarios index](../README.md) · [Capability specification](../../../capabilities/CAP-003.md)
-
-**Status:** 8 approved requirements, 12 focused acceptance scenarios. All scenarios are **Planned**; no feature acceptance is verified.
+[Functional scenarios index](../README.md) · [Acceptance evidence](../../../testing/traceability.md) · [Capability specification](../../../capabilities/CAP-003.md)
 
 Each requirement has its own document containing the approved Given/When/Then scenarios. The titles below mirror the requirement-coverage table in the capability specification.
 
@@ -17,4 +15,3 @@ Each requirement has its own document containing the approved Given/When/Then sc
 | [FR-CFG-007](FR-CFG-007.md) | Separate runtime requests from targets | `SC-CFG-011` |
 | [FR-CFG-008](FR-CFG-008.md) | Record configuration provenance | `SC-CFG-012` |
 
-Actual test-to-scenario evidence is maintained in [traceability](../../../testing/traceability.md); a written scenario is not proof of implementation.

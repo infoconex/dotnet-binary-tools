@@ -9,4 +9,4 @@
 | NFR-003 | Safe inspection of untrusted metadata | [Scenarios](../scenarios/non-functional/NFR-003.md) |
 | NFR-004 | Bounded resource consumption | [Scenarios](../scenarios/non-functional/NFR-004.md) |
 
-Concrete resource budgets, supported-host evidence, and quantitative security/test thresholds must be finalized before approving these NFRs. No NFR is currently claimed as implemented or verified.
+Concrete resource budgets, supported-host evidence, and quantitative security/test thresholds must be finalized before approving these NFRs. Scenario verification belongs in [traceability](../testing/traceability.md).

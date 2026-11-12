@@ -68,7 +68,7 @@ def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
         source = f"docs/capabilities/{capability}.md"
         text = load(source)
         section = re.search(
-            r"^## Requirement coverage\n([\s\S]*?)(?=^## Verification status\n)",
+            r"^## Requirement coverage\n([\s\S]*)\Z",
             text, re.M,
         )
         if section is None:
@@ -242,6 +242,18 @@ def check_scenarios(
         )
         relative = f"docs/scenarios/{folder}/{identity}.md"
         source = load(relative)
+        evidence_path = (
+            "../../../testing/traceability.md" if is_fr
+            else "../../testing/traceability.md"
+        )
+        if f"[Verification evidence]({evidence_path})" not in source:
+            error(f"{relative}: missing canonical evidence link")
+        if re.search(
+            r"^\*\*(?:Acceptance evidence|Acceptance verification|Requirement status|Specification status):"
+            r"|^## Verification(?: notes)?$",
+            source, re.M,
+        ):
+            error(f"{relative}: duplicated verification status or notes")
         if not source.startswith(f"# {identity}: "):
             error(f"{relative}: incorrect title")
         if is_fr:
@@ -356,13 +368,12 @@ def check_governance(functional: dict[str, tuple[str, str]]) -> None:
             "Boundaries and exclusions",
             "Failure and completeness behavior",
             "Requirement coverage",
-            "Verification status",
         ):
             if f"## {heading}\n" not in source:
                 error(f"{relative}: missing section {heading}")
 
         section_match = re.search(
-            r"^## Requirement coverage\n([\s\S]*?)(?=^## Verification status\n)",
+            r"^## Requirement coverage\n([\s\S]*)\Z",
             source,
             re.M,
         )
@@ -401,10 +412,32 @@ def check_governance(functional: dict[str, tuple[str, str]]) -> None:
             expected = functional.get(identity)
             if expected is not None and purpose.strip().replace(r"\|", "|") != expected[1]:
                 error(f"{relative}: purpose differs from approved catalog for {identity}")
-        if not re.search(r"\bPlanned\b", source):
-            error(f"{relative}: missing unverified acceptance status")
+        if "**Specification status:**" in source or "## Verification status" in source:
+            error(f"{relative}: duplicated verification status is not allowed")
         if not re.search(rf"^\|\s*ARCH-{number:03d}\s*\|", architecture, re.M):
             error(f"Missing ARCH-{number:03d} from architectural constraints")
+
+
+def check_navigation_index_status() -> None:
+    """Navigation indexes must not copy mutable verification state."""
+    pages = [
+        "README.md",
+        "docs/README.md",
+        "docs/capabilities/README.md",
+        "docs/scenarios/README.md",
+        "docs/scenarios/functional/README.md",
+        "docs/requirements/functional.md",
+        *(f"docs/scenarios/functional/{slug}/README.md"
+          for slug in CAPABILITY_FOLDERS.values()),
+    ]
+    for relative in pages:
+        source = load(relative)
+        if re.search(
+            r"^\*\*(?:Status|Current state|Implementation status|Specification status):"
+            r"|\bscenarios (?:are|remain) \*\*Planned\*\*",
+            source, re.M | re.I,
+        ):
+            error(f"{relative}: navigation index duplicates mutable status")
 
 
 def check_links_and_retired_refs() -> None:
@@ -450,6 +483,7 @@ def main() -> int:
     mapping = check_scenarios(functional, quality)
     check_traceability(mapping)
     check_governance(functional)
+    check_navigation_index_status()
     check_links_and_retired_refs()
     for problem in ERRORS:
         print(f"ERROR: {problem}", file=sys.stderr)

@@ -1,7 +1,5 @@
 # v0.1 product capabilities
 
-**Specification status:** All eight capabilities are approved for v0.1. **Implementation status:** The inspection features and functional acceptance remain Planned, not yet verified.
-
 This README is the index for the individual capability specifications. Each capability document explains its purpose, approved behavior, inputs and outputs, exclusions, failure/completeness semantics, relationships to other capabilities, and linked requirements. It is a behavioral boundary, **not** a requirement to create one class or one implementation project per capability.
 
 | ID | Capability | Responsibility |
@@ -25,4 +23,4 @@ This README is the index for the individual capability specifications. Each capa
 
 ## Specification authority and verification
 
-The **Requirement coverage** tables in these eight capability files define all 71 approved functional requirements; the [functional requirements index](../requirements/functional.md) links to them. Their linked [102 Given/When/Then acceptance scenarios](../scenarios/README.md) define acceptance criteria; individual scenarios remain **Planned** until evidence appears in [traceability](../testing/traceability.md). The approved [architectural constraints](../requirements/architecture.md) govern implementation independently of the capabilities. Open numerical and contract choices are tracked in [open decisions](../requirements/open-decisions.md).
+The **Requirement coverage** tables in these eight capability files define all 71 approved functional requirements; the [functional requirements index](../requirements/functional.md) links to them. Their linked [102 Given/When/Then acceptance scenarios](../scenarios/README.md) define acceptance criteria; scenario-level verification evidence is maintained in [traceability](../testing/traceability.md). The approved [architectural constraints](../requirements/architecture.md) govern implementation independently of the capabilities. Open numerical and contract choices are tracked in [open decisions](../requirements/open-decisions.md).
