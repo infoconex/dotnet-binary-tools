@@ -1,0 +1,31 @@
+# FR-CLI-005: Return exit code zero for successfully generated valid reports, including scans with per-file errors or resource-limit partial coverage; return nonzero for invalid inputs or unrecoverable command/report errors.
+
+**Capability:** [CAP-007 — Command-Line Interface](../../../capabilities/CAP-007.md)  
+**Requirement status:** Approved for v0.1 specification  
+**Acceptance evidence:** Planned — not implemented or verified
+
+## Requirement
+
+Return exit code zero for successfully generated valid reports, including scans with per-file errors or resource-limit partial coverage; return nonzero for invalid inputs or unrecoverable command/report errors.
+
+## Acceptance scenarios
+
+### SC-CLI-007: Preserve success for a partial scan
+
+**Given** a valid scan produces a completed report with per-file errors and incomplete coverage
+
+**When** the CLI exits
+
+**Then** exit code is zero and the report clearly marks its errors and incompleteness.
+
+### SC-CLI-008: Reject invalid selected inputs
+
+**Given** one of several explicitly supplied directories does not exist
+
+**When** scan is invoked
+
+**Then** validation returns a nonzero exit and no directory scan starts.
+
+## Verification
+
+Use controlled, synthetic fixtures, including platform/edge variations where appropriate. Tests remain **Planned** until executed; do not claim feature acceptance from a written scenario. Record observed test names, CI runs and exact commit SHA in [traceability](../../../testing/traceability.md).

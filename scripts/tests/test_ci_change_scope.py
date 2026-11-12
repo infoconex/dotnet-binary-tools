@@ -19,7 +19,7 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertFalse(result["architecture"])
 
     def test_scenario_docs_do_not_trigger_dotnet_build(self):
-        result = classify(["docs/scenarios/functional/FR-ASM-001.md"])
+        result = classify(["docs/scenarios/functional/assembly-inspection/FR-ASM-001.md"])
         self.assertTrue(result["documentation"])
         self.assertTrue(result["test_metadata"])
         self.assertFalse(result["managed"])

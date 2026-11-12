@@ -13,8 +13,12 @@ TEST=re.compile(r'\[Property\("Scenario",\s*"((?:SC-[A-Z]{3}-\d{3}|NFR-\d{3}-SC\
 
 def main():
     defined=set()
-    for folder in ("functional","non-functional"):
-        for path in (ROOT/"docs/scenarios"/folder).glob("*.md"):
+    for folder in ("functional", "non-functional"):
+        root = ROOT / "docs/scenarios" / folder
+        scenario_files = (
+            root.rglob("FR-*.md") if folder == "functional" else root.glob("NFR-*.md")
+        )
+        for path in scenario_files:
             defined.update(SC.findall(path.read_text(encoding="utf-8")))
     sources=list((ROOT/"tests").rglob("*.cs"))
     test_count=sum(("[Test]" in s.read_text(encoding="utf-8") or "[TestCase(" in s.read_text(encoding="utf-8")) for s in sources)

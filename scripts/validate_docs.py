@@ -21,6 +21,16 @@ CAPABILITIES = {
     "CLI": "CAP-007",
     "DST": "CAP-008",
 }
+CAPABILITY_FOLDERS = {
+    "INP": "input-selection",
+    "ASM": "assembly-inspection",
+    "CFG": "deployment-configuration",
+    "LCY": "lifecycle-assessment",
+    "INV": "inspection-inventory",
+    "RPT": "results-and-reporting",
+    "CLI": "command-line-interface",
+    "DST": "distribution",
+}
 FR_ID = re.compile(r"^FR-([A-Z]{3})-\d{3}$")
 NFR_ID = re.compile(r"^NFR-\d{3}$")
 SCENARIO = re.compile(r"^### ((?:SC-[A-Z]{3}-\d{3}|NFR-\d{3}-SC\d{2})): (.+)$", re.M)
@@ -65,7 +75,7 @@ def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
         expected_cap = CAPABILITIES[match.group(1)]
         if capability != expected_cap:
             error(f"{identity}: expected {expected_cap}, found {capability}")
-        if link != f"[Scenarios](../scenarios/functional/{identity}.md)":
+        if link != f"[Scenarios](../scenarios/functional/{CAPABILITY_FOLDERS[match.group(1)]}/{identity}.md)":
             error(f"{identity}: requirement scenario link is incorrect")
         if identity in functional:
             error(f"Duplicate functional requirement {identity}")
@@ -99,30 +109,72 @@ def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
 def check_scenarios(
     functional: dict[str, tuple[str, str]], quality: dict[str, str]
 ) -> dict[str, tuple[str, str, str]]:
-    expected_files = {
-        "functional": {f"{identity}.md" for identity in functional},
-        "non-functional": {f"{identity}.md" for identity in quality},
-    }
-    for folder, expected in expected_files.items():
-        base = ROOT / "docs/scenarios" / folder
-        actual = {p.name for p in base.glob("*.md")}
+    functional_folder = ROOT / "docs/scenarios/functional"
+    expected_folders = set(CAPABILITY_FOLDERS.values())
+    actual_folders = {p.name for p in functional_folder.iterdir() if p.is_dir()}
+    if actual_folders != expected_folders:
+        error(
+            "docs/scenarios/functional: incorrect capability folders; "
+            f"missing={sorted(expected_folders - actual_folders)}, "
+            f"unexpected={sorted(actual_folders - expected_folders)}"
+        )
+    root_files = {p.name for p in functional_folder.glob("*.md")}
+    if root_files != {"README.md"}:
+        error(f"docs/scenarios/functional: unexpected root files {sorted(root_files)}")
+    functional_index = load("docs/scenarios/functional/README.md")
+    root_index = load("docs/scenarios/README.md")
+    if "](functional/README.md)" not in root_index:
+        error("docs/scenarios/README.md: missing functional index link")
+    for prefix, cap in CAPABILITIES.items():
+        slug = CAPABILITY_FOLDERS[prefix]
+        expected = {"README.md"} | {
+            f"{identity}.md"
+            for identity in functional if identity.startswith(f"FR-{prefix}-")
+        }
+        folder = functional_folder / slug
+        actual = {p.name for p in folder.glob("*.md")}
         if actual != expected:
             error(
-                f"docs/scenarios/{folder}: missing={sorted(expected - actual)}, "
+                f"docs/scenarios/functional/{slug}: "
+                f"missing={sorted(expected - actual)}, "
                 f"orphaned={sorted(actual - expected)}"
             )
+        if f"]({slug}/README.md)" not in functional_index:
+            error(f"docs/scenarios/functional/README.md: missing {slug} index")
+        if f"](functional/{slug}/README.md)" not in root_index:
+            error(f"docs/scenarios/README.md: missing {slug} index")
+        category_index = load(f"docs/scenarios/functional/{slug}/README.md")
+        if f"](../../../capabilities/{cap}.md)" not in category_index:
+            error(f"docs/scenarios/functional/{slug}/README.md: missing capability link")
+        for identity in functional:
+            if identity.startswith(f"FR-{prefix}-"):
+                if f"]({identity}.md)" not in category_index:
+                    error(f"docs/scenarios/functional/{slug}/README.md: missing {identity}")
+    nonfunctional_folder = ROOT / "docs/scenarios/non-functional"
+    expected_quality = {f"{identity}.md" for identity in quality}
+    actual_quality = {p.name for p in nonfunctional_folder.glob("*.md")}
+    if actual_quality != expected_quality:
+        error(
+            "docs/scenarios/non-functional: "
+            f"missing={sorted(expected_quality - actual_quality)}, "
+            f"orphaned={sorted(actual_quality - expected_quality)}"
+        )
 
     mapping: dict[str, tuple[str, str, str]] = {}
     for identity in [*functional, *quality]:
         is_fr = identity in functional
-        folder = "functional" if is_fr else "non-functional"
+        folder = (
+            f"functional/{CAPABILITY_FOLDERS[identity.split('-')[1]]}"
+            if is_fr
+            else "non-functional"
+        )
         relative = f"docs/scenarios/{folder}/{identity}.md"
         source = load(relative)
         if not source.startswith(f"# {identity}: "):
             error(f"{relative}: incorrect title")
         if is_fr:
             capability = functional[identity][0]
-            if f"](../../capabilities/{capability}.md)" not in source:
+            if f"](../../../capabilities/{capability}.md)" not in source:
                 error(f"{relative}: missing direct link to {capability} specification")
         if is_fr and not identity.startswith("FR-INP-"):
             description = functional[identity][1]
@@ -151,9 +203,7 @@ def check_scenarios(
                     error(f"{relative}: {scenario} missing {word}")
                 if re.search(rf"^\*\*{word}\*\*\s+{word}\b", block, re.M | re.I):
                     error(f"{relative}: {scenario} repeats {word}")
-        index_path = load("docs/scenarios/README.md")
-        short_folder = "functional" if is_fr else "non-functional"
-        if f"]({short_folder}/{identity}.md)" not in index_path:
+        if not is_fr and f"](non-functional/{identity}.md)" not in root_index:
             error(f"docs/scenarios/README.md: missing index for {identity}")
     functional_count = sum(1 for item in mapping.values() if item[0] in functional)
     quality_count = len(mapping) - functional_count
@@ -272,7 +322,7 @@ def check_governance(functional: dict[str, tuple[str, str]]) -> None:
                 f"incorrect={sorted(set(found_requirements) - expected_requirements)}"
             )
         for identity, target, title, purpose in linked:
-            if target != f"../scenarios/functional/{identity}.md":
+            if target != f"../scenarios/functional/{CAPABILITY_FOLDERS[identity.split('-')[1]]}/{identity}.md":
                 error(f"{relative}: incorrect scenario link for {identity}: {target}")
             if not title.strip():
                 error(f"{relative}: missing requirement title for {identity}")
