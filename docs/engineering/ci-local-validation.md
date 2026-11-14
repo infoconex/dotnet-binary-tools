@@ -7,8 +7,8 @@ Actions orchestrates them.** Where practical, the same implementation must be
 executable locally and in CI. Workflows own event triggers, change detection,
 matrix selection, checkout, tool provisioning, caching, permissions, and
 artifact publication. GitHub-managed features such as Dependabot and secret
-scanning are exceptions because they run as services. CodeQL's configuration
-is documented separately.
+scanning are exceptions because they run as services. CodeQL's build-aware
+analysis is described in [security automation](security-automation.md).
 
 Prefer native `dotnet` commands for individual operations and focused,
 cross-platform PowerShell 7 scripts when orchestration is useful. Preserve the
