@@ -110,6 +110,7 @@ runtime-free clean installation, or release readiness.
 | [Validate engineering documentation](../../.github/workflows/validate-engineering.yml) | Python unit tests, line endings, docs, architecture, and test metadata | Runs Python unit tests on every invocation; relevant validators are selected by changed paths. |
 | [.NET 11 build, test and style](../../.github/workflows/build-test.yml) | Managed restore/audit, build, NUnit across three OSes; Linux style | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
 | [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | RID-specific restore, publish, help and version on three OSes | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
+| [Dependency review](../../.github/workflows/dependency-review.yml) | GitHub dependency-graph diff and high/critical vulnerability gate | Runs on pull requests; requires GitHub's dependency graph and advisory data, so there is no equivalent entirely local check. |
 
 All workflows trigger on PRs targeting `main`, pushes to `main`, and manual
 dispatch. Manual dispatch forces every applicable job in the full matrix.
