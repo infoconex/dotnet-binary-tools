@@ -6,8 +6,9 @@
 Actions orchestrates them.** Where practical, the same implementation must be
 executable locally and in CI. Workflows own event triggers, change detection,
 matrix selection, checkout, tool provisioning, caching, permissions, and
-artifact publication. GitHub-managed features such as Dependabot, CodeQL
-default setup, and secret scanning are exceptions because they run as services.
+artifact publication. GitHub-managed features such as Dependabot and secret
+scanning are exceptions because they run as services. CodeQL's configuration
+is documented separately.
 
 Prefer native `dotnet` commands for individual operations and focused,
 cross-platform PowerShell 7 scripts when orchestration is useful. Preserve the
@@ -15,12 +16,12 @@ existing Python 3 validators. Validation must return a meaningful nonzero exit
 code and actionable diagnostics without depending on GitHub-only variables;
 keep installing prerequisites separate from checking the repository.
 
-**Current state:** Existing Python validators already run from both local
-shells and CI. Managed build/test/style and Native AOT validation currently
-use `dotnet` commands embedded directly in workflow YAML. Moving that logic to
-small reusable scripts, with tests for nontrivial script decisions, belongs to
-[Issue #2's testing and developer-tooling workstream](https://github.com/infoconex/dotnet-binary-tools/issues/2).
-This policy does **not** claim full local/CI parity has already been achieved.
+The Python validators, managed Release build/NUnit/style commands, and Native
+AOT publish/smoke checks have reusable entry points. Workflows retain SDK and
+native compiler provisioning, OS selection, reporting and artifact uploads.
+Style verification is enabled on Linux CI. Examine CI results for the exact
+candidate SHA on each platform; an SDK-equipped native smoke test is not
+independent evidence of a runtime-free consumer environment.
 
 ## Prerequisites and environment evidence
 
@@ -28,7 +29,7 @@ This policy does **not** claim full local/CI parity has already been achieved.
   place of `python3`).
 - The .NET 11 SDK selected by [global.json](../../global.json), plus NuGet
   access, for managed restore, build, test, and formatting.
-- PowerShell 7 for cross-platform orchestration as it is introduced.
+- PowerShell 7 for the cross-platform validation scripts.
 - A matching operating system and native compiler/linker prerequisites for
   Native AOT. Linux CI installs or verifies Clang and `zlib1g-dev` separately.
   macOS x64 verification uses an Intel runner; Windows uses an x64 runner.
@@ -76,37 +77,38 @@ Actions. Its decision logic is covered by the Python unit tests above.
 ### Managed .NET and NUnit
 
 ```shell
-dotnet restore DotNetBinary.slnx --configfile nuget.config --force-evaluate
-dotnet build DotNetBinary.slnx --configuration Release --no-restore
-dotnet test DotNetBinary.slnx --configuration Release --no-build --no-restore --logger trx
-dotnet format style DotNetBinary.slnx --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal
+pwsh ./scripts/validate-managed.ps1 -VerifyStyle
 pwsh ./scripts/collect-coverage.ps1
+python3 scripts/coverage_report.py --input artifacts/coverage/raw --output artifacts/coverage/report --artifact-name coverage-local
 ```
 
-The format-style check runs on Linux in the current workflow. Managed
+Omit `-VerifyStyle` to match Windows/macOS CI checks. The managed script records
+the actual SDK, OS, PowerShell version and commit, and fails on any unsuccessful
+restore/build/NUnit/style command. The format-style check runs on Linux CI. Managed
 restore/build/NUnit are matrixed over `ubuntu-latest`, `windows-latest`, and
 `macos-latest`. Successful local execution on one OS cannot establish the
 other two OS results. The optional coverage script runs NUnit again after a
 Release build using Microsoft's built-in collector and the shared
 [coverage settings](../../coverage.runsettings). It writes Cobertura XML and
 TRX files under ignored `artifacts/coverage/raw`, with separate CI artifacts
-per OS. A complete HTML and method-level report is still being evaluated under
-Issue #2.
+per OS. The Python renderer produces annotated source-level HTML,
+method/unexecuted-method details, JSON metrics and a Markdown summary. Open
+`report/index.html` from the downloadable GitHub Actions artifact ZIP.
 
 ### Native AOT CLI smoke test
 
-Run on the operating system matching one of `linux-x64`, `win-x64`, or
-`osx-x64`, after installing its native AOT prerequisites. Replace `<rid>`
-with the matching RID (no angle brackets in the actual command):
+Run on an x64 operating system matching one of `linux-x64`, `win-x64`, or
+`osx-x64`, after installing native AOT prerequisites:
 
 ```shell
-dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -r <rid> --configfile nuget.config
-dotnet publish src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -c Release -r <rid> --configfile nuget.config --no-restore -p:PublishAot=true -o artifacts/aot/<rid>
+pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier linux-x64
+# Windows x64: pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier win-x64
+# macOS Intel: pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier osx-x64
 ```
 
-Execute the resulting `dotnet-binary` (or `dotnet-binary.exe` on Windows)
-with `--help` and `--version` and check both exit codes. Current CI checks
-only these scaffold commands; this is **not** proof of full inspection,
+The script rejects a mismatched host or architecture and executes the resulting
+`dotnet-binary` (or `dotnet-binary.exe` on Windows) with `--help` and `--version`,
+checking both exit codes. CI checks only these scaffold commands; this is **not** proof of full inspection,
 runtime-free clean installation, or release readiness.
 
 ## What CI does and does not run

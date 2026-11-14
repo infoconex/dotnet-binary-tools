@@ -64,18 +64,10 @@ jobs:
             nuget.config
             src/**/*.csproj
             tests/**/*.csproj
-      - name: Record SDK environment
+      - name: Validate managed solution and NUnit
         if: needs.scope.outputs.managed == 'true'
-        run: dotnet --info
-      - name: Restore and NuGet audit
-        if: needs.scope.outputs.managed == 'true'
-        run: dotnet restore DotNetBinary.slnx --configfile nuget.config --force-evaluate
-      - name: Build Release
-        if: needs.scope.outputs.managed == 'true'
-        run: dotnet build DotNetBinary.slnx --configuration Release --no-restore
-      - name: Execute NUnit suites
-        if: needs.scope.outputs.managed == 'true'
-        run: dotnet test DotNetBinary.slnx --configuration Release --no-build --no-restore --logger trx
+        shell: pwsh
+        run: ./scripts/validate-managed.ps1 -VerifyStyle:$IsLinux
       - name: Collect cross-platform NUnit coverage
         if: needs.scope.outputs.managed == 'true'
         shell: pwsh
@@ -111,6 +103,3 @@ jobs:
         run: |
           Get-Content 'artifacts/coverage/report/summary.md' | Add-Content $env:GITHUB_STEP_SUMMARY
           Add-Content $env:GITHUB_STEP_SUMMARY "[Download complete HTML report]($env:COVERAGE_ARTIFACT_URL) — open report/index.html from the ZIP."
-      - name: Check enforced Microsoft C# naming
-        if: needs.scope.outputs.managed == 'true' && runner.os == 'Linux'
-        run: dotnet format style DotNetBinary.slnx --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal
