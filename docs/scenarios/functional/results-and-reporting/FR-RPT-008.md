@@ -1,0 +1,25 @@
+# FR-RPT-008: Never overwrite an existing report: use the requested filename when available or a UTC timestamped and collision-resistant suffix with exclusive creation.
+
+**Capability:** [CAP-006 — Results and Reporting](../../../capabilities/CAP-006.md) · [Verification evidence](../../../testing/traceability.md)
+
+## Requirement
+
+Never overwrite an existing report: use the requested filename when available or a UTC timestamped and collision-resistant suffix with exclusive creation.
+
+## Acceptance scenarios
+
+### SC-RPT-011: Do not overwrite an existing file
+
+**Given** the requested report filename already contains unrelated content
+
+**When** the report is saved
+
+**Then** the existing file is byte-for-byte unchanged and a new unique timestamped filename is used.
+
+### SC-RPT-012: Handle simultaneous filename collision
+
+**Given** two report writers request the same name at the same instant
+
+**When** both attempt file creation
+
+**Then** each creates a distinct file or reports a safe failure, with no clobbered output.

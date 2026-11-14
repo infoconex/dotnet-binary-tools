@@ -1,0 +1,47 @@
+name: Validate engineering documentation
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engineering-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engineering:
+    name: Requirements and architecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: classify
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci_change_scope.py
+      - name: Verify changed-path classification logic
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+      - name: Verify tracked text normalization and checkout line endings
+        if: steps.classify.outputs.line_endings == 'true'
+        run: python3 scripts/validate_line_endings.py
+      - name: Check documented requirement coverage and local links
+        if: steps.classify.outputs.documentation == 'true'
+        run: python3 scripts/validate_docs.py
+      - name: Check project dependency graph and AOT package identity
+        if: steps.classify.outputs.architecture == 'true'
+        run: python3 scripts/validate_architecture.py
+      - name: Check NUnit test scenario metadata
+        if: steps.classify.outputs.test_metadata == 'true'
+        run: python3 scripts/validate_test_metadata.py

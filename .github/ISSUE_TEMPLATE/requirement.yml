@@ -1,0 +1,46 @@
+name: Individual requirement
+description: Track an independently testable feature, quality requirement or engineering change.
+title: "Requirement: "
+body:
+  - type: input
+    id: requirement
+    attributes:
+      label: Stable requirement or engineering identifier
+      placeholder: FR-ASM-001, FR-INP-001, NFR-001, or ARCH-001
+      description: Use approved requirement and CAP IDs, or explain a separately scoped engineering change.
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Must - v0.1
+        - Should - later
+        - Future - deferred
+    validations:
+      required: true
+  - type: textarea
+    id: observable-behavior
+    attributes:
+      label: Observable behavior or quality obligation
+    validations:
+      required: true
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: Given/When/Then acceptance scenarios
+      description: Link the authoritative docs/scenarios file and describe any proposed additions.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Identify NUnit test levels and synthetic fixtures; planned tests are not evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Dependencies, security, cross-platform/AOT risks and exclusions

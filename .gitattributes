@@ -1,0 +1,51 @@
+# Normalize text in Git; use LF for cross-platform source and documentation.
+* text=auto
+
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.editorconfig text eol=lf
+LICENSE text eol=lf
+
+# .NET source and build configuration.
+*.cs text eol=lf
+*.csx text eol=lf
+*.csproj text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.slnx text eol=lf
+*.config text eol=lf
+*.xml text eol=lf
+*.nuspec text eol=lf
+
+# Documentation and structured configuration.
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Cross-platform scripts.
+*.py text eol=lf
+*.ps1 text eol=lf
+*.psm1 text eol=lf
+*.psd1 text eol=lf
+*.sh text eol=lf
+
+# Windows command scripts are checked out using CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Never apply line-ending conversion to binary artifacts.
+*.dll binary
+*.exe binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.nupkg binary
+*.snupkg binary

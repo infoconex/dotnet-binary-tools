@@ -1,0 +1,6 @@
+<Project>
+  <!-- Evaluated after each project declares IsTestProject. -->
+  <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,117 @@
+name: .NET 11 Native AOT smoke test
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aot-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scope:
+    name: Determine relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      aot: ${{ steps.classify.outputs.aot }}
+    steps:
+      - name: Checkout full history for changes
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: classify
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci_change_scope.py
+  aot:
+    needs: scope
+    if: needs.scope.outputs.aot == 'true'
+    name: Native AOT CLI (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-15-intel
+            rid: osx-x64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Install .NET 11 SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '11.0.x'
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            Directory.Build.props
+            Directory.Build.targets
+            global.json
+            nuget.config
+            src/**/*.csproj
+            tests/**/*.csproj
+            .github/workflows/native-aot-smoke.yml
+      - name: Verify Linux AOT compiler prerequisites
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v clang >/dev/null 2>&1; then
+            for candidate in clang-20 clang-19 clang-18 clang-17 clang-16; do
+              if command -v "$candidate" >/dev/null 2>&1; then
+                sudo ln -s "$(command -v "$candidate")" /usr/local/bin/clang
+                break
+              fi
+            done
+          fi
+          if ! command -v clang >/dev/null 2>&1 || [ ! -f /usr/include/zlib.h ]; then
+            for attempt in 1 2 3; do
+              if sudo apt-get update && sudo apt-get install -y clang zlib1g-dev; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "Linux AOT prerequisites unavailable after three installation attempts." >&2
+                exit 1
+              fi
+              sleep 10
+            done
+          fi
+          command -v clang
+          clang --version
+          test -f /usr/include/zlib.h
+      - name: Restore for native RID
+        shell: pwsh
+        run: |
+          dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -r ${{ matrix.rid }} --configfile nuget.config
+          if ($LASTEXITCODE -ne 0) { throw "AOT restore failed" }
+      - name: Publish native executable
+        shell: pwsh
+        run: |
+          dotnet publish src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -c Release -r ${{ matrix.rid }} --configfile nuget.config --no-restore -p:PublishAot=true -o artifacts/aot/${{ matrix.rid }}
+          if ($LASTEXITCODE -ne 0) { throw "AOT publish failed" }
+      - name: Run native executable's help command
+        shell: pwsh
+        run: |
+          $name = if ($IsWindows) { "dotnet-binary.exe" } else { "dotnet-binary" }
+          $binary = Join-Path "artifacts/aot/${{ matrix.rid }}" $name
+          if (-not (Test-Path $binary)) { throw "Native executable missing: $binary" }
+          & (Resolve-Path $binary).Path --help
+          if ($LASTEXITCODE -ne 0) { throw "Native help smoke test failed" }
+          & (Resolve-Path $binary).Path --version
+          if ($LASTEXITCODE -ne 0) { throw "Native version smoke test failed" }

@@ -1,0 +1,502 @@
+#!/usr/bin/env python3
+"""Validate v0.1 requirement, scenario, capability and traceability integrity.
+
+Structural documentation verification does not establish feature acceptance.
+"""
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+from urllib.parse import unquote
+
+ROOT = Path(__file__).resolve().parent.parent
+CAPABILITIES = {
+    "INP": "CAP-001",
+    "ASM": "CAP-002",
+    "CFG": "CAP-003",
+    "LCY": "CAP-004",
+    "INV": "CAP-005",
+    "RPT": "CAP-006",
+    "CLI": "CAP-007",
+    "DST": "CAP-008",
+}
+CAPABILITY_FOLDERS = {
+    "INP": "input-selection",
+    "ASM": "assembly-inspection",
+    "CFG": "deployment-configuration",
+    "LCY": "lifecycle-assessment",
+    "INV": "inspection-inventory",
+    "RPT": "results-and-reporting",
+    "CLI": "command-line-interface",
+    "DST": "distribution",
+}
+FR_ID = re.compile(r"^FR-([A-Z]{3})-\d{3}$")
+NFR_ID = re.compile(r"^NFR-\d{3}$")
+SCENARIO = re.compile(r"^### ((?:SC-[A-Z]{3}-\d{3}|NFR-\d{3}-SC\d{2})): (.+)$", re.M)
+TRACE_LINK = re.compile(r"^\[([^\]]+)\]\(([^)]+)\)$")
+MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+ERRORS: list[str] = []
+
+
+def error(message: str) -> None:
+    ERRORS.append(message)
+
+
+def load(relative: str) -> str:
+    path = ROOT / relative
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        error(f"{relative}: cannot read: {exc}")
+        return ""
+
+
+def columns(line: str) -> list[str]:
+    return [part.strip() for part in line.strip().strip("|").split("|")]
+
+
+def read_catalog() -> tuple[dict[str, tuple[str, str]], dict[str, str]]:
+    functional: dict[str, tuple[str, str]] = {}
+    quality: dict[str, str] = {}
+    # The capability requirement tables are the authoritative approved source.
+    expected_counts = {
+        "INP": 8, "ASM": 11, "CFG": 8, "LCY": 8,
+        "INV": 12, "RPT": 9, "CLI": 8, "DST": 7,
+    }
+    for prefix, capability in CAPABILITIES.items():
+        source = f"docs/capabilities/{capability}.md"
+        text = load(source)
+        section = re.search(
+            r"^## Requirement coverage\n([\s\S]*)\Z",
+            text, re.M,
+        )
+        if section is None:
+            error(f"{source}: missing requirement coverage table")
+            continue
+        for line in section.group(1).splitlines():
+            if not line.startswith("| [FR-"):
+                continue
+            match = re.fullmatch(
+                r"\| \[(FR-[A-Z]{3}-\d{3})\]\(([^)]+)\) \| ([^|]+) \| (.+) \|",
+                line,
+            )
+            if match is None:
+                error(f"{source}: malformed requirement row: {line}")
+                continue
+            identity, target, title, purpose = match.groups()
+            if not identity.startswith(f"FR-{prefix}-"):
+                error(f"{source}: requirement in wrong capability: {identity}")
+            expected_path = (
+                f"../scenarios/functional/{CAPABILITY_FOLDERS[prefix]}/{identity}.md"
+            )
+            if target != expected_path:
+                error(f"{source}: invalid scenario link for {identity}")
+            if not title.strip() or not purpose.strip():
+                error(f"{source}: missing requirement title or purpose: {identity}")
+            if identity in functional:
+                error(f"Duplicate functional requirement {identity}")
+            functional[identity] = (capability, purpose.strip().replace(r"\|", "|"))
+
+        expected_ids = {
+            f"FR-{prefix}-{number:03d}"
+            for number in range(1, expected_counts[prefix] + 1)
+        }
+        actual_ids = {
+            identity for identity, (cap, _) in functional.items() if cap == capability
+        }
+        if actual_ids != expected_ids:
+            error(
+                f"{source}: missing={sorted(expected_ids - actual_ids)}, "
+                f"unexpected={sorted(actual_ids - expected_ids)}"
+            )
+    if len(functional) != 71:
+        error(f"Expected 71 functional requirements, found {len(functional)}")
+
+    source = "docs/requirements/non-functional.md"
+    for line in load(source).splitlines():
+        if not line.startswith("| NFR-"):
+            continue
+        cells = columns(line)
+        if len(cells) != 3:
+            error(f"{source}: malformed quality requirement row: {line}")
+            continue
+        identity, description, link = cells
+        if not NFR_ID.fullmatch(identity):
+            error(f"{source}: invalid quality requirement ID {identity}")
+            continue
+        if link != f"[Scenarios](../scenarios/non-functional/{identity}.md)":
+            error(f"{identity}: quality scenario link is incorrect")
+        if identity in quality:
+            error(f"Duplicate quality requirement {identity}")
+        quality[identity] = description
+    expected_quality = {f"NFR-{n:03d}" for n in range(1, 5)}
+    if set(quality) != expected_quality:
+        error(f"Expected four proposed NFRs {sorted(expected_quality)}, found {sorted(quality)}")
+    return functional, quality
+
+def check_functional_area_navigation(functional: dict[str, tuple[str, str]]) -> None:
+    """Ensure this page indexes authoritative capability requirements."""
+    relative = "docs/requirements/functional.md"
+    source = load(relative)
+    section = re.search(
+        r"^## Functional areas\n([\s\S]*)\Z",
+        source,
+        re.M,
+    )
+    if section is None:
+        error(f"{relative}: missing functional areas navigation")
+        return
+    if "**Status:**" in source or "## Boundaries and interpretation" in source:
+        error(f"{relative}: navigation index contains removed status or boundaries")
+    if re.search(r"^\| FR-[A-Z]{3}-\d{3}\s*\|", source, re.M):
+        error(f"{relative}: individual requirements must live in capability files")
+    if "| Capability | Requirement prefix | Functional area | Requirements |" not in section.group(1):
+        error(f"{relative}: incorrect functional area navigation headers")
+    area_rows = [
+        line for line in section.group(1).splitlines()
+        if line.startswith("| [CAP-")
+    ]
+    expected_rows = []
+    for prefix, capability in CAPABILITIES.items():
+        heading = load(f"docs/capabilities/{capability}.md").splitlines()
+        expected_prefix = f"# {capability}: "
+        title = (
+            heading[0].removeprefix(expected_prefix)
+            if heading and heading[0].startswith(expected_prefix) else ""
+        )
+        count = sum(1 for assigned, _ in functional.values() if assigned == capability)
+        expected_rows.append(
+            f"| [{capability}](../capabilities/{capability}.md) "
+            f"| `FR-{prefix}-XXX` | [{title}](../scenarios/functional/"
+            f"{CAPABILITY_FOLDERS[prefix]}/README.md) | {count} |"
+        )
+    if area_rows != expected_rows:
+        error(
+            f"{relative}: navigation must match all eight capability titles, "
+            "authoritative documents, scenario indexes, prefixes and requirement counts"
+        )
+
+
+def check_scenarios(
+    functional: dict[str, tuple[str, str]], quality: dict[str, str]
+) -> dict[str, tuple[str, str, str]]:
+    functional_folder = ROOT / "docs/scenarios/functional"
+    expected_folders = set(CAPABILITY_FOLDERS.values())
+    actual_folders = {p.name for p in functional_folder.iterdir() if p.is_dir()}
+    if actual_folders != expected_folders:
+        error(
+            "docs/scenarios/functional: incorrect capability folders; "
+            f"missing={sorted(expected_folders - actual_folders)}, "
+            f"unexpected={sorted(actual_folders - expected_folders)}"
+        )
+    root_files = {p.name for p in functional_folder.glob("*.md")}
+    if root_files != {"README.md"}:
+        error(f"docs/scenarios/functional: unexpected root files {sorted(root_files)}")
+    functional_index = load("docs/scenarios/functional/README.md")
+    root_index = load("docs/scenarios/README.md")
+    if "](functional/README.md)" not in root_index:
+        error("docs/scenarios/README.md: missing functional index link")
+    for prefix, cap in CAPABILITIES.items():
+        slug = CAPABILITY_FOLDERS[prefix]
+        expected = {"README.md"} | {
+            f"{identity}.md"
+            for identity in functional if identity.startswith(f"FR-{prefix}-")
+        }
+        folder = functional_folder / slug
+        actual = {p.name for p in folder.glob("*.md")}
+        if actual != expected:
+            error(
+                f"docs/scenarios/functional/{slug}: "
+                f"missing={sorted(expected - actual)}, "
+                f"orphaned={sorted(actual - expected)}"
+            )
+        if f"]({slug}/README.md)" not in functional_index:
+            error(f"docs/scenarios/functional/README.md: missing {slug} index")
+        if f"](functional/{slug}/README.md)" not in root_index:
+            error(f"docs/scenarios/README.md: missing {slug} index")
+        category_index = load(f"docs/scenarios/functional/{slug}/README.md")
+        if f"](../../../capabilities/{cap}.md)" not in category_index:
+            error(f"docs/scenarios/functional/{slug}/README.md: missing capability link")
+        for identity in functional:
+            if identity.startswith(f"FR-{prefix}-"):
+                if f"]({identity}.md)" not in category_index:
+                    error(f"docs/scenarios/functional/{slug}/README.md: missing {identity}")
+    nonfunctional_folder = ROOT / "docs/scenarios/non-functional"
+    expected_quality = {f"{identity}.md" for identity in quality}
+    actual_quality = {p.name for p in nonfunctional_folder.glob("*.md")}
+    if actual_quality != expected_quality:
+        error(
+            "docs/scenarios/non-functional: "
+            f"missing={sorted(expected_quality - actual_quality)}, "
+            f"orphaned={sorted(actual_quality - expected_quality)}"
+        )
+
+    mapping: dict[str, tuple[str, str, str]] = {}
+    for identity in [*functional, *quality]:
+        is_fr = identity in functional
+        folder = (
+            f"functional/{CAPABILITY_FOLDERS[identity.split('-')[1]]}"
+            if is_fr
+            else "non-functional"
+        )
+        relative = f"docs/scenarios/{folder}/{identity}.md"
+        source = load(relative)
+        evidence_path = (
+            "../../../testing/traceability.md" if is_fr
+            else "../../testing/traceability.md"
+        )
+        if f"[Verification evidence]({evidence_path})" not in source:
+            error(f"{relative}: missing canonical evidence link")
+        if re.search(
+            r"^\*\*(?:Acceptance evidence|Acceptance verification|Requirement status|Specification status):"
+            r"|^## Verification(?: notes)?$",
+            source, re.M,
+        ):
+            error(f"{relative}: duplicated verification status or notes")
+        if not source.startswith(f"# {identity}: "):
+            error(f"{relative}: incorrect title")
+        if is_fr:
+            capability = functional[identity][0]
+            if f"](../../../capabilities/{capability}.md)" not in source:
+                error(f"{relative}: missing direct link to {capability} specification")
+        if is_fr and not identity.startswith("FR-INP-"):
+            description = functional[identity][1]
+            if f"## Requirement\n\n{description}\n" not in source:
+                error(f"{relative}: requirement text differs from catalog")
+        matches = list(SCENARIO.finditer(source))
+        if not matches:
+            error(f"{relative}: missing Given/When/Then scenarios")
+        for index, match in enumerate(matches):
+            scenario = match.group(1)
+            required_prefix = (
+                "SC-" + identity.split("-")[1] + "-"
+                if is_fr
+                else identity + "-SC"
+            )
+            if not scenario.startswith(required_prefix):
+                error(f"{relative}: invalid scenario prefix {scenario}")
+            if scenario in mapping:
+                error(f"Duplicate acceptance scenario {scenario}")
+            cap = functional[identity][0] if is_fr else "Proposed"
+            mapping[scenario] = (identity, cap, relative)
+            finish = matches[index + 1].start() if index + 1 < len(matches) else len(source)
+            block = source[match.end():finish]
+            for word in ("Given", "When", "Then"):
+                if not re.search(rf"^\*\*{word}\*\*\s+\S+", block, re.M):
+                    error(f"{relative}: {scenario} missing {word}")
+                if re.search(rf"^\*\*{word}\*\*\s+{word}\b", block, re.M | re.I):
+                    error(f"{relative}: {scenario} repeats {word}")
+        if not is_fr and f"](non-functional/{identity}.md)" not in root_index:
+            error(f"docs/scenarios/README.md: missing index for {identity}")
+    functional_count = sum(1 for item in mapping.values() if item[0] in functional)
+    quality_count = len(mapping) - functional_count
+    if functional_count != 102 or quality_count != 8:
+        error(
+            f"Expected 102 functional and 8 proposed-quality scenarios; "
+            f"found {functional_count} and {quality_count}"
+        )
+    return mapping
+
+
+def check_traceability(mapping: dict[str, tuple[str, str, str]]) -> None:
+    relative = "docs/testing/traceability.md"
+    documented: set[str] = set()
+    for line in load(relative).splitlines():
+        if not line.startswith("| [SC-") and not line.startswith("| [NFR-"):
+            continue
+        cells = columns(line)
+        if len(cells) != 7:
+            error(f"{relative}: malformed traceability row: {line}")
+            continue
+        match = TRACE_LINK.fullmatch(cells[0])
+        if match is None:
+            error(f"{relative}: malformed scenario link {cells[0]}")
+            continue
+        scenario, destination = match.groups()
+        if scenario in documented:
+            error(f"{relative}: duplicate traceability {scenario}")
+        documented.add(scenario)
+        expected = mapping.get(scenario)
+        if expected is None:
+            error(f"{relative}: unknown scenario {scenario}")
+            continue
+        requirement, capability, path = expected
+        expected_destination = "../" + path.removeprefix("docs/")
+        if cells[1] != capability or cells[2] != requirement:
+            error(f"{scenario}: traceability requirement or capability mismatch")
+        if destination != expected_destination:
+            error(f"{scenario}: traceability link should be {expected_destination}")
+    if documented != set(mapping):
+        error(f"{relative}: scenarios missing from traceability: {sorted(set(mapping) - documented)}")
+
+
+def check_governance(functional: dict[str, tuple[str, str]]) -> None:
+    """Verify the README capability index and one detailed file per approved CAP."""
+    index = load("docs/capabilities/README.md")
+    architecture = load("docs/requirements/architecture.md")
+    capability_folder = ROOT / "docs/capabilities"
+    expected_ids = [f"CAP-{number:03d}" for number in range(1, 9)]
+    expected_files = {"README.md"} | {f"{cap}.md" for cap in expected_ids}
+    actual_files = {path.name for path in capability_folder.glob("*.md")}
+    if actual_files != expected_files:
+        error(
+            "docs/capabilities: incorrect file set; "
+            f"missing={sorted(expected_files - actual_files)}, "
+            f"orphaned={sorted(actual_files - expected_files)}"
+        )
+    if (ROOT / "docs/capabilities.md").exists():
+        error("Obsolete docs/capabilities.md: use docs/capabilities/README.md")
+
+    indexed = re.findall(r"^\|\s*\[(CAP-\d{3})\]\(([^)]+)\)\s*\|", index, re.M)
+    expected_index = [(cap, f"{cap}.md") for cap in expected_ids]
+    if indexed != expected_index:
+        error(
+            "docs/capabilities/README.md: expected exactly one ordered linked "
+            f"index row per capability; found {indexed}"
+        )
+
+    for number, cap in enumerate(expected_ids, start=1):
+        relative = f"docs/capabilities/{cap}.md"
+        source = load(relative)
+        if not re.match(rf"^# {cap}: \S[^\n]*\n", source):
+            error(f"{relative}: missing capability ID and title")
+        for heading in (
+            "Purpose",
+            "Approved behavior",
+            "Inputs and outputs",
+            "Boundaries and exclusions",
+            "Failure and completeness behavior",
+            "Requirement coverage",
+        ):
+            if f"## {heading}\n" not in source:
+                error(f"{relative}: missing section {heading}")
+
+        section_match = re.search(
+            r"^## Requirement coverage\n([\s\S]*)\Z",
+            source,
+            re.M,
+        )
+        if section_match is None:
+            error(f"{relative}: missing requirement coverage table")
+            coverage = ""
+        else:
+            coverage = section_match.group(1)
+        if "| Requirement | Title | Purpose |" not in coverage:
+            error(f"{relative}: missing requirement coverage table headers")
+
+        linked = re.findall(
+            r"^\| \[(FR-[A-Z]{3}-\d{3})\]\(([^)]+)\) \| ([^|]+) \| (.+) \|$",
+            coverage,
+            re.M,
+        )
+        expected_requirements = {
+            identity
+            for identity, (capability, _) in functional.items()
+            if capability == cap
+        }
+        found_requirements = [identity for identity, _, _, _ in linked]
+        if len(found_requirements) != len(set(found_requirements)):
+            error(f"{relative}: duplicate requirement table rows")
+        if set(found_requirements) != expected_requirements:
+            error(
+                f"{relative}: requirement coverage mismatch; "
+                f"missing={sorted(expected_requirements - set(found_requirements))}, "
+                f"incorrect={sorted(set(found_requirements) - expected_requirements)}"
+            )
+        for identity, target, title, purpose in linked:
+            if target != f"../scenarios/functional/{CAPABILITY_FOLDERS[identity.split('-')[1]]}/{identity}.md":
+                error(f"{relative}: incorrect scenario link for {identity}: {target}")
+            if not title.strip():
+                error(f"{relative}: missing requirement title for {identity}")
+            expected = functional.get(identity)
+            if expected is not None and purpose.strip().replace(r"\|", "|") != expected[1]:
+                error(f"{relative}: purpose differs from approved catalog for {identity}")
+        if "**Specification status:**" in source or "## Verification status" in source:
+            error(f"{relative}: duplicated verification status is not allowed")
+        if not re.search(rf"^\|\s*ARCH-{number:03d}\s*\|", architecture, re.M):
+            error(f"Missing ARCH-{number:03d} from architectural constraints")
+
+
+def check_navigation_index_status() -> None:
+    """Navigation indexes must not copy mutable verification state."""
+    pages = [
+        "README.md",
+        "docs/README.md",
+        "docs/capabilities/README.md",
+        "docs/scenarios/README.md",
+        "docs/scenarios/functional/README.md",
+        "docs/requirements/functional.md",
+        *(f"docs/scenarios/functional/{slug}/README.md"
+          for slug in CAPABILITY_FOLDERS.values()),
+    ]
+    for relative in pages:
+        source = load(relative)
+        if re.search(
+            r"^\*\*(?:Status|Current state|Implementation status|Specification status):"
+            r"|\bscenarios (?:are|remain) \*\*Planned\*\*",
+            source, re.M | re.I,
+        ):
+            error(f"{relative}: navigation index duplicates mutable status")
+
+
+def check_links_and_retired_refs() -> None:
+    paths = [
+        ROOT / "README.md",
+        ROOT / "AGENTS.md",
+        *ROOT.glob("docs/**/*.md"),
+        *ROOT.glob(".github/**/*.md"),
+    ]
+    retired = (
+        "Infoconex.DotNetBinary.Core",
+        "Infoconex.DotNetFramework",
+        "DotNetFramework.slnx",
+        "dotnet-framework",
+        "docs/capabilities.md",
+        "0001-core-cli-boundary.md",
+        "0003-hexagonal-project-boundaries.md",
+        "docs/scenarios/functional/FR-001.md",
+    )
+    root_resolved = ROOT.resolve()
+    for path in sorted(set(paths)):
+        if not path.is_file():
+            continue
+        source = path.read_text(encoding="utf-8")
+        for item in retired:
+            if item in source:
+                error(f"{path.relative_to(ROOT)}: obsolete reference {item}")
+        for target in MARKDOWN_LINK.findall(source):
+            url = unquote(target.strip().split(" ", 1)[0].strip("<>"))
+            if not url or url.startswith(("#", "http:", "https:", "mailto:")):
+                continue
+            relative = url.split("#", 1)[0].split("?", 1)[0]
+            if not relative:
+                continue
+            resolved = (path.parent / relative).resolve()
+            if not resolved.is_relative_to(root_resolved) or not resolved.exists():
+                error(f"{path.relative_to(ROOT)}: broken local link {target}")
+
+
+def main() -> int:
+    functional, quality = read_catalog()
+    check_functional_area_navigation(functional)
+    mapping = check_scenarios(functional, quality)
+    check_traceability(mapping)
+    check_governance(functional)
+    check_navigation_index_status()
+    check_links_and_retired_refs()
+    for problem in ERRORS:
+        print(f"ERROR: {problem}", file=sys.stderr)
+    if ERRORS:
+        print(f"Validation failed: {len(ERRORS)} issue(s).", file=sys.stderr)
+        return 1
+    print(
+        f"Validated {len(functional)} functional requirements, "
+        f"{len(quality)} proposed quality requirements, {len(mapping)} scenarios, "
+        "capability/architecture mappings, traceability, filenames and links."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
