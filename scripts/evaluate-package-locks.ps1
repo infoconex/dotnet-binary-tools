@@ -62,8 +62,20 @@ try {
     finally { Set-Content -LiteralPath $central -Value $original -NoNewline -Encoding utf8NoBOM }
 
     $project = 'src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj'
-    & dotnet restore $project -r linux-x64 --configfile nuget.config --locked-mode
-    if ($LASTEXITCODE -ne 0) { throw "RID-specific locked restore failed with exit code $LASTEXITCODE." }
+    $ridResult = & dotnet restore $project -r linux-x64 --configfile nuget.config --locked-mode 2>&1
+    $ridExit = $LASTEXITCODE
+    $ridResult | ForEach-Object { Write-Host $_ }
+    if ($ridExit -ne 0) {
+        if (($ridResult | Out-String) -notmatch 'NU1004') {
+            throw "RID-specific locked restore failed for an unexpected reason (exit $ridExit)."
+        }
+        Write-Host 'Observed NU1004: solution-generated lock files do not describe the explicitly requested linux-x64 restore graph.'
+        Write-Host 'Re-evaluating locks for the matching RID in the isolated workspace.'
+        & dotnet restore $project -r linux-x64 --configfile nuget.config --force-evaluate
+        if ($LASTEXITCODE -ne 0) { throw "RID-specific lock regeneration failed with exit code $LASTEXITCODE." }
+        & dotnet restore $project -r linux-x64 --configfile nuget.config --locked-mode
+        if ($LASTEXITCODE -ne 0) { throw "RID-specific locked restore still failed after regeneration: $LASTEXITCODE." }
+    }
 
     & dotnet publish $project -c Release -r linux-x64 --no-restore -p:PublishAot=true -o artifacts/lock-evaluation/native
     if ($LASTEXITCODE -ne 0) { throw "AOT publish after locked restore failed with exit code $LASTEXITCODE." }
@@ -71,6 +83,6 @@ try {
     if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw 'AOT publish did not produce the native binary.' }
     & (Resolve-Path -LiteralPath $binary).Path --version
     if ($LASTEXITCODE -ne 0) { throw "Locked-restore AOT binary failed with exit code $LASTEXITCODE." }
-    Write-Host 'Lock-file evaluation passed: generated direct/transitive locks, locked restore, negative control, RID restore, and AOT publish.'
+    Write-Host 'Lock-file evaluation complete: locked solution restore, package-drift negative control, RID-specific restore/regeneration, and AOT publish.'
 }
 finally { Pop-Location }

@@ -33,7 +33,13 @@ Review staged changes before committing; avoid broad formatting changes unrelate
 
 ## Change-aware CI and NuGet dependency caching
 
-All three GitHub Actions workflows still trigger on pull requests targeting `main`, pushes to `main`, and manual dispatch. A shared, tested `scripts/ci_change_scope.py` classifier evaluates the changed paths; checks are gated at **job or step level**, not with workflow-level `paths` filters. This preserves check results for branch rules: documentation-only PRs do not build .NET or run NUnit/AOT jobs, while source and build configuration changes do. A change-detection failure fails CI instead of silently skipping checks.
+The engineering, managed and Native AOT GitHub Actions workflows trigger on
+pull requests targeting `main`, pushes to `main`, and manual dispatch. A shared,
+tested `scripts/ci_change_scope.py` classifier evaluates the changed paths;
+checks are gated at **job or step level**, not with workflow-level `paths`
+filters. This preserves required check contexts for branch rules. Dependency
+Review runs on PRs; CodeQL runs on PRs, pushes, a weekly schedule and dispatch.
+A change-detection failure fails CI instead of silently skipping checks.
 
 | Change type | Documentation validation | Managed build/NUnit | Native AOT | Relevant engineering gates |
 | --- | --- | --- | --- | --- |
@@ -71,8 +77,20 @@ A developer restoring from the solution root also gets this root NuGet configura
 - `Directory.Solution.props` and `Directory.Solution.targets`: solution-scoped MSBuild customization is unnecessary without solution-specific targets.
 - `Directory.Build.rsp`: global MSBuild command-line switches are not needed; shared properties and CI commands are explicit.
 - `.globalconfig`: unnecessary while the current analyzer and severity rules fit in `.editorconfig`.
-- `.config/dotnet-tools.json`: local tool manifest can be added when the project relies on repository-scoped development tools.
-- `packages.lock.json`: evaluate locked transitive dependency graphs before release where needed. Consider runtime-specific restore and Native AOT tool packaging when adopting lock files.
+- `.config/dotnet-tools.json`: not warranted currently. The validation stack
+  uses the installed .NET SDK's commands, PowerShell and Python; there is no
+  additional repository-scoped `dotnet tool` requiring a pinned version.
+- `packages.lock.json`: NuGet lock files were evaluated in an isolated working
+  copy, including a controlled central-version mismatch. Ordinary solution
+  locked restore succeeds and rejects package drift, but the subsequent
+  `linux-x64` locked restore rejects that same lock graph with `NU1004` because
+  its explicit RID differs from the solution restore graph. A RID-specific
+  lock regeneration is necessary; simply committing solution-generated locks
+  and enabling locked mode would break AOT CI. Do not commit lock files until
+  a single, maintainable strategy supports all three RIDs, solution restore,
+  managed CI and `--force-evaluate` dependency updates. The repeatable
+  [lock-file evaluation](../../scripts/evaluate-package-locks.ps1) exercises
+  the decision against current packages without modifying tracked source.
 
 Adding files without a requirement would increase maintenance and the risk of settings overriding one another. The present baseline is centralized without unnecessary duplication.
 

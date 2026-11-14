@@ -132,5 +132,6 @@ jobs:
           path: |
             artifacts/aot/${{ matrix.rid }}/
             artifacts/tool-packages/*.nupkg
+            artifacts/tool-packages/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14

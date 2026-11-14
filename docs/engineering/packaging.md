@@ -22,7 +22,8 @@ Use `win-x64` on Windows x64 or `osx-x64` on Intel macOS. The first script
 publishes an AOT executable and smoke-tests `--help`/`--version`. The second
 builds both the matching Native AOT RID package and the top-level pointer
 package, then installs the latter into a fresh private `--tool-path` from the
-local package source. It tests the installed shim and `dotnet binary`.
+local package source. It tests the installed shim (a `.cmd` launcher on the
+observed Windows runner) and `dotnet binary`.
 Neither script pushes artifacts or updates a global tool installation.
 `scripts/write-artifact-checksums.ps1` writes SHA-256 manifests for generated
 artifact directories. On Linux, provision the `ubuntu:24.04` container image
