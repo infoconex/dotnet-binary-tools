@@ -64,6 +64,8 @@ def classify(changed_files: Iterable[str]) -> dict[str, bool]:
             ".github/workflows/build-test.yml",
             "coverage.runsettings",
             "scripts/collect-coverage.ps1",
+            "scripts/coverage_report.py",
+            "scripts/tests/test_coverage_report.py",
         }:
             result["managed"] = True
 

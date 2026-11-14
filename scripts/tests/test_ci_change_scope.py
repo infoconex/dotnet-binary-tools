@@ -46,7 +46,12 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertTrue(result["architecture"])
 
     def test_coverage_script_and_settings_trigger_managed_validation(self):
-        for changed_file in ("scripts/collect-coverage.ps1", "coverage.runsettings"):
+        for changed_file in (
+            "scripts/collect-coverage.ps1",
+            "scripts/coverage_report.py",
+            "scripts/tests/test_coverage_report.py",
+            "coverage.runsettings",
+        ):
             with self.subTest(changed_file=changed_file):
                 result = classify([changed_file])
                 self.assertTrue(result["managed"])
