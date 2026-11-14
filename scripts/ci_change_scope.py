@@ -70,7 +70,7 @@ def classify(changed_files: Iterable[str]) -> dict[str, bool]:
         }:
             result["managed"] = True
 
-        if path in {".github/workflows/native-aot-smoke.yml", "scripts/validate-aot.ps1"}:
+        if path in {".github/workflows/native-aot-smoke.yml", "scripts/validate-aot.ps1", "scripts/validate-tool-package.ps1"}:
             result["aot"] = True
 
         if path in {"scripts/validate_architecture.py", ".github/workflows/validate-engineering.yml"}:
