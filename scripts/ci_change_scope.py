@@ -76,6 +76,10 @@ def classify(changed_files: Iterable[str]) -> dict[str, bool]:
         if path in {"scripts/validate_architecture.py", ".github/workflows/validate-engineering.yml"}:
             result["architecture"] = True
 
+        if path == "scripts/update-package-locks.ps1":
+            result["managed"] = True
+            result["aot"] = True
+
         if path in {"scripts/validate_docs.py", ".github/workflows/validate-engineering.yml"}:
             result["test_metadata"] = True
 

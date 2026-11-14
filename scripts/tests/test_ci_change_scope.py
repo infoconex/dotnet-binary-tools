@@ -83,6 +83,11 @@ class ChangeScopeTests(unittest.TestCase):
         result = classify(["scripts/ci_change_scope.py"])
         self.assertTrue(all(result.values()))
 
+    def test_lock_regeneration_script_requires_both_build_modes(self):
+        result = classify(["scripts/update-package-locks.ps1"])
+        self.assertTrue(result["managed"])
+        self.assertTrue(result["aot"])
+
     def test_documentation_validator_change_checks_docs(self):
         result = classify(["scripts/validate_docs.py"])
         self.assertTrue(result["documentation"])
