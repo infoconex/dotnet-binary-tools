@@ -107,6 +107,23 @@ jobs:
         if: needs.scope.outputs.aot == 'true'
         shell: pwsh
         run: ./scripts/validate-tool-package.ps1 -RuntimeIdentifier '${{ matrix.rid }}'
+      - name: Provision SDK-free Linux consumer image
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
+        run: docker pull ubuntu:24.04
+      - name: Validate Linux runtime-independent consumer
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
+        shell: pwsh
+        run: ./scripts/validate-linux-runtime-free.ps1
+      - name: Evaluate isolated NuGet lock files and RID-specific AOT restore
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
+        shell: pwsh
+        run: ./scripts/evaluate-package-locks.ps1
+      - name: Record SHA-256 artifact checksums
+        if: needs.scope.outputs.aot == 'true'
+        shell: pwsh
+        run: |
+          ./scripts/write-artifact-checksums.ps1 -ArtifactDirectory 'artifacts/aot/${{ matrix.rid }}'
+          ./scripts/write-artifact-checksums.ps1 -ArtifactDirectory 'artifacts/tool-packages'
       - name: Retain unpromoted AOT binaries and tool packages
         if: needs.scope.outputs.aot == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

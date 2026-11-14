@@ -24,6 +24,10 @@ builds both the matching Native AOT RID package and the top-level pointer
 package, then installs the latter into a fresh private `--tool-path` from the
 local package source. It tests the installed shim and `dotnet binary`.
 Neither script pushes artifacts or updates a global tool installation.
+`scripts/write-artifact-checksums.ps1` writes SHA-256 manifests for generated
+artifact directories. On Linux, provision the `ubuntu:24.04` container image
+separately, then run `scripts/validate-linux-runtime-free.ps1` to verify the
+published executable works without an installed .NET runtime or network.
 
 In .NET 10 and later, a RID-specific Native AOT tool uses **two package
 steps**: `dotnet pack -r <rid>` creates the native subpackage on the matching
@@ -34,9 +38,11 @@ before. See [Microsoft's RID-specific tooling documentation](https://learn.micro
 and [ADR 0002](decisions/0002-dotnet-11-aot-tools.md).
 
 CI retains the unpublished artifacts for review; a successful SDK-equipped
-runner smoke test does **not** establish runtime independence. Consumer
-verification must separately execute the standalone binary where no .NET SDK
-or runtime is installed, on each advertised OS, and test the NuGet tool from a
+runner smoke test does **not** establish runtime independence. The isolated
+Linux container probes this on an Ubuntu 24.04/glibc-compatible image; equivalent
+independent consumer testing is still needed for Windows and macOS before a
+release. Consumer verification must execute the binary without .NET on each
+advertised OS and test the NuGet tool from a
 clean source and tool path. Native AOT still depends on OS ABI and system
 libraries; Linux builds target a compatible glibc baseline.
 

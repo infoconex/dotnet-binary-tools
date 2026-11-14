@@ -65,7 +65,14 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertTrue(result["aot"])
 
     def test_workflow_implementations_are_independently_scoped(self):
-        for changed_file in (".github/workflows/native-aot-smoke.yml", "scripts/validate-aot.ps1", "scripts/validate-tool-package.ps1"):
+        for changed_file in (
+            ".github/workflows/native-aot-smoke.yml",
+            "scripts/validate-aot.ps1",
+            "scripts/validate-tool-package.ps1",
+            "scripts/write-artifact-checksums.ps1",
+            "scripts/validate-linux-runtime-free.ps1",
+            "scripts/evaluate-package-locks.ps1",
+        ):
             with self.subTest(changed_file=changed_file):
                 result = classify([changed_file])
                 self.assertTrue(result["aot"])

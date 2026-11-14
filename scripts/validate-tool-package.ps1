@@ -61,9 +61,12 @@ try {
     & dotnet tool install Infoconex.DotNetBinary.Tools --version $version --tool-path $installationPath --add-source $packageDirectory --ignore-failed-sources
     if ($LASTEXITCODE -ne 0) { throw "Clean local NuGet tool installation failed with exit code $LASTEXITCODE." }
 
-    $shimName = if ($IsWindows) { 'dotnet-binary.exe' } else { 'dotnet-binary' }
-    $shim = Join-Path $installationPath $shimName
-    if (-not (Test-Path -LiteralPath $shim -PathType Leaf)) { throw "Installed tool shim missing: $shim" }
+    Write-Host 'Top-level installed tool paths:'
+    Get-ChildItem -LiteralPath $installationPath -Force | ForEach-Object { Write-Host "  $($_.Name)" }
+    $shimNames = if ($IsWindows) { @('dotnet-binary.exe', 'dotnet-binary.cmd', 'dotnet-binary') } else { @('dotnet-binary') }
+    $shims = @($shimNames | ForEach-Object { Join-Path $installationPath $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+    if ($shims.Count -eq 0) { throw "No installed tool entry point found under $installationPath; checked $($shimNames -join ', ')." }
+    $shim = $shims[0]
     & (Resolve-Path -LiteralPath $shim).Path --help
     if ($LASTEXITCODE -ne 0) { throw "Installed tool help failed with exit code $LASTEXITCODE." }
     & (Resolve-Path -LiteralPath $shim).Path --version
