@@ -23,6 +23,14 @@ also lives in [AGENTS.md](AGENTS.md).
 5. Open a pull request linked to the issue and provide the commands, observed
    results, exact commit SHA, supported operating systems, and remaining gaps.
 
+For decisions involving existing framework, platform, package-manager or tool
+behavior, follow the [evidence-based technical decision
+workflow](docs/engineering/workflow.md#evidence-based-technical-decisions).
+Consult authoritative documentation before choosing an implementation or
+experiment; use tests to establish applicability in this repository. Record
+the remaining uncertainty and any justified deviation in the issue or PR.
+Routine application-code changes do not require a separate research artifact.
+
 ## Architecture and safe inputs
 
 Follow [ARCH-001–ARCH-008](docs/requirements/architecture.md): SOLID,

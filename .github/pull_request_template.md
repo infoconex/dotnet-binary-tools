@@ -19,6 +19,17 @@ Describe the smallest behavior or engineering improvement delivered.
 
 <!-- Link actual runs, logs, counts and exact SHA; never invent execution -->
 
+## Technical guidance and applicability (when relevant)
+
+For platform, framework, dependency or tooling decisions, distinguish:
+
+- **Documented:** authoritative source links and applicable versions or platforms.
+- **Verified:** repository-specific commands, results, OS/RIDs and exact-SHA evidence (link above rather than repeating it).
+- **Experimental:** remaining uncertainty, focused investigation, findings and limitations; or state why no discovery experiment was needed.
+
+Explain any deliberate departure from authoritative guidance. Omit this section
+for routine changes that do not depend on an external technical contract.
+
 ## Architecture, security and release review
 
 - [ ] ARCH-001–ARCH-008 respected, including Domain/Application/Infrastructure/CLI inward-only references.

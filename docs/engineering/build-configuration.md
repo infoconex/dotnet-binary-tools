@@ -79,6 +79,22 @@ A developer restoring from the solution root also gets this root NuGet configura
 
 The CLI uses a single cross-platform restore graph with `linux-x64`, `win-x64`, `osx-x64` **and `osx-arm64`**. The Apple Silicon RID is included for consistent dependency resolution on arm64 macOS development and CI hosts; `ToolPackageRuntimeIdentifiers` remains restricted to the three approved **x64** distribution targets. Declaring restore RIDs does not authorize or validate an arm64 release. The managed, Native AOT and NuGet packaging scripts all use locked restore without passing an individual RID, followed by `--no-restore` build, publish or pack operations with the appropriate target RID.
 
+This decision follows the
+[Microsoft .NET multitargeting guidance](https://learn.microsoft.com/en-us/visualstudio/msbuild/net-sdk-multitargeting#specify-runtime-identifiers):
+plural `RuntimeIdentifiers` prepares multiple restore graphs without making the
+managed build RID-specific. Microsoft's
+[NuGet lock-file guidance](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#locking-dependencies)
+documents locked mode, and its
+[NU1004 reference](https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1004)
+explains inconsistent lock-file inputs. Those are **documented** platform
+contracts, not discoveries unique to this repository. Cross-platform restore,
+Native AOT publishing, tool installation and the need for `osx-arm64` on Apple
+Silicon hosts were **repository-specific verification and investigation**.
+Consult [Issue #2](https://github.com/infoconex/dotnet-binary-tools/issues/2)
+and [PR #3](https://github.com/infoconex/dotnet-binary-tools/pull/3) for
+observed exact-SHA evidence; do not treat this explanation as a claim that
+every current CI gate has passed.
+
 When dependency versions are intentionally changed, regenerate the common lock graph and review its full diff:
 
 ```shell

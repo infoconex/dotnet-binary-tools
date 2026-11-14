@@ -19,6 +19,7 @@ Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities/README.m
 
 ## Development
 
+- For established .NET, NuGet, platform, or third-party behavior, review authoritative guidance before designing an experiment. Record applicable guidance, remaining uncertainty, repository-specific verification, and any justified deviation in the issue/PR; follow the [evidence-based decision workflow](docs/engineering/workflow.md#evidence-based-technical-decisions).
 - Use .NET 11, `DotNetBinary.slnx`, root lowercase `nuget.config`, centralized package versions, Microsoft-aligned `.editorconfig`, and Git-normalized `.gitattributes`.
 - For new functionality, write meaningful failing tests first, implement minimally, then refactor. Ensure independent architecture, component, integration and negative tests as appropriate.
 - Do not claim `inspect`/`scan` or lifecycle, config, JSON, AOT runtime-free or installation acceptance until actual code and observed evidence exist.
