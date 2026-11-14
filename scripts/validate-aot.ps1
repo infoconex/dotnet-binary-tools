@@ -33,8 +33,8 @@ try {
     & dotnet --info
     if ($LASTEXITCODE -ne 0) { throw "dotnet --info failed with exit code $LASTEXITCODE." }
 
-    Write-Host "Restoring dependencies for all RIDs declared by the CLI project (host publish RID: $RuntimeIdentifier)"
-    & dotnet restore $project --configfile nuget.config
+    Write-Host "Restoring locked dependencies for all RIDs declared by the CLI project (host publish RID: $RuntimeIdentifier)"
+    & dotnet restore $project --configfile nuget.config --locked-mode
     if ($LASTEXITCODE -ne 0) { throw "Native AOT restore failed with exit code $LASTEXITCODE." }
 
     Write-Host "Publishing Native AOT binary to $output"

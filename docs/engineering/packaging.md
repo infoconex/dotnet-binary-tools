@@ -19,8 +19,11 @@ pwsh ./scripts/validate-tool-package.ps1 -RuntimeIdentifier linux-x64
 ```
 
 Use `win-x64` on Windows x64 or `osx-x64` on Intel macOS. Both scripts first
-restore the CLI project's declared multi-RID dependency graph without passing
-an individual `-r` to restore. The first script publishes for the host RID
+restore the CLI project's declared multi-RID dependency graph in NuGet
+`--locked-mode`, without passing an individual `-r` to restore. The graph
+includes an extra `osx-arm64` **restore-only** target for Apple Silicon
+development and managed CI; the package manifest still names only the
+approved three x64 targets. The first script publishes for the host RID
 with `--no-restore` and smoke-tests `--help`/`--version`. The second builds
 both the matching Native AOT RID package and the top-level pointer package
 without restoring again, then installs the latter into a fresh private `--tool-path` from the

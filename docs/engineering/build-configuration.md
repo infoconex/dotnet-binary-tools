@@ -13,6 +13,7 @@ Modern .NET has several optional repository-level hooks; use the ones that solve
 | `Directory.Build.props` | MSBuild, early import | Shared target framework, nullable analysis, warnings-as-errors, build determinism and NuGet auditing |
 | `Directory.Build.targets` | MSBuild, late import | XML documentation on production projects only, after test-project properties are known |
 | `Directory.Packages.props` | NuGet Central Package Management | Enables `ManagePackageVersionsCentrally` and pins all direct package versions |
+| `src/**/packages.lock.json`, `tests/**/packages.lock.json` | NuGet locked restore | Persist each project's resolved direct and transitive dependencies and their content hashes; enforce repeatable restores in CI |
 | `nuget.config` | NuGet restore/audit | Explicit approved feeds, clears inherited package sources, disabled-source settings, source mappings and audit sources |
 
 ## Git line-ending policy
@@ -50,9 +51,9 @@ A change-detection failure fails CI instead of silently skipping checks.
 | Specific workflow/validator changes | Only if documentation validator changes | As relevant to the changed workflow | As relevant to the changed workflow | Applicable validator |
 | Manual dispatch | Yes | Yes | Yes | All |
 
-The two .NET workflows use the existing pinned `actions/setup-dotnet` action's NuGet **global-packages** cache. Keys hash `Directory.Packages.props`, shared build properties/targets, `global.json`, `nuget.config` and all project files. The Native AOT workflow also includes its workflow definition in its key so its RID-specific dependency cache is distinct from the managed cache. Host operating systems are separated by the action's cache-key calculation.
+The two .NET workflows use the existing pinned `actions/setup-dotnet` action's NuGet **global-packages** cache. Keys hash `Directory.Packages.props`, shared build properties/targets, `global.json`, `nuget.config`, project files and committed `packages.lock.json` files. The Native AOT workflow also includes its workflow definition in its key so its RID-specific dependency cache is distinct from the managed cache. Host operating systems are separated by the action's cache-key calculation.
 
-No new lock-file policy is introduced just for caching. Restores still execute and perform the configured NuGet audit; cached packages are a download optimization, **not** proof of dependency consistency. We do not cache `bin`, `obj`, compilation outputs, toolchains or entire build environments. AOT compiler prerequisites are verified on runners and installed only if missing.
+The committed lock files, not the cache, enforce dependency consistency. Restores still execute and perform the configured NuGet audit; cached packages are a download optimization. We do not cache `bin`, `obj`, compilation outputs, toolchains or entire build environments. AOT compiler prerequisites are verified on runners and installed only if missing.
 
 For a release candidate or any audit requiring full verification, use manual workflow dispatch to force the complete documentation, managed build/NUnit and Native AOT checks on the exact selected commit; do not treat an intentionally skipped job as evidence of execution.
 
@@ -63,7 +64,7 @@ The root `nuget.config` clears inherited settings in four sections: `packageSour
 This matters when a developer has globally disabled nuget.org or configured unrelated enterprise feeds and source mapping. Without clearing each relevant section, user-specific settings can influence repository restores. In CI, restore explicitly supplies the configuration:
 
 ```shell
-dotnet restore DotNetBinary.slnx --configfile nuget.config --force-evaluate
+dotnet restore DotNetBinary.slnx --configfile nuget.config --locked-mode
 ```
 
 A developer restoring from the solution root also gets this root NuGet configuration through standard NuGet discovery; explicit `--configfile` makes the source set unambiguous.
@@ -71,6 +72,21 @@ A developer restoring from the solution root also gets this root NuGet configura
 ## Central Package Management
 
 `ManagePackageVersionsCentrally` is declared in `Directory.Packages.props` alongside the `PackageVersion` items. Project files use versionless `PackageReference` declarations. `Directory.Build.props` does not duplicate the CPM activation setting.
+
+## Committed NuGet lock files
+
+`Directory.Build.props` enables `RestorePackagesWithLockFile` for solution projects. All six internal projects have checked-in `packages.lock.json` files. They protect the repository's own builds and tests; these library-project locks do **not** constrain a future external consumer of the libraries, whose top-level application resolves its own dependency graph.
+
+The CLI uses a single cross-platform restore graph with `linux-x64`, `win-x64`, `osx-x64` **and `osx-arm64`**. The Apple Silicon RID is included for consistent dependency resolution on arm64 macOS development and CI hosts; `ToolPackageRuntimeIdentifiers` remains restricted to the three approved **x64** distribution targets. Declaring restore RIDs does not authorize or validate an arm64 release. The managed, Native AOT and NuGet packaging scripts all use locked restore without passing an individual RID, followed by `--no-restore` build, publish or pack operations with the appropriate target RID.
+
+When dependency versions are intentionally changed, regenerate the common lock graph and review its full diff:
+
+```shell
+pwsh ./scripts/update-package-locks.ps1
+git diff -- src tests
+```
+
+Only this explicit update path uses NuGet's `--force-evaluate`; routine local validation and CI use `--locked-mode` and reject drift. The Linux CI negative control runs [`evaluate-package-locks.ps1`](../../scripts/evaluate-package-locks.ps1) against an isolated copy, verifies a changed direct NuGet version fails with `NU1004`, then verifies the original locks again. Avoid ad hoc `dotnet restore -r <RID> --locked-mode`: a single-RID restore constructs a different graph than the repository's intentionally common multi-RID restore.
 
 ## Optional features not enabled
 
@@ -80,17 +96,6 @@ A developer restoring from the solution root also gets this root NuGet configura
 - `.config/dotnet-tools.json`: not warranted currently. The validation stack
   uses the installed .NET SDK's commands, PowerShell and Python; there is no
   additional repository-scoped `dotnet tool` requiring a pinned version.
-- `packages.lock.json`: NuGet lock files were evaluated in an isolated working
-  copy, including a controlled central-version mismatch. Ordinary solution
-  locked restore succeeds and rejects package drift, but the subsequent
-  `linux-x64` locked restore rejects that same lock graph with `NU1004` because
-  its explicit RID differs from the solution restore graph. A RID-specific
-  lock regeneration is necessary; simply committing solution-generated locks
-  and enabling locked mode would break AOT CI. Do not commit lock files until
-  a single, maintainable strategy supports all three RIDs, solution restore,
-  managed CI and `--force-evaluate` dependency updates. The repeatable
-  [lock-file evaluation](../../scripts/evaluate-package-locks.ps1) exercises
-  the decision against current packages without modifying tracked source.
 
 Adding files without a requirement would increase maintenance and the risk of settings overriding one another. The present baseline is centralized without unnecessary duplication.
 
@@ -100,3 +105,5 @@ Adding files without a requirement would increase maintenance and the risk of se
 - [Microsoft: NuGet Central Package Management](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management)
 - [Microsoft: nuget.config reference](https://learn.microsoft.com/en-us/nuget/reference/nuget-config-file)
 - [Microsoft: lock files and SDK selection](https://learn.microsoft.com/en-us/dotnet/core/install/upgrade)
+- [Microsoft: NuGet lock-file behavior and locked mode](https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#locking-dependencies)
+- [Microsoft: RID-specific .NET tools](https://learn.microsoft.com/en-us/dotnet/core/tools/rid-specific-tools)

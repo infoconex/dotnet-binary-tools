@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net11.0": {
+      "infoconex.dotnetbinary.application": {
+        "type": "Project",
+        "dependencies": {
+          "Infoconex.DotNetBinary.Domain": "[1.0.0, )"
+        }
+      },
+      "infoconex.dotnetbinary.domain": {
+        "type": "Project"
+      }
+    }
+  }
+}

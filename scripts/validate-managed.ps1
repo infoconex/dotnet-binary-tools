@@ -22,8 +22,8 @@ try {
     & dotnet --info
     if ($LASTEXITCODE -ne 0) { throw "dotnet --info failed with exit code $LASTEXITCODE." }
 
-    Write-Host 'Restoring solution with NuGet audit and dependency reevaluation'
-    & dotnet restore DotNetBinary.slnx --configfile nuget.config --force-evaluate
+    Write-Host 'Restoring solution with NuGet audit and committed dependency locks'
+    & dotnet restore DotNetBinary.slnx --configfile nuget.config --locked-mode
     if ($LASTEXITCODE -ne 0) { throw "Managed restore failed with exit code $LASTEXITCODE." }
 
     Write-Host 'Building Release configuration'

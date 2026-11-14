@@ -84,7 +84,10 @@ python3 scripts/coverage_report.py --input artifacts/coverage/raw --output artif
 
 Omit `-VerifyStyle` to match Windows/macOS CI checks. The managed script records
 the actual SDK, OS, PowerShell version and commit, and fails on any unsuccessful
-restore/build/NUnit/style command. The format-style check runs on Linux CI. Managed
+locked restore/build/NUnit/style command. It verifies the committed NuGet
+lock files; use `pwsh ./scripts/update-package-locks.ps1` only when
+intentionally changing package versions, and review the resulting lock-file
+diff. The format-style check runs on Linux CI. Managed
 restore/build/NUnit are matrixed over `ubuntu-latest`, `windows-latest`, and
 `macos-latest`. Successful local execution on one OS cannot establish the
 other two OS results. The optional coverage script runs NUnit again after a
@@ -111,13 +114,20 @@ The script rejects a mismatched host or architecture and executes the resulting
 checking both exit codes. CI checks only these scaffold commands; this is **not** proof of full inspection,
 runtime-free clean installation, or release readiness.
 
+The Native AOT and NuGet tool packaging scripts restore the **common locked
+dependency graph** first, then publish or pack with their explicit x64 RID and
+`--no-restore`. An `osx-arm64` restore target is present so Apple Silicon
+managed hosts resolve the same lock; no ARM64 artifact is tested or shipped.
+Linux CI also runs an isolated negative test that changes one central package
+version and verifies locked restore rejects it (`NU1004`).
+
 ## What CI does and does not run
 
 | Workflow | Purpose | Current change behavior |
 | --- | --- | --- |
 | [Validate engineering documentation](../../.github/workflows/validate-engineering.yml) | Python unit tests, line endings, docs, architecture, and test metadata | Runs Python unit tests on every invocation; relevant validators are selected by changed paths. |
 | [.NET 11 build, test and style](../../.github/workflows/build-test.yml) | Managed restore/audit, build, NUnit and Microsoft Cobertura coverage across three OSes; Linux style | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
-| [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | RID-specific restore, publish, help and version on three OSes | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
+| [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | Common locked restore, RID-specific publish, help, version, NuGet tool packaging and installation on three OSes | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
 | [Dependency review](../../.github/workflows/dependency-review.yml) | GitHub dependency-graph diff and high/critical vulnerability gate | Runs on pull requests; requires GitHub's dependency graph and advisory data, so there is no equivalent entirely local check. |
 
 All workflows trigger on PRs targeting `main`, pushes to `main`, and manual

@@ -64,6 +64,8 @@ jobs:
             nuget.config
             src/**/*.csproj
             tests/**/*.csproj
+            src/**/packages.lock.json
+            tests/**/packages.lock.json
       - name: Validate managed solution and NUnit
         if: needs.scope.outputs.managed == 'true'
         shell: pwsh
@@ -103,17 +105,3 @@ jobs:
         run: |
           Get-Content 'artifacts/coverage/report/summary.md' | Add-Content $env:GITHUB_STEP_SUMMARY
           Add-Content $env:GITHUB_STEP_SUMMARY "[Download complete HTML report]($env:COVERAGE_ARTIFACT_URL) — open report/index.html from the ZIP."
-      - name: Generate candidate common-graph NuGet lock files
-        if: needs.scope.outputs.managed == 'true'
-        shell: pwsh
-        run: ./scripts/update-package-locks.ps1
-      - name: Retain candidate lock files for three-OS comparison
-        if: needs.scope.outputs.managed == 'true'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: candidate-locks-${{ matrix.os }}
-          path: |
-            src/**/packages.lock.json
-            tests/**/packages.lock.json
-          if-no-files-found: error
-          retention-days: 14

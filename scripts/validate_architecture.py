@@ -41,6 +41,21 @@ def property_values(root: ET.Element, name: str) -> list[str]:
     return [n.text.strip() for n in root.findall(".//" + name) if n.text]
 
 
+def validate_cli_rids(root: ET.Element) -> list[str]:
+    """Protect x64 distribution while covering arm64 macOS restore hosts."""
+    issues = []
+    expected = {
+        "RuntimeIdentifiers": {"win-x64", "linux-x64", "osx-x64", "osx-arm64"},
+        "ToolPackageRuntimeIdentifiers": {"win-x64", "linux-x64", "osx-x64"},
+    }
+    for key, required in expected.items():
+        values = property_values(root, key)
+        rids = values[0].split(";") if len(values) == 1 else []
+        if len(rids) != len(required) or set(rids) != required:
+            issues.append(f"CLI: {key} must list {', '.join(sorted(required))}")
+    return issues
+
+
 def check_graph() -> None:
     names = {path.name: label for label, path in PROJECTS.items()}
     solution = parse(ROOT / "DotNetBinary.slnx")
@@ -78,10 +93,7 @@ def check_graph() -> None:
             }.items():
                 if property_values(root, key) != [expected]:
                     errors.append(f"CLI: {key} must be {expected}")
-            for key in ("RuntimeIdentifiers", "ToolPackageRuntimeIdentifiers"):
-                values = property_values(root, key)
-                if len(values) != 1 or set(values[0].split(";")) != {"win-x64", "linux-x64", "osx-x64"}:
-                    errors.append(f"CLI: {key} must list three x64 RIDs")
+            errors.extend(validate_cli_rids(root))
     known = {p.resolve() for p in PROJECTS.values()}
     unexpected = sorted(
         p.relative_to(ROOT).as_posix()

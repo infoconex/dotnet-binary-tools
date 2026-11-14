@@ -41,8 +41,8 @@ try {
     $version = ([string]($versionOutput | Select-Object -Last 1)).Trim()
     if ([string]::IsNullOrWhiteSpace($version)) { throw 'Package version was empty.' }
 
-    Write-Host 'Restoring all declared tool RIDs before RID-specific packaging'
-    & dotnet restore $project --configfile nuget.config --force-evaluate
+    Write-Host 'Restoring committed multi-RID dependency locks before RID-specific packaging'
+    & dotnet restore $project --configfile nuget.config --locked-mode
     if ($LASTEXITCODE -ne 0) { throw "Multi-RID tool restore failed with exit code $LASTEXITCODE." }
     & dotnet pack $project --configuration Release -r $RuntimeIdentifier --no-restore --output $packageDirectory
     if ($LASTEXITCODE -ne 0) { throw "RID-specific AOT tool pack failed with exit code $LASTEXITCODE." }

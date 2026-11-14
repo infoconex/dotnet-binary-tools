@@ -15,7 +15,7 @@ Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities/README.m
 - Domain contains pure invariants, Application owns use cases and consumer ports, Infrastructure implements ports, and CLI is an outer entry point and composition root.
 - Do not put PE parsing, filesystem I/O, runtime config readers, network data sources or report persistence in Domain. Do not couple Application to concrete outer adapters.
 - Never execute, load or invoke inspected candidate assemblies. Keep declared targets, configured runtime requirements and observed runtimes distinct.
-- Native AOT standalone binaries and the NuGet tool are v0.1 distribution goals for Windows/Linux/macOS **x64**; ARM64 is deferred.
+- Native AOT standalone binaries and the NuGet tool are v0.1 distribution goals for Windows/Linux/macOS **x64**; ARM64 distribution is deferred. The CLI's `osx-arm64` restore graph entry is for Apple Silicon dependency resolution only, not a supported tool-package target.
 
 ## Development
 

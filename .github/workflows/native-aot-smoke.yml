@@ -70,6 +70,8 @@ jobs:
             nuget.config
             src/**/*.csproj
             tests/**/*.csproj
+            src/**/packages.lock.json
+            tests/**/packages.lock.json
             .github/workflows/native-aot-smoke.yml
       - name: Verify Linux AOT compiler prerequisites
         if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
@@ -114,7 +116,7 @@ jobs:
         if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
         shell: pwsh
         run: ./scripts/validate-linux-runtime-free.ps1
-      - name: Evaluate isolated NuGet lock files and RID-specific AOT restore
+      - name: Verify committed NuGet locks reject dependency drift
         if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
         shell: pwsh
         run: ./scripts/evaluate-package-locks.ps1
