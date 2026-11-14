@@ -76,6 +76,18 @@ jobs:
       - name: Execute NUnit suites
         if: needs.scope.outputs.managed == 'true'
         run: dotnet test DotNetBinary.slnx --configuration Release --no-build --no-restore --logger trx
+      - name: Collect cross-platform NUnit coverage
+        if: needs.scope.outputs.managed == 'true'
+        shell: pwsh
+        run: ./scripts/collect-coverage.ps1
+      - name: Publish raw coverage results
+        if: always() && needs.scope.outputs.managed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-${{ matrix.os }}
+          path: artifacts/coverage/raw/
+          if-no-files-found: error
+          retention-days: 14
       - name: Check enforced Microsoft C# naming
         if: needs.scope.outputs.managed == 'true' && runner.os == 'Linux'
         run: dotnet format style DotNetBinary.slnx --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal

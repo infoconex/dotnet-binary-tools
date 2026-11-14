@@ -45,6 +45,13 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertTrue(result["aot"])
         self.assertTrue(result["architecture"])
 
+    def test_coverage_script_and_settings_trigger_managed_validation(self):
+        for changed_file in ("scripts/collect-coverage.ps1", "coverage.runsettings"):
+            with self.subTest(changed_file=changed_file):
+                result = classify([changed_file])
+                self.assertTrue(result["managed"])
+                self.assertFalse(result["aot"])
+
     def test_combined_docs_and_source_runs_both(self):
         result = classify(["docs/README.md", "src/Infoconex.DotNetBinary.Cli/Program.cs"])
         self.assertTrue(result["documentation"])

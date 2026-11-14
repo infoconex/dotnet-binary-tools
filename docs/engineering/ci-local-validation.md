@@ -80,12 +80,18 @@ dotnet restore DotNetBinary.slnx --configfile nuget.config --force-evaluate
 dotnet build DotNetBinary.slnx --configuration Release --no-restore
 dotnet test DotNetBinary.slnx --configuration Release --no-build --no-restore --logger trx
 dotnet format style DotNetBinary.slnx --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal
+pwsh ./scripts/collect-coverage.ps1
 ```
 
 The format-style check runs on Linux in the current workflow. Managed
 restore/build/NUnit are matrixed over `ubuntu-latest`, `windows-latest`, and
 `macos-latest`. Successful local execution on one OS cannot establish the
-other two OS results.
+other two OS results. The optional coverage script runs NUnit again after a
+Release build using Microsoft's built-in collector and the shared
+[coverage settings](../../coverage.runsettings). It writes Cobertura XML and
+TRX files under ignored `artifacts/coverage/raw`, with separate CI artifacts
+per OS. A complete HTML and method-level report is still being evaluated under
+Issue #2.
 
 ### Native AOT CLI smoke test
 
@@ -108,7 +114,7 @@ runtime-free clean installation, or release readiness.
 | Workflow | Purpose | Current change behavior |
 | --- | --- | --- |
 | [Validate engineering documentation](../../.github/workflows/validate-engineering.yml) | Python unit tests, line endings, docs, architecture, and test metadata | Runs Python unit tests on every invocation; relevant validators are selected by changed paths. |
-| [.NET 11 build, test and style](../../.github/workflows/build-test.yml) | Managed restore/audit, build, NUnit across three OSes; Linux style | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
+| [.NET 11 build, test and style](../../.github/workflows/build-test.yml) | Managed restore/audit, build, NUnit and Microsoft Cobertura coverage across three OSes; Linux style | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
 | [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | RID-specific restore, publish, help and version on three OSes | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
 | [Dependency review](../../.github/workflows/dependency-review.yml) | GitHub dependency-graph diff and high/critical vulnerability gate | Runs on pull requests; requires GitHub's dependency graph and advisory data, so there is no equivalent entirely local check. |
 
