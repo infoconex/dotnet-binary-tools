@@ -34,7 +34,6 @@ jobs:
         run: python3 scripts/ci_change_scope.py
   aot:
     needs: scope
-    if: needs.scope.outputs.aot == 'true'
     name: Native AOT CLI (${{ matrix.rid }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
@@ -49,11 +48,16 @@ jobs:
           - os: macos-15-intel
             rid: osx-x64
     steps:
+      - name: Note intentionally omitted Native AOT validation
+        if: needs.scope.outputs.aot != 'true'
+        run: echo "No Native AOT inputs changed; validation was not executed."
       - name: Checkout
+        if: needs.scope.outputs.aot == 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - name: Install .NET 11 SDK
+        if: needs.scope.outputs.aot == 'true'
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '11.0.x'
@@ -68,7 +72,7 @@ jobs:
             tests/**/*.csproj
             .github/workflows/native-aot-smoke.yml
       - name: Verify Linux AOT compiler prerequisites
-        if: runner.os == 'Linux'
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
@@ -95,23 +99,39 @@ jobs:
           command -v clang
           clang --version
           test -f /usr/include/zlib.h
-      - name: Restore for native RID
+      - name: Validate Native AOT publication and CLI smoke behavior
+        if: needs.scope.outputs.aot == 'true'
+        shell: pwsh
+        run: ./scripts/validate-aot.ps1 -RuntimeIdentifier '${{ matrix.rid }}'
+      - name: Verify Native AOT tool packages and isolated installation
+        if: needs.scope.outputs.aot == 'true'
+        shell: pwsh
+        run: ./scripts/validate-tool-package.ps1 -RuntimeIdentifier '${{ matrix.rid }}'
+      - name: Provision SDK-free Linux consumer image
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
+        run: docker pull ubuntu:24.04
+      - name: Validate Linux runtime-independent consumer
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
+        shell: pwsh
+        run: ./scripts/validate-linux-runtime-free.ps1
+      - name: Evaluate isolated NuGet lock files and RID-specific AOT restore
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
+        shell: pwsh
+        run: ./scripts/evaluate-package-locks.ps1
+      - name: Record SHA-256 artifact checksums
+        if: needs.scope.outputs.aot == 'true'
         shell: pwsh
         run: |
-          dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -r ${{ matrix.rid }} --configfile nuget.config
-          if ($LASTEXITCODE -ne 0) { throw "AOT restore failed" }
-      - name: Publish native executable
-        shell: pwsh
-        run: |
-          dotnet publish src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -c Release -r ${{ matrix.rid }} --configfile nuget.config --no-restore -p:PublishAot=true -o artifacts/aot/${{ matrix.rid }}
-          if ($LASTEXITCODE -ne 0) { throw "AOT publish failed" }
-      - name: Run native executable's help command
-        shell: pwsh
-        run: |
-          $name = if ($IsWindows) { "dotnet-binary.exe" } else { "dotnet-binary" }
-          $binary = Join-Path "artifacts/aot/${{ matrix.rid }}" $name
-          if (-not (Test-Path $binary)) { throw "Native executable missing: $binary" }
-          & (Resolve-Path $binary).Path --help
-          if ($LASTEXITCODE -ne 0) { throw "Native help smoke test failed" }
-          & (Resolve-Path $binary).Path --version
-          if ($LASTEXITCODE -ne 0) { throw "Native version smoke test failed" }
+          ./scripts/write-artifact-checksums.ps1 -ArtifactDirectory 'artifacts/aot/${{ matrix.rid }}'
+          ./scripts/write-artifact-checksums.ps1 -ArtifactDirectory 'artifacts/tool-packages'
+      - name: Retain unpromoted AOT binaries and tool packages
+        if: needs.scope.outputs.aot == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pre-release-${{ matrix.rid }}
+          path: |
+            artifacts/aot/${{ matrix.rid }}/
+            artifacts/tool-packages/*.nupkg
+            artifacts/tool-packages/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

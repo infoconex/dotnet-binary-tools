@@ -1,6 +1,6 @@
 # Repository instructions for human and AI contributions
 
-Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities/README.md), and [mandatory architecture](docs/requirements/architecture.md) before changes.
+Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities/README.md), [mandatory architecture](docs/requirements/architecture.md), and [contributing guidance](CONTRIBUTING.md) before changes.
 
 ## Governance
 
@@ -22,6 +22,9 @@ Read [docs/README.md](docs/README.md), [capabilities](docs/capabilities/README.m
 - Use .NET 11, `DotNetBinary.slnx`, root lowercase `nuget.config`, centralized package versions, Microsoft-aligned `.editorconfig`, and Git-normalized `.gitattributes`.
 - For new functionality, write meaningful failing tests first, implement minimally, then refactor. Ensure independent architecture, component, integration and negative tests as appropriate.
 - Do not claim `inspect`/`scan` or lifecycle, config, JSON, AOT runtime-free or installation acceptance until actual code and observed evidence exist.
+- Follow the [CI/local validation policy](docs/engineering/ci-local-validation.md): repository-controlled scripts own reusable validations; GitHub Actions owns orchestration and provisioning. Use `scripts/validate-managed.ps1` and `scripts/validate-aot.ps1` for cross-platform managed/AOT validation. Keep provisioning separate from validation and report actual environment/tool versions.
+- Collect NUnit coverage with `scripts/collect-coverage.ps1` after a Release build. The shared [coverage.runsettings](coverage.runsettings) selects production assemblies; do not treat absent or uninstrumented assemblies as fully covered.
 - Use `python3 scripts/validate_docs.py`, `python3 scripts/validate_architecture.py`, `python3 scripts/validate_test_metadata.py`, `python3 scripts/validate_line_endings.py` in addition to build/NUnit/Native AOT checks.
 - CI uses `scripts/ci_change_scope.py` to gate documentation checks and expensive managed/Native AOT builds by affected paths. Test the classifier with `python3 -m unittest discover -s scripts/tests`; manual workflow dispatch runs the full matrix. NuGet global-package caching never replaces restore or the dependency audit.
 - Require accurate public XML documentation, safe error messages, non-sensitive synthetic fixtures, versioned JSON contracts and precise PR verification claims.
+- Treat suspected vulnerabilities according to [SECURITY.md](SECURITY.md); never expose candidate binaries' secrets or private vulnerability details in public issues or CI logs.

@@ -45,6 +45,19 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertTrue(result["aot"])
         self.assertTrue(result["architecture"])
 
+    def test_coverage_script_and_settings_trigger_managed_validation(self):
+        for changed_file in (
+            "scripts/collect-coverage.ps1",
+            "scripts/validate-managed.ps1",
+            "scripts/coverage_report.py",
+            "scripts/tests/test_coverage_report.py",
+            "coverage.runsettings",
+        ):
+            with self.subTest(changed_file=changed_file):
+                result = classify([changed_file])
+                self.assertTrue(result["managed"])
+                self.assertFalse(result["aot"])
+
     def test_combined_docs_and_source_runs_both(self):
         result = classify(["docs/README.md", "src/Infoconex.DotNetBinary.Cli/Program.cs"])
         self.assertTrue(result["documentation"])
@@ -52,10 +65,19 @@ class ChangeScopeTests(unittest.TestCase):
         self.assertTrue(result["aot"])
 
     def test_workflow_implementations_are_independently_scoped(self):
-        result = classify([".github/workflows/native-aot-smoke.yml"])
-        self.assertTrue(result["aot"])
-        self.assertFalse(result["managed"])
-        self.assertFalse(result["documentation"])
+        for changed_file in (
+            ".github/workflows/native-aot-smoke.yml",
+            "scripts/validate-aot.ps1",
+            "scripts/validate-tool-package.ps1",
+            "scripts/write-artifact-checksums.ps1",
+            "scripts/validate-linux-runtime-free.ps1",
+            "scripts/evaluate-package-locks.ps1",
+        ):
+            with self.subTest(changed_file=changed_file):
+                result = classify([changed_file])
+                self.assertTrue(result["aot"])
+                self.assertFalse(result["managed"])
+                self.assertFalse(result["documentation"])
 
     def test_change_detection_script_change_runs_all(self):
         result = classify(["scripts/ci_change_scope.py"])
