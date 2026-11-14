@@ -15,3 +15,7 @@ coverage/
 *.coveragexml
 # Native AOT intermediate files are under obj/; keep publication outputs untracked
 artifacts/
+
+# Python validation tooling
+__pycache__/
+*.py[cod]
