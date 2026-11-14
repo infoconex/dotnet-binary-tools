@@ -5,6 +5,8 @@
     <RootNamespace>Infoconex.DotNetBinary.Cli</RootNamespace>
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- No-RID restores must not add the host RID to the declared cross-platform graph. -->
+    <UseCurrentRuntimeIdentifier>false</UseCurrentRuntimeIdentifier>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-binary</ToolCommandName>
     <PackageId>Infoconex.DotNetBinary.Tools</PackageId>
