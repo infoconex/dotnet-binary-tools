@@ -9,7 +9,7 @@
           <CodeCoverage>
             <ModulePaths>
               <Include>
-                <ModulePath>.*Infoconex\.DotNetBinary\.(Domain|Application|Infrastructure|Cli)\.dll$</ModulePath>
+                <ModulePath>.*(Infoconex\.DotNetBinary\.(Domain|Application|Infrastructure)|dotnet-binary)\.dll$</ModulePath>
               </Include>
             </ModulePaths>
           </CodeCoverage>

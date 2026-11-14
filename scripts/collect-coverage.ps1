@@ -30,7 +30,7 @@ try {
         throw "Coverage test run failed with exit code $LASTEXITCODE."
     }
 
-    $reports = @(Get-ChildItem -Path $output -Recurse -File -Filter 'coverage.cobertura.xml')
+    $reports = @(Get-ChildItem -Path $output -Recurse -File -Filter '*.cobertura.xml')
     if ($reports.Count -eq 0) {
         throw "The coverage collector did not produce a Cobertura report under $output."
     }
