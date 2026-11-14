@@ -5,8 +5,6 @@
     <RootNamespace>Infoconex.DotNetBinary.Cli</RootNamespace>
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
-    <!-- No-RID restores must not add the host RID to the declared cross-platform graph. -->
-    <UseCurrentRuntimeIdentifier>false</UseCurrentRuntimeIdentifier>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-binary</ToolCommandName>
     <PackageId>Infoconex.DotNetBinary.Tools</PackageId>
@@ -19,7 +17,8 @@
     <RepositoryUrl>https://github.com/infoconex/dotnet-binary-tools</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>dotnet;cli;tool;framework;assembly;metadata;nativeaot</PackageTags>
-    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
+    <!-- Restore includes Apple Silicon hosts; only the x64 RIDs below are packaged. -->
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
     <ToolPackageRuntimeIdentifiers>win-x64;linux-x64;osx-x64</ToolPackageRuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
