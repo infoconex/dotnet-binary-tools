@@ -41,13 +41,12 @@ try {
     $version = ([string]($versionOutput | Select-Object -Last 1)).Trim()
     if ([string]::IsNullOrWhiteSpace($version)) { throw 'Package version was empty.' }
 
-    & dotnet restore $project -r $RuntimeIdentifier --configfile nuget.config --force-evaluate
-    if ($LASTEXITCODE -ne 0) { throw "Native tool restore failed with exit code $LASTEXITCODE." }
+    Write-Host 'Restoring all declared tool RIDs before RID-specific packaging'
+    & dotnet restore $project --configfile nuget.config --force-evaluate
+    if ($LASTEXITCODE -ne 0) { throw "Multi-RID tool restore failed with exit code $LASTEXITCODE." }
     & dotnet pack $project --configuration Release -r $RuntimeIdentifier --no-restore --output $packageDirectory
     if ($LASTEXITCODE -ne 0) { throw "RID-specific AOT tool pack failed with exit code $LASTEXITCODE." }
 
-    & dotnet restore $project --configfile nuget.config --force-evaluate
-    if ($LASTEXITCODE -ne 0) { throw "Pointer-package restore failed with exit code $LASTEXITCODE." }
     & dotnet pack $project --configuration Release --no-restore --output $packageDirectory
     if ($LASTEXITCODE -ne 0) { throw "Top-level tool pack failed with exit code $LASTEXITCODE." }
 

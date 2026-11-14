@@ -18,10 +18,12 @@ pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier linux-x64
 pwsh ./scripts/validate-tool-package.ps1 -RuntimeIdentifier linux-x64
 ```
 
-Use `win-x64` on Windows x64 or `osx-x64` on Intel macOS. The first script
-publishes an AOT executable and smoke-tests `--help`/`--version`. The second
-builds both the matching Native AOT RID package and the top-level pointer
-package, then installs the latter into a fresh private `--tool-path` from the
+Use `win-x64` on Windows x64 or `osx-x64` on Intel macOS. Both scripts first
+restore the CLI project's declared multi-RID dependency graph without passing
+an individual `-r` to restore. The first script publishes for the host RID
+with `--no-restore` and smoke-tests `--help`/`--version`. The second builds
+both the matching Native AOT RID package and the top-level pointer package
+without restoring again, then installs the latter into a fresh private `--tool-path` from the
 local package source. It tests the installed shim (a `.cmd` launcher on the
 observed Windows runner) and `dotnet binary`.
 Neither script pushes artifacts or updates a global tool installation.
