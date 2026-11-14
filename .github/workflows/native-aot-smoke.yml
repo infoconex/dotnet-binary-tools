@@ -34,7 +34,6 @@ jobs:
         run: python3 scripts/ci_change_scope.py
   aot:
     needs: scope
-    if: needs.scope.outputs.aot == 'true'
     name: Native AOT CLI (${{ matrix.rid }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
@@ -49,11 +48,16 @@ jobs:
           - os: macos-15-intel
             rid: osx-x64
     steps:
+      - name: Note intentionally omitted Native AOT validation
+        if: needs.scope.outputs.aot != 'true'
+        run: echo "No Native AOT inputs changed; validation was not executed."
       - name: Checkout
+        if: needs.scope.outputs.aot == 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - name: Install .NET 11 SDK
+        if: needs.scope.outputs.aot == 'true'
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '11.0.x'
@@ -68,7 +72,7 @@ jobs:
             tests/**/*.csproj
             .github/workflows/native-aot-smoke.yml
       - name: Verify Linux AOT compiler prerequisites
-        if: runner.os == 'Linux'
+        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
@@ -96,16 +100,19 @@ jobs:
           clang --version
           test -f /usr/include/zlib.h
       - name: Restore for native RID
+        if: needs.scope.outputs.aot == 'true'
         shell: pwsh
         run: |
           dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -r ${{ matrix.rid }} --configfile nuget.config
           if ($LASTEXITCODE -ne 0) { throw "AOT restore failed" }
       - name: Publish native executable
+        if: needs.scope.outputs.aot == 'true'
         shell: pwsh
         run: |
           dotnet publish src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj -c Release -r ${{ matrix.rid }} --configfile nuget.config --no-restore -p:PublishAot=true -o artifacts/aot/${{ matrix.rid }}
           if ($LASTEXITCODE -ne 0) { throw "AOT publish failed" }
       - name: Run native executable's help command
+        if: needs.scope.outputs.aot == 'true'
         shell: pwsh
         run: |
           $name = if ($IsWindows) { "dotnet-binary.exe" } else { "dotnet-binary" }

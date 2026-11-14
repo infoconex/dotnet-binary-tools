@@ -34,7 +34,6 @@ jobs:
         run: python3 scripts/ci_change_scope.py
   build-test:
     needs: scope
-    if: needs.scope.outputs.managed == 'true'
     name: Managed build and NUnit (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
@@ -43,11 +42,16 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
+      - name: Note intentionally omitted managed validation
+        if: needs.scope.outputs.managed != 'true'
+        run: echo "No managed inputs changed; validation was not executed."
       - name: Checkout
+        if: needs.scope.outputs.managed == 'true'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - name: Install .NET 11 SDK
+        if: needs.scope.outputs.managed == 'true'
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: '11.0.x'
@@ -61,13 +65,17 @@ jobs:
             src/**/*.csproj
             tests/**/*.csproj
       - name: Record SDK environment
+        if: needs.scope.outputs.managed == 'true'
         run: dotnet --info
       - name: Restore and NuGet audit
+        if: needs.scope.outputs.managed == 'true'
         run: dotnet restore DotNetBinary.slnx --configfile nuget.config --force-evaluate
       - name: Build Release
+        if: needs.scope.outputs.managed == 'true'
         run: dotnet build DotNetBinary.slnx --configuration Release --no-restore
       - name: Execute NUnit suites
+        if: needs.scope.outputs.managed == 'true'
         run: dotnet test DotNetBinary.slnx --configuration Release --no-build --no-restore --logger trx
       - name: Check enforced Microsoft C# naming
-        if: runner.os == 'Linux'
+        if: needs.scope.outputs.managed == 'true' && runner.os == 'Linux'
         run: dotnet format style DotNetBinary.slnx --no-restore --verify-no-changes --diagnostics IDE1006 --severity error --verbosity normal

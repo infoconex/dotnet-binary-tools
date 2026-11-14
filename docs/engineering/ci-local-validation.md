@@ -108,13 +108,16 @@ runtime-free clean installation, or release readiness.
 | Workflow | Purpose | Current change behavior |
 | --- | --- | --- |
 | [Validate engineering documentation](../../.github/workflows/validate-engineering.yml) | Python unit tests, line endings, docs, architecture, and test metadata | Runs Python unit tests on every invocation; relevant validators are selected by changed paths. |
-| [.NET 11 build, test and style](../../.github/workflows/build-test.yml) | Managed restore/audit, build, NUnit across three OSes; Linux style | The managed matrix is skipped for documentation-only changes. |
-| [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | RID-specific restore, publish, help and version on three OSes | The AOT matrix is skipped for documentation-only changes. |
+| [.NET 11 build, test and style](../../.github/workflows/build-test.yml) | Managed restore/audit, build, NUnit across three OSes; Linux style | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
+| [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | RID-specific restore, publish, help and version on three OSes | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
 
 All workflows trigger on PRs targeting `main`, pushes to `main`, and manual
 dispatch. Manual dispatch forces every applicable job in the full matrix.
 Change detection fails rather than silently skipping checks when it cannot
-classify a change. **A skipped matrix is not validation evidence.** NuGet
+classify a change. A green matrix job that ran only the intentional-omission
+notice is **not validation evidence**. Keeping matrix jobs present allows
+the ruleset's OS-specific required contexts to be reported even for
+documentation-only PRs. NuGet
 caching never replaces restore or auditing. Compare exact SHA and observed
 check results before approving a PR, and run the full matrix when preparing a
 release candidate.
