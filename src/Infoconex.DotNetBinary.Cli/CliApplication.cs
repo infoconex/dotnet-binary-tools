@@ -1,18 +1,21 @@
+using Infoconex.DotNetBinary.Application.InputSelection;
+using Infoconex.DotNetBinary.Infrastructure.InputSelection;
+
 namespace Infoconex.DotNetBinary.Cli;
 
 /// <summary>
-/// Provides the foundational command-line entry point.
-/// Inspection and scanning commands are intentionally not implemented yet.
+/// Adapts explicit inspect and scan arguments into input selection while the
+/// inspection and inventory capabilities remain unimplemented.
 /// </summary>
 public static class CliApplication
 {
     /// <summary>
-    /// Runs the current CLI baseline without modifying any inspected files.
+    /// Runs the CLI's informational and explicit input-selection operations.
     /// </summary>
     /// <param name="arguments">Command-line arguments.</param>
     /// <param name="output">Destination for normal output.</param>
     /// <param name="error">Destination for diagnostic output.</param>
-    /// <returns>Zero for recognized informational commands; two for unsupported commands.</returns>
+    /// <returns>Zero for informational commands; two for failures or unavailable downstream operations.</returns>
     public static int Run(IReadOnlyList<string> arguments, TextWriter output, TextWriter error)
     {
         ArgumentNullException.ThrowIfNull(arguments);
@@ -24,9 +27,9 @@ public static class CliApplication
         {
             output.WriteLine("dotnet-binary: static .NET binary inspection (planned)");
             output.WriteLine("Usage: dotnet binary <command> [options]");
-            output.WriteLine("Planned: inspect <file> [options] (one regular file, any extension)");
-            output.WriteLine("         scan <directory> [<directory> ...] [options]");
-            output.WriteLine("Status: engineering foundation; inspection commands not implemented yet.");
+            output.WriteLine("Input selection: inspect <file> (one regular file, any extension)");
+            output.WriteLine("                 scan <directory> [<directory> ...]");
+            output.WriteLine("Status: input selection available; inspection and traversal not implemented yet.");
             return 0;
         }
 
@@ -36,7 +39,28 @@ public static class CliApplication
             return 0;
         }
 
-        error.WriteLine("The requested command is not implemented in this engineering foundation.");
+        if (arguments.Count > 0 && arguments[0] is "inspect" or "scan")
+        {
+            var mode = arguments[0] == "inspect" ? InputSelectionMode.Inspect : InputSelectionMode.Scan;
+            var paths = arguments.Skip(1).ToArray();
+            var result = new InputSelectionService(new HostFileSystemInputPathProbe()).Select(mode, paths);
+            if (!result.IsSuccess)
+            {
+                foreach (var failure in result.Failures)
+                {
+                    error.WriteLine(failure.Message);
+                }
+
+                return 2;
+            }
+
+            // Do not claim successful inspection or a completed inventory until
+            // downstream capabilities are implemented and coordinated.
+            error.WriteLine("Input selection succeeded; inspection and traversal are not implemented yet.");
+            return 2;
+        }
+
+        error.WriteLine("The requested command is not implemented yet.");
         return 2;
     }
 }

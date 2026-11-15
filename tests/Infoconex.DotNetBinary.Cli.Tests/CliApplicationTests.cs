@@ -47,16 +47,58 @@ public sealed class CliApplicationTests
     [Test]
     public void InspectionCommandMustNotPretendToWork()
     {
+        var file = Path.GetTempFileName();
         using var output = new StringWriter();
         using var error = new StringWriter();
+        try
+        {
+            var code = CliApplication.Run(new[] { "inspect", file }, output, error);
 
-        var code = CliApplication.Run(new[] { "inspect", "Sample.dll" }, output, error);
+            Assert.Multiple(() =>
+            {
+                Assert.That(code, Is.EqualTo(2));
+                Assert.That(output.ToString(), Is.Empty);
+                Assert.That(error.ToString(), Does.Contain("selection succeeded"));
+                Assert.That(error.ToString(), Does.Contain("not implemented"));
+            });
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Test]
+    public void InvalidScanRootReturnsFailureWithoutReportingACompletedInventory()
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var missing = Path.Combine(Path.GetTempPath(), "missing-" + Guid.NewGuid().ToString("N"));
+
+        var code = CliApplication.Run(new[] { "scan", missing }, output, error);
 
         Assert.Multiple(() =>
         {
             Assert.That(code, Is.EqualTo(2));
             Assert.That(output.ToString(), Is.Empty);
-            Assert.That(error.ToString(), Does.Contain("not implemented"));
+            Assert.That(error.ToString(), Does.Contain(missing));
+            Assert.That(error.ToString(), Does.Contain("does not exist"));
+        });
+    }
+
+    [Test]
+    public void InspectWithMultipleFilesFailsCardinalityBeforeFilesystemAccess()
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var code = CliApplication.Run(new[] { "inspect", "a.dll", "b.dll" }, output, error);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(code, Is.EqualTo(2));
+            Assert.That(output.ToString(), Is.Empty);
+            Assert.That(error.ToString(), Does.Contain("exactly one"));
         });
     }
 
