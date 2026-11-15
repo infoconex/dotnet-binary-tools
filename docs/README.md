@@ -8,9 +8,13 @@
 - [Cross-cutting nonfunctional requirements](requirements/non-functional.md): quality obligations and their approval status; distribution and evidence governance are specified separately.
 - [Acceptance scenarios](scenarios/README.md): Given/When/Then specifications; [traceability](testing/traceability.md) is the source for actual verification.
 - [TDD and testing strategy](testing/strategy.md).
+- [Contributor workflow](../CONTRIBUTING.md) and [security reporting](../SECURITY.md).
 
 ## Engineering documents
 
 - [Architecture](engineering/architecture.md) and [ADR 0001](engineering/decisions/0001-hexagonal-project-boundaries.md).
 - [Distribution ADR 0002](engineering/decisions/0002-dotnet-11-aot-tools.md).
 - [Build configuration](engineering/build-configuration.md), [packaging](engineering/packaging.md), [release gates](engineering/release-gates.md), [workflow](engineering/workflow.md), and [style](engineering/csharp-style.md).
+- [CI/local validation policy and reproducible commands](engineering/ci-local-validation.md).
+- [Security automation and administrator verification](engineering/security-automation.md).
+- [Changelog and release-note conventions](../CHANGELOG.md).

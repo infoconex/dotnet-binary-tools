@@ -44,3 +44,8 @@ body:
     id: risk
     attributes:
       label: Dependencies, security, cross-platform/AOT risks and exclusions
+  - type: textarea
+    id: technical-guidance
+    attributes:
+      label: Existing technical guidance and unresolved uncertainty (when relevant)
+      description: For platform, framework, dependency or tooling decisions, link authoritative documentation, identify its applicable versions, and explain what still needs project-specific validation or experimentation. Leave blank for routine behavior changes.
