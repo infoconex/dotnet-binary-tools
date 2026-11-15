@@ -36,7 +36,7 @@ public sealed record InputPathProbeResult
     /// <summary>Creates a failed input-path classification.</summary>
     public static InputPathProbeResult Failed(InputSelectionFailureReason reason)
     {
-        if (reason is InputSelectionFailureReason.None or InputSelectionFailureReason.InvalidCount or InputSelectionFailureReason.WrongKind || !Enum.IsDefined(reason))
+        if (reason is InputSelectionFailureReason.None or InputSelectionFailureReason.InvalidCount || !Enum.IsDefined(reason))
         {
             throw new ArgumentOutOfRangeException(nameof(reason));
         }

@@ -66,6 +66,7 @@ public sealed class InputSelectionService(IInputPathProbe pathProbe)
             InputSelectionFailureReason.BrokenLink => "is a broken symbolic link or junction",
             InputSelectionFailureReason.Inaccessible => "cannot be accessed with current permissions",
             InputSelectionFailureReason.InvalidPath => "is not a valid literal filesystem path",
+            InputSelectionFailureReason.WrongKind => "is not a regular file or directory",
             _ => "could not be validated due to a filesystem error",
         };
         return $"Input '{DescribePath(path)}' {description}.";

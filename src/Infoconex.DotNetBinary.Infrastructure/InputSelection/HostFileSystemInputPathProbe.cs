@@ -21,23 +21,37 @@ public sealed class HostFileSystemInputPathProbe : IInputPathProbe
         {
             var fullPath = Path.GetFullPath(path);
 
-            // Exists follows valid file/directory symlinks and junctions while never enumerating.
-            // Their literal qualified paths remain intact for later consumption.
+            // Exists can report a dangling symbolic link as present on some hosts.
+            // Resolve only directly selected links to verify their final targets.
+            // Preserve the literal qualified selection path for downstream consumers.
             if (File.Exists(fullPath))
             {
-                var attributes = File.GetAttributes(fullPath);
-                return (attributes & (FileAttributes.Directory | FileAttributes.Device)) == 0
+                var target = File.ResolveLinkTarget(fullPath, returnFinalTarget: true);
+                return target is null || File.Exists(target.FullName)
                     ? InputPathProbeResult.Found(fullPath, InputKind.File)
-                    : InputPathProbeResult.Failed(InputSelectionFailureReason.Unavailable);
+                    : InputPathProbeResult.Failed(InputSelectionFailureReason.BrokenLink);
             }
 
             if (Directory.Exists(fullPath))
             {
-                return InputPathProbeResult.Found(fullPath, InputKind.Directory);
+                var target = Directory.ResolveLinkTarget(fullPath, returnFinalTarget: true);
+                return target is null || Directory.Exists(target.FullName)
+                    ? InputPathProbeResult.Found(fullPath, InputKind.Directory)
+                    : InputPathProbeResult.Failed(InputSelectionFailureReason.BrokenLink);
             }
 
-            // Exists intentionally suppresses errors. GetAttributes allows us to distinguish
-            // missing paths, broken final-component links and reported access failures.
+            // Path.Exists also recognizes special nodes and broken final-component links.
+            // Neither operation opens a file or traverses a selected directory.
+            if (Path.Exists(fullPath))
+            {
+                var attributes = File.GetAttributes(fullPath);
+                return (attributes & FileAttributes.ReparsePoint) != 0
+                    ? InputPathProbeResult.Failed(InputSelectionFailureReason.BrokenLink)
+                    : InputPathProbeResult.Failed(InputSelectionFailureReason.WrongKind);
+            }
+
+            // Exists deliberately suppresses some errors. GetAttributes can expose access
+            // failures, or an explicitly selected link whose destination disappeared.
             var unresolvedAttributes = File.GetAttributes(fullPath);
             return (unresolvedAttributes & FileAttributes.ReparsePoint) != 0
                 ? InputPathProbeResult.Failed(InputSelectionFailureReason.BrokenLink)

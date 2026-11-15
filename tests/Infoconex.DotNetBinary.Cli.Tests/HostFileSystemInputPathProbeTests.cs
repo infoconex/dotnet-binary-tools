@@ -139,6 +139,25 @@ public sealed class HostFileSystemInputPathProbeTests
     }
 
     [Test]
+    [Platform("Linux,MacOsX")]
+    public void RejectsNonRegularNamedPipeWithoutOpeningIt()
+    {
+        var pipe = Path.Combine(_folder, "special-node");
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mkfifo")
+        {
+            ArgumentList = { pipe },
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardError = true,
+        }) ?? throw new InvalidOperationException("Could not start mkfifo.");
+        process.WaitForExit();
+        Assert.That(process.ExitCode, Is.Zero, process.StandardError.ReadToEnd());
+
+        var result = _probe.Probe(pipe);
+        Assert.That(result.Failure, Is.EqualTo(InputSelectionFailureReason.WrongKind));
+    }
+
+    [Test]
     [Platform("Win")]
     public void AcceptsWindowsJunctionToExistingDirectory()
     {
@@ -152,9 +171,8 @@ public sealed class HostFileSystemInputPathProbeTests
             UseShellExecute = false,
             RedirectStandardError = true,
             RedirectStandardOutput = true,
-        });
-        Assert.That(process, Is.Not.Null);
-        process!.WaitForExit();
+        }) ?? throw new InvalidOperationException("Could not start mklink.");
+        process.WaitForExit();
         Assert.That(process.ExitCode, Is.Zero, process.StandardError.ReadToEnd());
 
         var result = _probe.Probe(junction);
