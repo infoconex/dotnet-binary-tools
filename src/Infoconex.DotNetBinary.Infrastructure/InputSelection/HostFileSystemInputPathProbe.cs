@@ -27,9 +27,14 @@ public sealed class HostFileSystemInputPathProbe : IInputPathProbe
             if (File.Exists(fullPath))
             {
                 var target = File.ResolveLinkTarget(fullPath, returnFinalTarget: true);
-                return target is null || File.Exists(target.FullName)
+                if (target is not null && !File.Exists(target.FullName))
+                {
+                    return InputPathProbeResult.Failed(InputSelectionFailureReason.BrokenLink);
+                }
+
+                return RegularFileTypeProbe.IsRegularFile(fullPath)
                     ? InputPathProbeResult.Found(fullPath, InputKind.File)
-                    : InputPathProbeResult.Failed(InputSelectionFailureReason.BrokenLink);
+                    : InputPathProbeResult.Failed(InputSelectionFailureReason.WrongKind);
             }
 
             if (Directory.Exists(fullPath))

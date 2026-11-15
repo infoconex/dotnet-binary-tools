@@ -30,16 +30,29 @@ public sealed class HostFileSystemInputPathProbeTests
     [Property("Scenario", "SC-INP-004")]
     public void ResolvesRelativePathsAgainstTheHostWorkingDirectory()
     {
-        var file = Path.Combine(_folder, "has spaces.bin");
-        File.WriteAllText(file, "synthetic fixture");
-
-        var result = _probe.Probe(Path.GetRelativePath(Environment.CurrentDirectory, file));
-
-        Assert.Multiple(() =>
+        // Keep the fixture below the current directory to exercise a relative path
+        // even on Windows hosts where the temp directory may be on another drive.
+        var folder = Path.Combine(Environment.CurrentDirectory, "cap001-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
         {
-            Assert.That(result.FullPath, Is.EqualTo(Path.GetFullPath(file)));
-            Assert.That(result.Kind, Is.EqualTo(InputKind.File));
-        });
+            var file = Path.Combine(folder, "資料 with spaces.bin");
+            File.WriteAllText(file, "synthetic fixture");
+            var relative = Path.GetRelativePath(Environment.CurrentDirectory, file);
+
+            var result = _probe.Probe(relative);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Path.IsPathFullyQualified(relative), Is.False);
+                Assert.That(result.FullPath, Is.EqualTo(Path.GetFullPath(file)));
+                Assert.That(result.Kind, Is.EqualTo(InputKind.File));
+            });
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     [Test]
