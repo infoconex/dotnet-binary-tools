@@ -1,7 +1,12 @@
 # Release promotion and publication gates
 
-This document specifies evidence required before promotion; current workstream
-progress is tracked only in [Issue #2](https://github.com/infoconex/dotnet-binary-tools/issues/2).
+This document specifies evidence required before promotion. The engineering
+foundation is tracked in [Issue #2](https://github.com/infoconex/dotnet-binary-tools/issues/2),
+while independent Windows/macOS runtime-free consumer acceptance is tracked
+separately in [release Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4).
+The deferred consumer check remains mandatory before publication; it is not
+evidence that those environments have passed.
+
 Approval to merge source is distinct from approval to distribute packages.
 
 ## Main branch controls
@@ -31,7 +36,7 @@ Keep the following evidence together for a frozen, reviewed candidate SHA:
 | Specifications | All selected CAP/FR/NFR/ARCH/scenario acceptance criteria mapped to observed tests; no drafts recorded as passing. |
 | Validation | Explicit full engineering, managed NUnit/coverage/style, CodeQL/security, dependency review and three-RID AOT runs on the exact SHA. |
 | NuGet tool | Top-level pointer and matching-version RID-specific `.nupkg` archives for all three x64 OSes; clean local install and both CLI entry points per OS. |
-| Standalone AOT | Three native outputs and SHA-256 manifests; successful `--help`, `--version` and meaningful behavior tests in consumer environments **without .NET SDK or runtime**. |
+| Standalone AOT | Three native outputs and SHA-256 manifests; successful `--help`, `--version` and meaningful behavior tests in consumer environments **without .NET SDK or runtime**. Track Windows/macOS clean-consumer evidence in [Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4). |
 | Security | NuGet audit/Dependabot/CodeQL and secret protections verified; dependency inventory, advisories and security exceptions reviewed. |
 | Supply chain | Final package/binary checksums, a verified dependency SBOM, build provenance attestation tied to immutable digests and SHA, publication permissions and chain of custody. |
 | Operational | Version naming, download/install instructions, release notes, rollback and revocation plan, and independent owner decision. |
