@@ -45,7 +45,7 @@ public sealed class CliApplicationTests
     }
 
     [Test]
-    public void InspectionCommandMustNotPretendToWork()
+    public void InspectionCommandReportsIncompleteForMalformedFileWithoutCommandFailure()
     {
         var file = Path.GetTempFileName();
         using var output = new StringWriter();
@@ -56,10 +56,10 @@ public sealed class CliApplicationTests
 
             Assert.Multiple(() =>
             {
-                Assert.That(code, Is.EqualTo(2));
-                Assert.That(output.ToString(), Is.Empty);
-                Assert.That(error.ToString(), Does.Contain("selection succeeded"));
-                Assert.That(error.ToString(), Does.Contain("not implemented"));
+                Assert.That(code, Is.Zero);
+                Assert.That(output.ToString(), Does.Contain("Inventory candidates: 1"));
+                Assert.That(output.ToString(), Does.Contain("Inventory coverage: Incomplete"));
+                Assert.That(error.ToString(), Does.Not.Contain("not implemented"));
             });
         }
         finally

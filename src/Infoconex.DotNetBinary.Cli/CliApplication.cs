@@ -1,28 +1,30 @@
 using Infoconex.DotNetBinary.Application.AssemblyInspection;
 using Infoconex.DotNetBinary.Application.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Application.InputSelection;
+using Infoconex.DotNetBinary.Application.InspectionInventory;
 using Infoconex.DotNetBinary.Application.LifecycleAssessment;
 using Infoconex.DotNetBinary.Domain.Models;
 using Infoconex.DotNetBinary.Infrastructure.AssemblyInspection;
 using Infoconex.DotNetBinary.Infrastructure.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Infrastructure.InputSelection;
+using Infoconex.DotNetBinary.Infrastructure.InspectionInventory;
 using Infoconex.DotNetBinary.Infrastructure.LifecycleAssessment;
 
 namespace Infoconex.DotNetBinary.Cli;
 
 /// <summary>
-/// Adapts selected inspect and scan arguments to available capability boundaries.
-/// Complete reporting, traversal and command-line functionality remain pending.
+/// Adapts selected inspect and scan arguments to the CAP-005 inventory boundary.
+/// Complete reporting and command-line functionality remain pending.
 /// </summary>
 public static class CliApplication
 {
     /// <summary>
-    /// Runs the CLI's informational and explicit input-selection operations.
+    /// Runs informational operations and minimal inspect/scan inventory entry points.
     /// </summary>
     /// <param name="arguments">Command-line arguments.</param>
     /// <param name="output">Destination for normal output.</param>
     /// <param name="error">Destination for diagnostic output.</param>
-    /// <returns>Zero for informational commands; two for failures or unavailable downstream operations.</returns>
+    /// <returns>Zero for valid inventories, even incomplete; two for invalid commands or roots.</returns>
     public static int Run(IReadOnlyList<string> arguments, TextWriter output, TextWriter error)
     {
         ArgumentNullException.ThrowIfNull(arguments);
@@ -32,12 +34,14 @@ public static class CliApplication
         if (arguments.Count == 0 ||
             (arguments.Count == 1 && arguments[0] is "--help" or "-h" or "help"))
         {
-            output.WriteLine("dotnet-binary: static .NET binary inspection (planned)");
+            output.WriteLine("dotnet-binary: static .NET binary inspection");
             output.WriteLine("Usage: dotnet binary <command> [options]");
             output.WriteLine("Input selection: inspect <file> [--config <file>] (one regular file, any extension)");
-            output.WriteLine("                 scan <directory> [<directory> ...]");
+            output.WriteLine("                 scan <directory> [<directory> ...] [--recursive] [--follow-links]");
+            output.WriteLine("Inventory bounds: --max-depth N, --max-candidates N, --max-file-mib N,");
+            output.WriteLine("                  --max-elapsed-seconds N, --max-cpu-seconds N");
             output.WriteLine("Lifecycle reference update: lifecycle refresh (explicit network request)");
-            output.WriteLine("Status: selected metadata/configuration evidence available; complete inspection, reporting and traversal not implemented yet.");
+            output.WriteLine("Status: inventory available; complete JSON reporting and CLI options not implemented yet.");
             return 0;
         }
 
@@ -67,22 +71,12 @@ public static class CliApplication
         if (arguments.Count > 0 && arguments[0] is "inspect" or "scan")
         {
             var mode = arguments[0] == "inspect" ? InputSelectionMode.Inspect : InputSelectionMode.Scan;
-            if (mode == InputSelectionMode.Scan && arguments.Skip(1).Contains("--config", StringComparer.Ordinal))
+            if (!TryParseInventoryArguments(arguments, mode, error, out var paths, out var options,
+                out var configurationPath))
             {
-                error.WriteLine("--config is supported only for one inspect request; scan does not accept a global configuration.");
                 return 2;
             }
 
-            var hasExplicitConfiguration = mode == InputSelectionMode.Inspect &&
-                arguments.Count == 4 && arguments[2] == "--config";
-            if (mode == InputSelectionMode.Inspect && arguments.Contains("--config", StringComparer.Ordinal) &&
-                !hasExplicitConfiguration)
-            {
-                error.WriteLine("inspect requires exactly one file followed by optional --config <file>.");
-                return 2;
-            }
-
-            var paths = hasExplicitConfiguration ? new[] { arguments[1] } : arguments.Skip(1).ToArray();
             var selection = new InputSelectionService(new HostFileSystemInputPathProbe());
             var result = selection.Select(mode, paths);
             if (!result.IsSuccess)
@@ -95,28 +89,66 @@ public static class CliApplication
                 return 2;
             }
 
-            if (mode == InputSelectionMode.Inspect)
+            SelectedInput? configurationInput = null;
+            if (configurationPath is not null)
             {
-                SelectedInput? configurationInput = null;
-                if (hasExplicitConfiguration)
+                var selectedConfiguration = selection.Select(InputSelectionMode.Inspect, [configurationPath]);
+                if (!selectedConfiguration.IsSuccess)
                 {
-                    var selectedConfiguration = selection.Select(InputSelectionMode.Inspect, [arguments[3]]);
-                    if (!selectedConfiguration.IsSuccess)
+                    foreach (var failure in selectedConfiguration.Failures)
                     {
-                        foreach (var failure in selectedConfiguration.Failures)
-                        {
-                            error.WriteLine(failure.Message);
-                        }
-
-                        return 2;
+                        error.WriteLine(failure.Message);
                     }
 
-                    configurationInput = selectedConfiguration.Inputs[0];
+                    return 2;
                 }
 
-                var configuration = new DeploymentConfigurationService(new FileDeploymentConfigurationReader())
-                    .Inspect(result.Inputs[0], configurationInput);
-                if (configuration.Outcome != DeploymentConfigurationOutcome.NotFound)
+                configurationInput = selectedConfiguration.Inputs[0];
+            }
+
+            using var cpuClock = new HostInventoryCpuClock();
+            var inventoryService = new InventoryService(new HostInventoryFileSystem(),
+                new InventoryCandidateInspectionService(
+                    new AssemblyInspectionService(new PortableExecutableAssemblyReader()),
+                    new DeploymentConfigurationService(new FileDeploymentConfigurationReader()),
+                    new LifecycleAssessmentService(new FileLifecycleDatasetStore(), TimeProvider.System)),
+                TimeProvider.System, cpuClock);
+            var inventory = mode == InputSelectionMode.Inspect
+                ? inventoryService.Inspect(result.Inputs[0], configurationInput, options)
+                : inventoryService.Scan(result.Inputs, options);
+            output.WriteLine($"Inventory roots: {inventory.Roots.Count}");
+            output.WriteLine($"Inventory candidates: {inventory.Summary.TotalCandidates}");
+            output.WriteLine($"Inventory coverage: {inventory.Completion.State}");
+            foreach (var reason in inventory.Completion.Reasons)
+            {
+                output.WriteLine($"Inventory coverage limitation: {reason}");
+            }
+
+            output.WriteLine($"Inventory distribution: managed={inventory.Summary.Managed}; native={inventory.Summary.Native}; " +
+                $"unknown-target={inventory.Summary.UnknownTargets}; failed={inventory.Summary.Failed}; " +
+                $"skipped={inventory.Summary.Skipped}; duplicate={inventory.Summary.Duplicates}; " +
+                $"traversal-errors={inventory.Summary.TraversalErrors}");
+            foreach (var item in inventory.Candidates)
+            {
+                output.WriteLine($"Candidate ({item.Assembly.Outcome}): {SafeDisplay(item.Input.FullPath)}");
+            }
+
+            foreach (var skipped in inventory.Skipped)
+            {
+                output.WriteLine($"Skipped ({skipped.Reason}) under {SafeDisplay(skipped.Root)}: {SafeDisplay(skipped.Path)}");
+            }
+
+            foreach (var traversalError in inventory.Errors)
+            {
+                output.WriteLine($"Traversal error ({traversalError.Code}) under {SafeDisplay(traversalError.Root)}: " +
+                    SafeDisplay(traversalError.Path));
+            }
+
+            if (mode == InputSelectionMode.Inspect)
+            {
+                var candidate = inventory.Candidates[0];
+                var configuration = candidate.Configuration;
+                if (configuration is not null && configuration.Outcome != DeploymentConfigurationOutcome.NotFound)
                 {
                     output.WriteLine($"Configuration: {configuration.Outcome} ({configuration.Association})");
                     output.WriteLine($"Configuration source: {SafeDisplay(configuration.Path)}");
@@ -140,21 +172,19 @@ public static class CliApplication
 
                 }
 
-                var assembly = new AssemblyInspectionService(new PortableExecutableAssemblyReader())
-                    .Inspect(result.Inputs[0]);
+                var assembly = candidate.Assembly;
                 if (assembly.Metadata?.DeclaredTarget is { } declaredTarget)
                 {
                     output.WriteLine($"Assembly target ({declaredTarget.EvidenceSource}): {SafeDisplay(declaredTarget.Moniker)}");
                 }
 
-                var lifecycle = new LifecycleAssessmentService(new FileLifecycleDatasetStore(), TimeProvider.System)
-                    .Assess(assembly.Metadata?.DeclaredTarget, configuration);
-                if (lifecycle.DatasetWarning is not null)
+                var lifecycle = candidate.Lifecycle;
+                if (lifecycle?.DatasetWarning is not null)
                 {
                     error.WriteLine(lifecycle.DatasetWarning);
                 }
 
-                foreach (var finding in lifecycle.Findings)
+                foreach (var finding in lifecycle?.Findings ?? [])
                 {
                     output.WriteLine($"Lifecycle ({finding.EvidenceKind}, {SafeDisplay(finding.EvidenceSource)}): {finding.Status}");
                     output.WriteLine($"Lifecycle declaration: {SafeDisplay(finding.DeclaredIdentity)}");
@@ -175,14 +205,110 @@ public static class CliApplication
                 }
             }
 
-            // Do not claim successful inspection or a completed inventory until
-            // downstream capabilities are implemented and coordinated.
-            error.WriteLine("Input selection succeeded; complete inspection and traversal are not implemented yet.");
-            return 2;
+            // Incomplete coverage is an honest successful inventory, not an invalid command.
+            // CAP-006 JSON and full CAP-007 parsing remain separate future capabilities.
+            return 0;
         }
 
         error.WriteLine("The requested command is not implemented yet.");
         return 2;
+    }
+
+    private static bool TryParseInventoryArguments(IReadOnlyList<string> arguments, InputSelectionMode mode,
+        TextWriter error, out IReadOnlyList<string> paths, out InventoryOptions options, out string? configurationPath)
+    {
+        var selectedPaths = new List<string>();
+        configurationPath = null;
+        options = new InventoryOptions();
+        var literalPaths = false;
+        for (var index = 1; index < arguments.Count; index++)
+        {
+            var token = arguments[index];
+            if (!literalPaths && token == "--")
+            {
+                literalPaths = true;
+                continue;
+            }
+
+            if (!literalPaths && token is "--recursive" or "--follow-links")
+            {
+                if (mode != InputSelectionMode.Scan)
+                {
+                    error.WriteLine($"{token} is supported only for scan.");
+                    paths = [];
+                    return false;
+                }
+
+                options = token == "--recursive" ? options with { Recursive = true } :
+                    options with { FollowLinks = true };
+                continue;
+            }
+
+            if (!literalPaths && token == "--config")
+            {
+                if (mode != InputSelectionMode.Inspect || configurationPath is not null || ++index == arguments.Count)
+                {
+                    error.WriteLine("--config is supported only for one inspect request with one configuration file.");
+                    paths = [];
+                    return false;
+                }
+
+                configurationPath = arguments[index];
+                continue;
+            }
+
+            if (!literalPaths && token is "--max-depth" or "--max-candidates" or "--max-file-mib" or
+                "--max-elapsed-seconds" or "--max-cpu-seconds")
+            {
+                if (++index == arguments.Count || !int.TryParse(arguments[index], out var number))
+                {
+                    error.WriteLine($"{token} requires an integer value.");
+                    paths = [];
+                    return false;
+                }
+
+                options = token switch
+                {
+                    "--max-depth" => options with { MaxDepth = number },
+                    "--max-candidates" => options with { MaxCandidates = number },
+                    "--max-file-mib" => options with { MaxFileBytes = (long)number * 1024 * 1024 },
+                    "--max-elapsed-seconds" => options with { MaxElapsedSeconds = number },
+                    _ => options with { MaxCpuSeconds = number },
+                };
+                continue;
+            }
+
+            if (!literalPaths && token.StartsWith("--", StringComparison.Ordinal))
+            {
+                error.WriteLine($"Unsupported inventory option: {SafeDisplay(token)}");
+                paths = [];
+                return false;
+            }
+
+            selectedPaths.Add(token);
+        }
+
+        try
+        {
+            options.Validate();
+        }
+        catch (ArgumentOutOfRangeException exception)
+        {
+            var option = exception.ParamName switch
+            {
+                nameof(InventoryOptions.MaxDepth) => "--max-depth",
+                nameof(InventoryOptions.MaxCandidates) => "--max-candidates",
+                nameof(InventoryOptions.MaxFileBytes) => "--max-file-mib",
+                nameof(InventoryOptions.MaxElapsedSeconds) => "--max-elapsed-seconds",
+                _ => "--max-cpu-seconds",
+            };
+            error.WriteLine($"Invalid {option} value; see --help for supported resource limits.");
+            paths = [];
+            return false;
+        }
+
+        paths = selectedPaths;
+        return true;
     }
 
     private static string SafeDisplay(string? content)
