@@ -166,7 +166,8 @@ public sealed class DeploymentConfigurationReaderTests
         Assert.Multiple(() =>
         {
             Assert.That(oversized.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.ResourceLimited));
-            Assert.That(deep.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.ResourceLimited));
+            Assert.That(deep.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.Malformed));
+            Assert.That(deep.Diagnostics.Single().Code, Is.EqualTo("InvalidJsonOrDepthLimit"));
         });
     }
 
@@ -185,6 +186,42 @@ public sealed class DeploymentConfigurationReaderTests
             Assert.That(unsupported.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.Unsupported));
             Assert.That(missing.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.NotFound));
             Assert.That(unreadable.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.Unreadable));
+        });
+    }
+
+    [Test]
+    public void UnsupportedFieldDoesNotDiscardPriorTrustworthyTfmEvidence()
+    {
+        var file = Input("PartiallySupported.dll");
+        Write("PartiallySupported.runtimeconfig.json", """
+            {"runtimeOptions":{"tfm":"net11.0","framework":{"name":"Microsoft.NETCore.App","version":123}}}
+            """);
+
+        var result = _service.Inspect(file);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.Unsupported));
+            Assert.That(result.Values.Single().Field, Is.EqualTo("runtimeOptions.tfm"));
+            Assert.That(result.Values.Single().RawValue, Is.EqualTo("net11.0"));
+            Assert.That(result.RuntimeRequests, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void DuplicateJsonRuntimeSelectionFieldsCannotSilentlyOverrideEachOther()
+    {
+        var file = Input("Duplicate.dll");
+        Write("Duplicate.runtimeconfig.json", """
+            {"runtimeOptions":{"framework":{"name":"Microsoft.NETCore.App","version":"8.0.0","version":"11.0.0"}}}
+            """);
+
+        var result = _service.Inspect(file);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Outcome, Is.EqualTo(DeploymentConfigurationOutcome.Unsupported));
+            Assert.That(result.RuntimeRequests, Is.Empty);
         });
     }
 
