@@ -134,8 +134,8 @@ public sealed class ResultsReportingCliTests
                 output, errors);
             Assert.Multiple(() =>
             {
-                Assert.That(code, Is.EqualTo(2));
-                Assert.That(errors.ToString(), Does.Contain("Report write or serialization failed"));
+                Assert.That(code, Is.EqualTo(1));
+                Assert.That(errors.ToString(), Does.Contain("reporting failed"));
                 Assert.That(errors.ToString(), Does.Not.Contain(folder));
                 Assert.That(output.ToString(), Is.Empty);
             });

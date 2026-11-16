@@ -5,7 +5,7 @@ namespace Infoconex.DotNetBinary.Application.InspectionInventory;
 
 /// <summary>Orchestrates bounded, explicit-scope inspection and independent candidate findings.</summary>
 public sealed class InventoryService(IInventoryFileSystem fileSystem,
-    IInventoryCandidateInspector inspector, TimeProvider clock, IInventoryCpuClock cpuClock)
+    IInventoryCandidateInspector inspector, TimeProvider clock, IInventoryCpuClock cpuClock) : IInventoryUseCase
 {
     private readonly IInventoryFileSystem _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
     private readonly IInventoryCandidateInspector _inspector = inspector ?? throw new ArgumentNullException(nameof(inspector));
@@ -198,7 +198,8 @@ public sealed class InventoryService(IInventoryFileSystem fileSystem,
                 return;
             }
 
-            candidates.Add(new InventoryCandidate(selected, _inspector.Inspect(selected, configuration, options.MaxFileBytes)));
+            candidates.Add(new InventoryCandidate(selected,
+                _inspector.Inspect(selected, configuration, options.MaxFileBytes, options.ComputeSha256)));
         }
         catch (Exception exception) when (IsRecoverableFileSystemFailure(exception) ||
             exception is BadImageFormatException or InvalidDataException)

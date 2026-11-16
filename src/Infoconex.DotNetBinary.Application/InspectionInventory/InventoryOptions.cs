@@ -8,9 +8,10 @@ namespace Infoconex.DotNetBinary.Application.InspectionInventory;
 /// <param name="MaxFileBytes">Maximum size of one candidate, in bytes.</param>
 /// <param name="MaxElapsedSeconds">Cooperative wall time budget, in seconds.</param>
 /// <param name="MaxCpuSeconds">Cooperative process CPU time budget, in seconds.</param>
+/// <param name="ComputeSha256">Opt in to computing bounded candidate SHA-256 hashes.</param>
 public sealed record InventoryOptions(bool Recursive = false, bool FollowLinks = false,
     int MaxDepth = 32, int MaxCandidates = 10_000, long MaxFileBytes = 512L * 1024 * 1024,
-    int MaxElapsedSeconds = 300, int MaxCpuSeconds = 300)
+    int MaxElapsedSeconds = 300, int MaxCpuSeconds = 300, bool ComputeSha256 = false)
 {
     /// <summary>Absolute bound on unique candidates.</summary>
     public const int MaximumCandidates = 100_000;

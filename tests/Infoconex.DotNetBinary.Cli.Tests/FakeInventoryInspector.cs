@@ -13,7 +13,8 @@ internal sealed class FakeInventoryInspector : IInventoryCandidateInspector
 
     public HashSet<string> ThrowPaths { get; } = new(StringComparer.Ordinal);
 
-    public InventoryEvidence Inspect(SelectedInput file, SelectedInput? explicitConfiguration, long maxFileBytes)
+    public InventoryEvidence Inspect(SelectedInput file, SelectedInput? explicitConfiguration, long maxFileBytes,
+        bool computeSha256 = false)
     {
         Visited.Add(file.FullPath);
         if (ThrowPaths.Contains(file.FullPath)) throw new IOException("synthetic sensitive error");

@@ -67,7 +67,26 @@ try {
         -not $report.ContainsKey('summary')) {
         throw 'Native JSON reporting smoke test produced an unexpected CAP-006 contract.'
     }
-    Write-Host 'Native AOT JSON reporting contract smoke test passed.'
+    # CAP-007: check real option binding, a scan operation, invalid syntax and exit-code discipline.
+    $hashJson = & $binaryPath inspect $binaryPath --format json --sha256 2>$null | Out-String
+    if ($LASTEXITCODE -ne 0) { throw 'Native opt-in SHA-256 inspection failed.' }
+    $hashReport = $hashJson | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+    if ($hashReport.candidates.Count -ne 1 -or $hashReport.candidates[0].sha256 -notmatch '^[0-9a-f]{64}$') {
+        throw 'Native opt-in SHA-256 did not propagate to the inspection service.'
+    }
+
+    $scanJson = & $binaryPath scan (Split-Path -Parent $binaryPath) --format json --max-candidates 1 2>$null | Out-String
+    if ($LASTEXITCODE -ne 0) { throw 'Native directory scan failed.' }
+    $scanReport = $scanJson | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+    if ($scanReport.schemaVersion -ne '1.0.0' -or $scanReport.command -ne 'scan' -or $scanReport.inputs.Count -ne 1) {
+        throw 'Native scan did not produce the expected command envelope.'
+    }
+
+    $invalidOutput = & $binaryPath inspect 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 2 -or $invalidOutput -notmatch 'exactly one') {
+        throw 'Native CLI did not reject invalid arity with the expected usage exit code.'
+    }
+    Write-Host 'Native AOT reporting, scan, SHA-256 option, and invalid-arity smoke tests passed.'
 }
 finally {
     Pop-Location

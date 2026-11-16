@@ -4,7 +4,7 @@ namespace Infoconex.DotNetBinary.Application.ResultsReporting;
 
 /// <summary>Coordinates one faithful inventory presentation and safe output placement.</summary>
 public sealed class ReportService(IInventoryReportRenderer renderer, IReportFileStore fileStore,
-    TimeProvider clock, Func<string> uniqueId)
+    TimeProvider clock, Func<string> uniqueId) : IReportUseCase
 {
     private readonly IInventoryReportRenderer _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
     private readonly IReportFileStore _fileStore = fileStore ?? throw new ArgumentNullException(nameof(fileStore));

@@ -19,4 +19,5 @@
 - [Security automation and administrator verification](engineering/security-automation.md).
 - [Lifecycle reference evidence and explicit refresh policy](engineering/lifecycle-assessment.md).
 - [Versioned JSON report contract and safe output policy](engineering/results-reporting.md).
+- [Command-line grammar, aliases, defaults and exit codes](engineering/command-line-interface.md).
 - [Changelog and release-note conventions](../CHANGELOG.md).

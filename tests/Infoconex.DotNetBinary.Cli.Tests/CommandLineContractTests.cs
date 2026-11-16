@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Infoconex.DotNetBinary.Application.InputSelection;
 using Infoconex.DotNetBinary.Application.InspectionInventory;
@@ -25,6 +26,8 @@ public sealed class CommandLineContractTests
         Assert.That(services.LastPaths, Is.EqualTo(new[] { "one", "two" }));
         Assert.That(Invoke(["--help"], services).Code, Is.Zero);
         Assert.That(Invoke(["--version"], services).Code, Is.Zero);
+        Assert.That(Invoke(["lifecycle", "refresh"], services).Code, Is.Zero);
+        Assert.That(services.RefreshCount, Is.EqualTo(1));
         Assert.That(services.SelectionCount, Is.EqualTo(2));
     }
 
@@ -67,6 +70,44 @@ public sealed class CommandLineContractTests
     }
 
     [Test]
+    public void SC_CLI_003_ActualInspectHashIsOptInAndMatchesCandidateBytes()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "cli-hash-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var input = Path.Combine(folder, "sample file.dll");
+            var bytes = AssemblyFixtureFactory.Managed();
+            File.WriteAllBytes(input, bytes);
+            var withoutHash = RunProcess("inspect", input, "--format", "json");
+            var withHash = RunProcess("inspect", input, "--format", "json", "--sha256");
+            using var ordinary = JsonDocument.Parse(withoutHash.StandardOutput);
+            using var hashed = JsonDocument.Parse(withHash.StandardOutput);
+            Assert.Multiple(() =>
+            {
+                Assert.That(withoutHash.Code, Is.Zero);
+                Assert.That(withHash.Code, Is.Zero);
+                Assert.That(ordinary.RootElement.GetProperty("candidates")[0].GetProperty("sha256").ValueKind,
+                    Is.EqualTo(JsonValueKind.Null));
+                Assert.That(hashed.RootElement.GetProperty("candidates")[0].GetProperty("sha256").GetString(),
+                    Is.EqualTo(Convert.ToHexStringLower(SHA256.HashData(bytes))));
+            });
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Test]
+    public void SC_CLI_003_UnspecifiedInventorySettingsPreserveApplicationDefaults()
+    {
+        var services = new RecordingUseCases();
+        Assert.That(Invoke(["scan", "fake"], services).Code, Is.Zero);
+        Assert.That(services.LastInventoryOptions, Is.EqualTo(new InventoryOptions()));
+    }
+
+    [Test]
     public void SC_CLI_004_ReportConfigurationAndOptInRefreshAreBoundAfterValidation()
     {
         var services = new RecordingUseCases();
@@ -83,13 +124,33 @@ public sealed class CommandLineContractTests
         });
     }
 
+    [Test]
+    public void SC_CLI_004_FailedExplicitRefreshDoesNotStartInventory()
+    {
+        var services = new RecordingUseCases { FailRefresh = true };
+        var result = Invoke(["inspect", "fake.dll", "--refresh-lifecycle"], services);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Code, Is.EqualTo(1));
+            Assert.That(result.StandardOutput, Is.Empty);
+            Assert.That(result.StandardError, Does.Contain("refresh failed"));
+            Assert.That(services.RefreshCount, Is.EqualTo(1));
+            Assert.That(services.InspectCount, Is.Zero);
+        });
+    }
+
     [TestCase("inspect file.dll --unknown")]
     [TestCase("inspect file.dll -x")]
     [TestCase("inspect file.dll --format")]
+    [TestCase("inspect file.dll --fields")]
+    [TestCase("inspect file.dll --output")]
+    [TestCase("inspect file.dll --config")]
     [TestCase("scan root --max-depth --recursive")]
     [TestCase("scan root --max-candidates 0")]
     [TestCase("scan root --max-file-mib 1025")]
     [TestCase("inspect file.dll --format json --format human")]
+    [TestCase("inspect file.dll --sha256 --sha256")]
+    [TestCase("inspect file.dll --fields name,name")]
     [TestCase("scan root --config config.xml")]
     [TestCase("inspect file.dll --refresh-lifecycle --not-an-option")]
     [TestCase("nonsense file.dll")]
@@ -133,6 +194,20 @@ public sealed class CommandLineContractTests
         });
     }
 
+    [TestCase(true, false)]
+    [TestCase(false, true)]
+    public void SC_CLI_007_UnrecoverableUseCaseOrReportFailureReturnsOne(bool failInventory, bool failReport)
+    {
+        var services = new RecordingUseCases { FailInventory = failInventory, FailReport = failReport };
+        var result = Invoke(["scan", "root"], services);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Code, Is.EqualTo(1));
+            Assert.That(result.StandardError, Does.Contain("failed"));
+            Assert.That(result.StandardError, Does.Not.Contain("synthetic sensitive"));
+        });
+    }
+
     [Test]
     public void SC_CLI_008_FailedSelectedRootBlocksAllInventoryWork()
     {
@@ -164,7 +239,7 @@ public sealed class CommandLineContractTests
                 Assert.That(document.RootElement.GetProperty("completion").GetProperty("state").GetString(),
                     Is.EqualTo("Incomplete"));
                 Assert.That(result.StandardError, Does.Contain("warning"));
-                Assert.That(result.StandardOutput, Does.Not.Contain("\u001b"));
+                Assert.That(result.StandardOutput.IndexOf('\u001b', StringComparison.Ordinal), Is.EqualTo(-1));
             });
         }
         finally
@@ -179,6 +254,8 @@ public sealed class CommandLineContractTests
         var services = new RecordingUseCases();
         var help = Invoke(["--help"], services);
         var version = Invoke(["--version"], services);
+        var processHelp = RunProcess("--help");
+        var processVersion = RunProcess("--version");
         var assembly = typeof(CliApplication).Assembly;
         var expected = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ??
             assembly.GetName().Version?.ToString();
@@ -190,6 +267,8 @@ public sealed class CommandLineContractTests
             Assert.That(help.StandardOutput, Does.Contain("offline"));
             Assert.That(help.StandardOutput, Does.Not.Contain("not implemented yet"));
             Assert.That(version.StandardOutput.Trim(), Is.EqualTo(expected));
+            Assert.That(processHelp.Code, Is.Zero);
+            Assert.That(processVersion.StandardOutput.Trim(), Is.EqualTo(expected));
             Assert.That(services.SelectionCount + services.RefreshCount, Is.Zero);
         });
     }
@@ -251,6 +330,9 @@ public sealed class CommandLineContractTests
         public int RefreshCount { get; private set; }
         public bool RejectSelection { get; init; }
         public bool Partial { get; init; }
+        public bool FailRefresh { get; init; }
+        public bool FailInventory { get; init; }
+        public bool FailReport { get; init; }
         public IReadOnlyList<string>? LastPaths { get; private set; }
         public InventoryOptions? LastInventoryOptions { get; private set; }
         public ReportOptions? LastReportOptions { get; private set; }
@@ -277,6 +359,7 @@ public sealed class CommandLineContractTests
             InventoryOptions? options = null)
         {
             InspectCount++;
+            if (FailInventory) throw new IOException("synthetic sensitive inventory error");
             ConfigurationPath = explicitConfiguration?.RequestedPath;
             LastInventoryOptions = options;
             return MakeInventory([file]);
@@ -285,6 +368,7 @@ public sealed class CommandLineContractTests
         public InventoryReport Scan(IReadOnlyList<SelectedInput> roots, InventoryOptions? options = null)
         {
             ScanCount++;
+            if (FailInventory) throw new IOException("synthetic sensitive inventory error");
             LastInventoryOptions = options;
             return MakeInventory(roots);
         }
@@ -294,6 +378,7 @@ public sealed class CommandLineContractTests
         {
             LastReport = inventory;
             LastReportOptions = options;
+            if (FailReport) throw new IOException("synthetic sensitive report error");
             output.WriteLine("REPORT");
             return null;
         }
@@ -304,7 +389,9 @@ public sealed class CommandLineContractTests
         private LifecycleRefreshResult Refresh()
         {
             RefreshCount++;
-            return new LifecycleRefreshResult(true, null!, null);
+            return new LifecycleRefreshResult(!FailRefresh,
+                new LifecycleReferenceDataset("synthetic-v1", new DateOnly(2026, 11, 16), []),
+                FailRefresh ? "synthetic sensitive refresh error" : null);
         }
     }
 }

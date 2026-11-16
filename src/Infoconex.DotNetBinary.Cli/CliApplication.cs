@@ -1,304 +1,152 @@
-using Infoconex.DotNetBinary.Application.AssemblyInspection;
-using Infoconex.DotNetBinary.Application.DeploymentConfiguration;
+using System.Reflection;
 using Infoconex.DotNetBinary.Application.InputSelection;
-using Infoconex.DotNetBinary.Application.InspectionInventory;
-using Infoconex.DotNetBinary.Application.LifecycleAssessment;
 using Infoconex.DotNetBinary.Application.ResultsReporting;
-using Infoconex.DotNetBinary.Domain.Models;
-using Infoconex.DotNetBinary.Infrastructure.AssemblyInspection;
-using Infoconex.DotNetBinary.Infrastructure.DeploymentConfiguration;
-using Infoconex.DotNetBinary.Infrastructure.InputSelection;
-using Infoconex.DotNetBinary.Infrastructure.InspectionInventory;
-using Infoconex.DotNetBinary.Infrastructure.LifecycleAssessment;
-using Infoconex.DotNetBinary.Infrastructure.ResultsReporting;
 
 namespace Infoconex.DotNetBinary.Cli;
 
-/// <summary>
-/// Adapts selected inspect and scan arguments to the CAP-005 inventory and CAP-006 reporting boundaries.
-/// Complete CAP-007 command-line functionality remains pending.
-/// </summary>
+/// <summary>Translates command-line intent to existing Application use cases.</summary>
 public static class CliApplication
 {
-    /// <summary>
-    /// Runs informational operations and minimal inspect/scan inventory entry points.
-    /// </summary>
-    /// <param name="arguments">Command-line arguments.</param>
-    /// <param name="output">Destination for normal output.</param>
-    /// <param name="error">Destination for diagnostic output.</param>
-    /// <returns>Zero for successfully written inventories, even incomplete; two for invalid commands or reports.</returns>
-    public static int Run(IReadOnlyList<string> arguments, TextWriter output, TextWriter error)
+    /// <summary>Parses, validates, dispatches and presents one CLI invocation.</summary>
+    /// <param name="arguments">Literal command-line arguments after the executable name.</param>
+    /// <param name="output">Report-only output (or offline help/version responses).</param>
+    /// <param name="error">Actionable, control-character-safe diagnostic output.</param>
+    /// <param name="useCases">Optional substituted Application ports for deterministic verification.</param>
+    /// <returns>0 for completed reports/help/version; 2 for usage/input errors; 1 for execution/output failures.</returns>
+    public static int Run(IReadOnlyList<string> arguments, TextWriter output, TextWriter error,
+        CliUseCases? useCases = null)
     {
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(error);
 
-        if (arguments.Count == 0 ||
-            (arguments.Count == 1 && arguments[0] is "--help" or "-h" or "help"))
+        if (!CliArgumentParser.TryParse(arguments, out var invocation, out var diagnostic))
         {
-            output.WriteLine("dotnet-binary: static .NET binary inspection");
-            output.WriteLine("Usage: dotnet binary <command> [options]");
-            output.WriteLine("Input selection: inspect <file> [--config <file>] (one regular file, any extension)");
-            output.WriteLine("                 scan <directory> [<directory> ...] [--recursive] [--follow-links]");
-            output.WriteLine("Inventory bounds: --max-depth N, --max-candidates N, --max-file-mib N,");
-            output.WriteLine("                  --max-elapsed-seconds N, --max-cpu-seconds N");
-            output.WriteLine("Reporting: --format human|json, --details (human), --fields name,version,targetFramework,...,");
-            output.WriteLine("           --output <new-file>; field choices: " + string.Join(",", ReportOptions.SupportedFields));
-            output.WriteLine("Lifecycle reference update: lifecycle refresh (explicit network request)");
-            output.WriteLine("Status: CAP-006 reporting available; full CAP-007 command-line options not implemented yet.");
+            error.WriteLine(diagnostic);
+            return 2;
+        }
+
+        if (invocation!.Command == "help")
+        {
+            WriteHelp(output);
             return 0;
         }
 
-        if (arguments.Count == 1 && arguments[0] == "--version")
+        if (invocation.Command == "version")
         {
-            output.WriteLine(typeof(CliApplication).Assembly.GetName().Version?.ToString() ?? "unknown");
+            var assembly = typeof(CliApplication).Assembly;
+            output.WriteLine(assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ??
+                assembly.GetName().Version?.ToString() ?? "unknown");
             return 0;
         }
 
-        if (arguments.Count == 2 && arguments[0] == "lifecycle" && arguments[1] == "refresh")
+        return useCases is null
+            ? CliCompositionRoot.Execute(invocation, output, error)
+            : Execute(invocation, output, error, useCases);
+    }
+
+    internal static int Execute(CliInvocation invocation, TextWriter output, TextWriter error, CliUseCases useCases)
+    {
+        try
         {
-            using var client = MicrosoftLifecycleReleaseSource.CreateHttpClient();
-            var refresh = new LifecycleRefreshService(new FileLifecycleDatasetStore(),
-                new MicrosoftLifecycleReleaseSource(client), new MicrosoftReleaseIndexReader(), TimeProvider.System)
-                .RefreshAsync().GetAwaiter().GetResult();
-            if (!refresh.Succeeded)
+            if (invocation.Command == "refresh")
             {
-                error.WriteLine(refresh.Warning);
-                error.WriteLine($"Retained lifecycle dataset version: {SafeDisplay(refresh.Dataset.Version)}");
+                return Refresh(useCases, error, output, announceSuccess: true);
+            }
+
+            var mode = invocation.Command == "inspect" ? InputSelectionMode.Inspect : InputSelectionMode.Scan;
+            var selected = useCases.Selection.Select(mode, invocation.Paths);
+            if (!selected.IsSuccess)
+            {
+                foreach (var failure in selected.Failures) error.WriteLine(SafeDisplay(failure.Message));
                 return 2;
             }
 
-            output.WriteLine($"Lifecycle dataset refreshed: {SafeDisplay(refresh.Dataset.Version)}");
-            return 0;
-        }
-
-        if (arguments.Count > 0 && arguments[0] is "inspect" or "scan")
-        {
-            var mode = arguments[0] == "inspect" ? InputSelectionMode.Inspect : InputSelectionMode.Scan;
-            if (!TryParseInventoryArguments(arguments, mode, error, out var paths, out var options,
-                out var configurationPath, out var reportingOptions))
+            Infoconex.DotNetBinary.Domain.Models.SelectedInput? configuration = null;
+            if (invocation.ConfigurationPath is not null)
             {
-                return 2;
-            }
-
-            var selection = new InputSelectionService(new HostFileSystemInputPathProbe());
-            var result = selection.Select(mode, paths);
-            if (!result.IsSuccess)
-            {
-                foreach (var failure in result.Failures)
+                var selectedConfig = useCases.Selection.Select(InputSelectionMode.Inspect, [invocation.ConfigurationPath]);
+                if (!selectedConfig.IsSuccess)
                 {
-                    error.WriteLine(failure.Message);
-                }
-
-                return 2;
-            }
-
-            SelectedInput? configurationInput = null;
-            if (configurationPath is not null)
-            {
-                var selectedConfiguration = selection.Select(InputSelectionMode.Inspect, [configurationPath]);
-                if (!selectedConfiguration.IsSuccess)
-                {
-                    foreach (var failure in selectedConfiguration.Failures)
-                    {
-                        error.WriteLine(failure.Message);
-                    }
-
+                    foreach (var failure in selectedConfig.Failures) error.WriteLine(SafeDisplay(failure.Message));
                     return 2;
                 }
 
-                configurationInput = selectedConfiguration.Inputs[0];
+                configuration = selectedConfig.Inputs[0];
             }
 
-            using var cpuClock = new HostInventoryCpuClock();
-            var inventoryService = new InventoryService(new HostInventoryFileSystem(),
-                new InventoryCandidateInspectionService(
-                    new AssemblyInspectionService(new PortableExecutableAssemblyReader()),
-                    new DeploymentConfigurationService(new FileDeploymentConfigurationReader()),
-                    new LifecycleAssessmentService(new FileLifecycleDatasetStore(), TimeProvider.System)),
-                TimeProvider.System, cpuClock);
+            if (invocation.RefreshLifecycle && Refresh(useCases, error, output, announceSuccess: false) != 0)
+            {
+                return 1;
+            }
+
             var inventory = mode == InputSelectionMode.Inspect
-                ? inventoryService.Inspect(result.Inputs[0], configurationInput, options)
-                : inventoryService.Scan(result.Inputs, options);
-            try
-            {
-                var reports = new ReportService(new InventoryReportRenderer(), new HostReportFileStore(),
-                    TimeProvider.System, () => Guid.NewGuid().ToString("N"));
-                reports.Write(inventory, arguments[0], reportingOptions, output, error);
-                // Incomplete coverage is not itself a failed command.
-                return 0;
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
-                System.Security.SecurityException or System.Text.Json.JsonException or InvalidOperationException)
-            {
-                error.WriteLine("Report write or serialization failed. No completed report can be claimed.");
-                return 2;
-            }
+                ? useCases.Inventory.Inspect(selected.Inputs[0], configuration, invocation.Inventory)
+                : useCases.Inventory.Scan(selected.Inputs, invocation.Inventory);
+            useCases.Reporting.Write(inventory, invocation.Command, invocation.Reporting, output, error);
+            // Partial inventory coverage and per-candidate errors do not invalidate a completed report.
+            return 0;
         }
-
-        error.WriteLine("The requested command is not implemented yet.");
-        return 2;
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            error.WriteLine("Command orchestration, refresh, or reporting failed. No completed report can be claimed.");
+            return 1;
+        }
     }
 
-    private static bool TryParseInventoryArguments(IReadOnlyList<string> arguments, InputSelectionMode mode,
-        TextWriter error, out IReadOnlyList<string> paths, out InventoryOptions options,
-        out string? configurationPath, out ReportOptions reportingOptions)
+    private static int Refresh(CliUseCases useCases, TextWriter error, TextWriter output, bool announceSuccess)
     {
-        var selectedPaths = new List<string>();
-        configurationPath = null;
-        options = new InventoryOptions();
-        reportingOptions = new ReportOptions();
-        var literalPaths = false;
-        for (var index = 1; index < arguments.Count; index++)
+        var result = useCases.RefreshLifecycle();
+        if (!result.Succeeded)
         {
-            var token = arguments[index];
-            if (!literalPaths && token == "--")
-            {
-                literalPaths = true;
-                continue;
-            }
-
-            if (!literalPaths && token is "--recursive" or "--follow-links")
-            {
-                if (mode != InputSelectionMode.Scan)
-                {
-                    error.WriteLine($"{token} is supported only for scan.");
-                    paths = [];
-                    return false;
-                }
-
-                options = token == "--recursive" ? options with { Recursive = true } :
-                    options with { FollowLinks = true };
-                continue;
-            }
-
-            if (!literalPaths && token == "--details")
-            {
-                reportingOptions = reportingOptions with { Details = true };
-                continue;
-            }
-
-            if (!literalPaths && token is "--format" or "--fields" or "--output")
-            {
-                if (++index == arguments.Count)
-                {
-                    error.WriteLine($"{token} requires a value.");
-                    paths = [];
-                    return false;
-                }
-
-                var value = arguments[index];
-                switch (token)
-                {
-                    case "--format":
-                        if (value is not ("human" or "json"))
-                        {
-                            error.WriteLine("--format must be human or json.");
-                            paths = [];
-                            return false;
-                        }
-
-                        reportingOptions = reportingOptions with
-                        {
-                            Format = value == "json" ? ReportFormat.Json : ReportFormat.Human,
-                        };
-                        break;
-                    case "--fields":
-                        reportingOptions = reportingOptions with { Fields = value.Split(',') };
-                        break;
-                    default:
-                        reportingOptions = reportingOptions with { OutputPath = value };
-                        break;
-                }
-
-                continue;
-            }
-
-            if (!literalPaths && token == "--config")
-            {
-                if (mode != InputSelectionMode.Inspect || configurationPath is not null || ++index == arguments.Count)
-                {
-                    error.WriteLine("--config is supported only for one inspect request with one configuration file.");
-                    paths = [];
-                    return false;
-                }
-
-                configurationPath = arguments[index];
-                continue;
-            }
-
-            if (!literalPaths && token is "--max-depth" or "--max-candidates" or "--max-file-mib" or
-                "--max-elapsed-seconds" or "--max-cpu-seconds")
-            {
-                if (++index == arguments.Count || !int.TryParse(arguments[index], out var number))
-                {
-                    error.WriteLine($"{token} requires an integer value.");
-                    paths = [];
-                    return false;
-                }
-
-                options = token switch
-                {
-                    "--max-depth" => options with { MaxDepth = number },
-                    "--max-candidates" => options with { MaxCandidates = number },
-                    "--max-file-mib" => options with { MaxFileBytes = (long)number * 1024 * 1024 },
-                    "--max-elapsed-seconds" => options with { MaxElapsedSeconds = number },
-                    _ => options with { MaxCpuSeconds = number },
-                };
-                continue;
-            }
-
-            if (!literalPaths && token.StartsWith("--", StringComparison.Ordinal))
-            {
-                error.WriteLine($"Unsupported inventory option: {SafeDisplay(token)}");
-                paths = [];
-                return false;
-            }
-
-            selectedPaths.Add(token);
+            error.WriteLine("Lifecycle refresh failed; retained the last valid offline reference data.");
+            return 1;
         }
 
-        try
+        if (announceSuccess)
         {
-            options.Validate();
-        }
-        catch (ArgumentOutOfRangeException exception)
-        {
-            var option = exception.ParamName switch
-            {
-                nameof(InventoryOptions.MaxDepth) => "--max-depth",
-                nameof(InventoryOptions.MaxCandidates) => "--max-candidates",
-                nameof(InventoryOptions.MaxFileBytes) => "--max-file-mib",
-                nameof(InventoryOptions.MaxElapsedSeconds) => "--max-elapsed-seconds",
-                _ => "--max-cpu-seconds",
-            };
-            error.WriteLine($"Invalid {option} value; see --help for supported resource limits.");
-            paths = [];
-            return false;
+            output.WriteLine("Lifecycle dataset refreshed: " + SafeDisplay(result.Dataset.Version));
         }
 
-        try
-        {
-            reportingOptions.Validate();
-        }
-        catch (ArgumentException exception)
-        {
-            error.WriteLine(exception.Message);
-            paths = [];
-            return false;
-        }
+        return 0;
+    }
 
-        paths = selectedPaths;
-        return true;
+    private static void WriteHelp(TextWriter output)
+    {
+        output.WriteLine("dotnet-binary: static, metadata-only .NET binary inspection");
+        output.WriteLine("Usage: dotnet binary <command> [options] (or dotnet-binary <command> [options])");
+        output.WriteLine("Commands:");
+        output.WriteLine("  inspect <file> [options]                 Exactly one explicit regular file, any extension");
+        output.WriteLine("  scan <directory> [<directory> ...] [options]  One or more explicit directories");
+        output.WriteLine("  lifecycle refresh                       Explicit online lifecycle reference refresh");
+        output.WriteLine("  --help, -h, help                         Show this offline help (also inspect/scan --help)");
+        output.WriteLine("  --version                                Show the assembly/package informational version");
+        output.WriteLine("Scan switches: --recursive (off by default); --follow-links (off by default)");
+        output.WriteLine("Inspect only: --config <file> (explicitly selected configuration file)");
+        output.WriteLine("Reports: --format human|json (human default), --details (human only),");
+        output.WriteLine("         --fields <comma-separated assembly fields>, --output <new-file>");
+        output.WriteLine("Assembly fields: " + string.Join(",", ReportOptions.SupportedFields));
+        output.WriteLine("--details conflicts with --fields and --format json; duplicate options are rejected.");
+        output.WriteLine("Optional: --sha256 (off by default); --refresh-lifecycle (explicit HTTPS access before inspection)");
+        output.WriteLine("Inventory resource limits (defaults; inclusive override ranges):");
+        output.WriteLine("  --max-depth            32       0-128");
+        output.WriteLine("  --max-candidates       10000    1-100000");
+        output.WriteLine("  --max-file-mib         512      1-1024");
+        output.WriteLine("  --max-elapsed-seconds  300      1-3600");
+        output.WriteLine("  --max-cpu-seconds      300      1-3600");
+        output.WriteLine("Paths are literal and may contain spaces (quote in your shell). Use -- before option-like paths.");
+        output.WriteLine("Exit codes: 0 completed report (including partial coverage), 2 usage/selected-input error,");
+        output.WriteLine("            1 orchestration, refresh, reporting, or output failure.");
+        output.WriteLine("Reports use stdout, diagnostics use stderr; --output creates a new file exclusively.");
+        output.WriteLine("Safety: never executes or loads inspected binaries; no installed runtime detection.");
+        output.WriteLine("Lifecycle assessment is offline by default. Explicit refresh requires network access to");
+        output.WriteLine("approved Microsoft HTTPS lifecycle sources and updates a validated local cache.");
+        output.WriteLine("Limits are cooperative; inspection is not an OS-isolated hostile-input sandbox.");
     }
 
     private static string SafeDisplay(string? content)
     {
-        if (content is null)
-        {
-            return "";
-        }
-
+        if (content is null) return "";
         const int MaxLength = 256;
         var limited = string.Concat(content.Take(MaxLength).Select(character =>
             char.IsControl(character) || character == '\u001b' ? '?' : character));
