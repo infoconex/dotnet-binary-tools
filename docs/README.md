@@ -18,4 +18,5 @@
 - [CI/local validation policy and reproducible commands](engineering/ci-local-validation.md).
 - [Security automation and administrator verification](engineering/security-automation.md).
 - [Lifecycle reference evidence and explicit refresh policy](engineering/lifecycle-assessment.md).
+- [Versioned JSON report contract and safe output policy](engineering/results-reporting.md).
 - [Changelog and release-note conventions](../CHANGELOG.md).

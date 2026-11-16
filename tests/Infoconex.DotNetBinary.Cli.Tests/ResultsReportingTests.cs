@@ -42,7 +42,7 @@ public sealed class ResultsReportingTests
         Assert.Multiple(() =>
         {
             Assert.That(detailed, Does.Contain("Example Company"));
-            Assert.That(detailed, Does.Contain("FileVersion"));
+            Assert.That(detailed, Does.Contain("fileVersion"));
             Assert.That(detailed, Does.Contain("Lifecycle"));
             Assert.That(detailed, Does.Contain("Inventory candidates: 1"));
             Assert.That(concise, Does.Not.Contain("Example Company"));
@@ -90,7 +90,8 @@ public sealed class ResultsReportingTests
             Assert.That(projected, Does.Contain("sample"));
             Assert.That(projected, Does.Contain("1.2.3.4"));
             Assert.That(projected, Does.Not.Contain("Example Company"));
-            Assert.That(projected, Does.Not.Contain(".NETCoreApp,Version=v8.0"));
+            Assert.That(projected, Does.Not.Contain("Assembly target ("));
+            Assert.That(projected, Does.Contain("Lifecycle declaration: .NETCoreApp,Version=v8.0"));
         });
     }
 
@@ -115,7 +116,16 @@ public sealed class ResultsReportingTests
         var unreadable = new InventoryCandidate(new SelectedInput("bad.dll", "bad.dll", InputKind.File),
             new InventoryEvidence(new AssemblyInspectionResult(AssemblyInspectionOutcome.Unreadable, null, null,
                 null, [new InspectionDiagnostic("CandidateReadFailure", "File")]), null, null));
-        var inventory = new InventoryReport([root], [Sample().Candidates[0], native, unreadable],
+        var unknown = new InventoryCandidate(new SelectedInput("unknown.dll", "unknown.dll", InputKind.File),
+            new InventoryEvidence(new AssemblyInspectionResult(AssemblyInspectionOutcome.ManagedAssembly, null,
+                new AssemblyMetadata { DeclaredTarget = new TargetFrameworkIdentity("unknown") }, null, []),
+                new DeploymentConfigurationResult(DeploymentConfigurationOutcome.Malformed, "unknown.dll.runtimeconfig.json",
+                    DeploymentConfigurationAssociation.Automatic, [], [],
+                    [new InspectionDiagnostic("MalformedJson", "runtimeOptions")]), null));
+        var limited = new InventoryCandidate(new SelectedInput("huge.dll", "huge.dll", InputKind.File),
+            new InventoryEvidence(new AssemblyInspectionResult(AssemblyInspectionOutcome.ResourceLimited, null, null,
+                null, [new InspectionDiagnostic("FileSizeLimit", "File")]), null, null));
+        var inventory = new InventoryReport([root], [Sample().Candidates[0], native, unreadable, unknown, limited],
             [new InventorySkippedPath("root", "dup.dll", InventorySkipReason.DuplicateCandidate)],
             [new InventoryTraversalError("root", "restricted", "AccessDenied")],
             [InventoryCompletionReason.CandidateLimit]);
@@ -124,10 +134,16 @@ public sealed class ResultsReportingTests
         {
             Assert.That(json.RootElement.GetProperty("summary").GetProperty("native").GetInt32(), Is.EqualTo(1));
             Assert.That(json.RootElement.GetProperty("summary").GetProperty("unreadable").GetInt32(), Is.EqualTo(1));
+            Assert.That(json.RootElement.GetProperty("summary").GetProperty("unknownTargets").GetInt32(), Is.EqualTo(1));
+            Assert.That(json.RootElement.GetProperty("summary").GetProperty("configurationFailures").GetInt32(), Is.EqualTo(1));
+            Assert.That(json.RootElement.GetProperty("summary").GetProperty("resourceLimited").GetInt32(), Is.EqualTo(1));
             Assert.That(json.RootElement.GetProperty("completion").GetProperty("state").GetString(), Is.EqualTo("Incomplete"));
             Assert.That(json.RootElement.GetProperty("skipped").GetArrayLength(), Is.EqualTo(1));
             Assert.That(json.RootElement.GetProperty("errors").GetArrayLength(), Is.EqualTo(1));
             Assert.That(json.RootElement.GetProperty("candidates")[2].GetProperty("diagnostics").GetArrayLength(), Is.EqualTo(1));
+            Assert.That(json.RootElement.GetProperty("candidates")[3].GetProperty("configuration")
+                .GetProperty("outcome").GetString(), Is.EqualTo("Malformed"));
+            Assert.That(json.RootElement.GetProperty("candidates")[4].GetProperty("outcome").GetString(), Is.EqualTo("ResourceLimited"));
         });
     }
 
