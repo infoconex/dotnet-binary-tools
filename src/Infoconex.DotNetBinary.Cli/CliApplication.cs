@@ -144,9 +144,9 @@ public static class CliApplication
             return "";
         }
 
-        const int maxLength = 256;
-        var limited = string.Concat(content.Take(maxLength).Select(character =>
+        const int MaxLength = 256;
+        var limited = string.Concat(content.Take(MaxLength).Select(character =>
             char.IsControl(character) || character == '\u001b' ? '?' : character));
-        return content.Length > maxLength ? limited + "..." : limited;
+        return content.Length > MaxLength ? limited + "..." : limited;
     }
 }
