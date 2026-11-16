@@ -9,7 +9,7 @@ public sealed class LifecycleCliTests
 {
     [Test]
     [Property("Scenario", "SC-LCY-007")]
-    public void UnsupportedDeclaredTargetRemainsAdvisoryWhenInspectCapabilityIsIncomplete()
+    public void UnsupportedDeclaredTargetRemainsAdvisoryWithCompletedInventory()
     {
         var directory = Path.Combine(Path.GetTempPath(), "lc-cli-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
@@ -24,10 +24,10 @@ public sealed class LifecycleCliTests
 
             Assert.Multiple(() =>
             {
-                Assert.That(exitCode, Is.EqualTo(2)); // CAP-005–007 still unavailable, not a lifecycle failure.
+                Assert.That(exitCode, Is.Zero); // CAP-005 success is independent of lifecycle status.
                 Assert.That(output.ToString(), Does.Contain("Lifecycle"));
                 Assert.That(output.ToString(), Does.Contain("OutOfSupport"));
-                Assert.That(error.ToString(), Does.Contain("not implemented"));
+                Assert.That(error.ToString(), Does.Not.Contain("not implemented"));
                 Assert.That(output.ToString(), Does.Not.Contain("noncompliant"));
             });
         }
@@ -56,7 +56,7 @@ public sealed class LifecycleCliTests
 
             Assert.Multiple(() =>
             {
-                Assert.That(exitCode, Is.EqualTo(2));
+                Assert.That(exitCode, Is.Zero);
                 Assert.That(output.ToString(), Does.Contain("AssemblyTarget"));
                 Assert.That(output.ToString(), Does.Contain("ConfiguredRuntime"));
                 Assert.That(output.ToString(), Does.Contain("Supported"));

@@ -283,6 +283,145 @@ public sealed class InspectionInventoryServiceTests
             MaxCandidates: count, MaxFileBytes: bytes, MaxElapsedSeconds: elapsed, MaxCpuSeconds: cpu).Validate());
     }
 
+    [Test]
+    public void ExactlyAtTheCandidateCountLimitIsCompleteWhenNoAdditionalCandidateExists()
+    {
+        var fs = new FakeInventoryFileSystem();
+        fs.AddFile("/r/one.dll", 1);
+        var inventory = Service(fs).Scan([DirectoryRoot("/r")], new InventoryOptions(MaxCandidates: 1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(inventory.Candidates, Has.Count.EqualTo(1));
+            Assert.That(inventory.Completion.State, Is.EqualTo(InventoryCompletionState.Complete));
+        });
+    }
+
+    [Test]
+    public void WallTimeBudgetEndsTraversalWithAnExplicitIncompleteReason()
+    {
+        var fs = NestedFiles();
+        var service = new InventoryService(fs, new FakeInventoryInspector(),
+            new SteppingInventoryTimeProvider(TimeSpan.FromSeconds(1)), new FixedInventoryCpuClock());
+        var inventory = service.Scan([DirectoryRoot("/r")],
+            new InventoryOptions(Recursive: true, MaxElapsedSeconds: 2));
+        Assert.That(inventory.Completion.Reasons, Does.Contain(InventoryCompletionReason.ElapsedTimeLimit));
+    }
+
+    [Test]
+    public void CpuBudgetEndsTraversalWithAnExplicitIncompleteReason()
+    {
+        var fs = NestedFiles();
+        var service = new InventoryService(fs, new FakeInventoryInspector(), TimeProvider.System,
+            new SteppingInventoryCpuClock(TimeSpan.FromSeconds(1)));
+        var inventory = service.Scan([DirectoryRoot("/r")],
+            new InventoryOptions(Recursive: true, MaxCpuSeconds: 2));
+        Assert.That(inventory.Completion.Reasons, Does.Contain(InventoryCompletionReason.CpuTimeLimit));
+    }
+
+    [Test]
+    public void PerFileReaderMetadataLimitIsDistinguishedFromLengthLimit()
+    {
+        var fs = new FakeInventoryFileSystem();
+        fs.AddFile("/r/one.dll", 1);
+        var inspector = new FakeInventoryInspector();
+        inspector.Outcomes["/r/one.dll"] = AssemblyInspectionOutcome.ResourceLimited;
+        var inventory = Service(fs, inspector).Scan([DirectoryRoot("/r")]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(inventory.Completion.Reasons, Does.Contain(InventoryCompletionReason.ParsingLimit));
+            Assert.That(inventory.Completion.State, Is.EqualTo(InventoryCompletionState.Incomplete));
+        });
+    }
+
+    [Test]
+    public void LifecycleDistributionDoesNotConflateAssemblyTargetWithConfiguredRuntime()
+    {
+        var fs = new FakeInventoryFileSystem();
+        fs.AddFile("/r/one.dll", 1);
+        var inspector = new FakeInventoryInspector();
+        var date = new DateOnly(2026, 11, 15);
+        inspector.Evidence["/r/one.dll"] = new InventoryEvidence(
+            new AssemblyInspectionResult(AssemblyInspectionOutcome.ManagedAssembly, null, null, null, []),
+            new DeploymentConfigurationResult(DeploymentConfigurationOutcome.Parsed, "/r/one.runtimeconfig.json",
+                DeploymentConfigurationAssociation.Automatic, [], [], []),
+            new LifecycleAssessmentResult([
+                new LifecycleFinding(LifecycleEvidenceKind.AssemblyTarget, "net11.0", "TargetFrameworkAttribute",
+                    TargetFrameworkFamily.ModernDotNet, LifecycleStatus.Supported, null, date, "test", null, null,
+                    date, false, "synthetic"),
+                new LifecycleFinding(LifecycleEvidenceKind.ConfiguredRuntime, "net8.0", "runtimeconfig.json:framework",
+                    TargetFrameworkFamily.ModernDotNet, LifecycleStatus.OutOfSupport, date, date, "test", null, null,
+                    date, false, "synthetic"),
+            ], null));
+
+        var inventory = Service(fs, inspector).Scan([DirectoryRoot("/r")]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(inventory.Summary.Lifecycle, Has.Count.EqualTo(2));
+            Assert.That(inventory.Summary.Lifecycle.Any(item => item.EvidenceKind == LifecycleEvidenceKind.AssemblyTarget &&
+                item.Status == LifecycleStatus.Supported && item.Count == 1), Is.True);
+            Assert.That(inventory.Summary.Lifecycle.Any(item => item.EvidenceKind == LifecycleEvidenceKind.ConfiguredRuntime &&
+                item.Status == LifecycleStatus.OutOfSupport && item.Count == 1), Is.True);
+            Assert.That(inventory.Completion.State, Is.EqualTo(InventoryCompletionState.Complete));
+        });
+    }
+
+    [Test]
+    public void MalformedConfigurationDoesNotEraseSuccessfulBinaryEvidence()
+    {
+        var fs = new FakeInventoryFileSystem();
+        fs.AddFile("/r/one.dll", 1);
+        var inspector = new FakeInventoryInspector();
+        inspector.Evidence["/r/one.dll"] = new InventoryEvidence(
+            new AssemblyInspectionResult(AssemblyInspectionOutcome.ManagedAssembly, null, null, null, []),
+            new DeploymentConfigurationResult(DeploymentConfigurationOutcome.Malformed, "/r/one.runtimeconfig.json",
+                DeploymentConfigurationAssociation.Automatic, [], [], []),
+            new LifecycleAssessmentResult([], null));
+
+        var inventory = Service(fs, inspector).Scan([DirectoryRoot("/r")]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(inventory.Summary.Managed, Is.EqualTo(1));
+            Assert.That(inventory.Summary.Failed, Is.Zero);
+            Assert.That(inventory.Summary.ConfigurationFailures, Is.EqualTo(1));
+            Assert.That(inventory.Completion.Reasons, Does.Contain(InventoryCompletionReason.ConfigurationFailure));
+        });
+    }
+
+    [Test]
+    public void ScanNeverDiscoversAnUnselectedSiblingDirectory()
+    {
+        var fs = new FakeInventoryFileSystem();
+        fs.AddFile("/chosen/one.dll", 1);
+        fs.AddFile("/unselected/two.dll", 1);
+        var inspector = new FakeInventoryInspector();
+
+        var inventory = Service(fs, inspector).Scan([DirectoryRoot("/chosen")],
+            new InventoryOptions(Recursive: true));
+        Assert.Multiple(() =>
+        {
+            Assert.That(inventory.Candidates, Has.Count.EqualTo(1));
+            Assert.That(inspector.Visited, Is.EquivalentTo(new[] { "/chosen/one.dll" }));
+        });
+    }
+
+    [Test]
+    public void SkipEventMemoryBudgetStopsTraversalWithPartialCoverage()
+    {
+        var fs = new FakeInventoryFileSystem();
+        for (var index = 0; index < 1050; index++)
+        {
+            fs.AddDirectoryLink($"/r/link-{index}", "/empty");
+        }
+
+        var inventory = Service(fs).Scan([DirectoryRoot("/r")],
+            new InventoryOptions(Recursive: true, MaxCandidates: 1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(inventory.Skipped.Count, Is.LessThanOrEqualTo(1024));
+            Assert.That(inventory.Completion.Reasons, Does.Contain(InventoryCompletionReason.DirectoryLimit));
+        });
+    }
+
     private static InventoryService Service(FakeInventoryFileSystem fs, FakeInventoryInspector? inspector = null) =>
         new(fs, inspector ?? new FakeInventoryInspector(), TimeProvider.System, new FixedInventoryCpuClock());
 

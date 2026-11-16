@@ -58,7 +58,7 @@ public sealed class DeploymentConfigurationCliTests
 
             Assert.Multiple(() =>
             {
-                Assert.That(code, Is.EqualTo(2)); // Full report/CLI capability remains pending.
+                Assert.That(code, Is.Zero); // CAP-005 inventory is complete; CAP-006/007 remain pending.
                 Assert.That(output.ToString(), Does.Contain(".NETCoreApp,Version=v11.0"));
                 Assert.That(output.ToString(), Does.Contain("runtimeOptions.framework.version=8.0.0"));
                 Assert.That(output.ToString(), Does.Contain("TargetFrameworkAttribute"));

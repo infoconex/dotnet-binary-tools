@@ -10,12 +10,14 @@ internal sealed class FakeInventoryFileSystem : IInventoryFileSystem
 
     public HashSet<string> DeniedDirectories { get; } = new(StringComparer.Ordinal);
 
+    public StringComparer PathComparer => StringComparer.Ordinal;
+
     public void AddFile(string path, long length)
     {
         var parent = Parent(path);
         EnsureDirectory(parent);
         _sizes[path] = length;
-        _entries[parent].Add(new InventoryDiscoveredPath(path, path, IsDirectory: false, IsLink: false, length));
+        _entries[parent].Add(new InventoryDiscoveredPath(path, path, IsDirectory: false, IsLink: false, FileLength: length));
     }
 
     public void AddDirectoryLink(string path, string target)
