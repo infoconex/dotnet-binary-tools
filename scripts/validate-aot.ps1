@@ -82,9 +82,27 @@ try {
         throw 'Native scan did not produce the expected command envelope.'
     }
 
-    $invalidOutput = & $binaryPath inspect 2>&1 | Out-String
-    if ($LASTEXITCODE -ne 2 -or $invalidOutput -notmatch 'exactly one') {
-        throw 'Native CLI did not reject invalid arity with the expected usage exit code.'
+    # Isolate the intentional nonzero exit so it cannot become this script's own
+    # $LASTEXITCODE on successful completion (pwsh would then fail the CI step).
+    $invalidStart = [System.Diagnostics.ProcessStartInfo]::new($binaryPath)
+    $invalidStart.ArgumentList.Add('inspect')
+    $invalidStart.RedirectStandardOutput = $true
+    $invalidStart.RedirectStandardError = $true
+    $invalidProcess = [System.Diagnostics.Process]::Start($invalidStart)
+    try {
+        $invalidStdout = $invalidProcess.StandardOutput.ReadToEnd()
+        $invalidStderr = $invalidProcess.StandardError.ReadToEnd()
+        if (-not $invalidProcess.WaitForExit(30000)) {
+            $invalidProcess.Kill()
+            throw 'Native invalid-arity smoke test exceeded 30 seconds.'
+        }
+        if ($invalidProcess.ExitCode -ne 2 -or $invalidStdout.Length -ne 0 -or
+            $invalidStderr -notmatch 'exactly one') {
+            throw 'Native CLI did not reject invalid arity with the expected exit code and stderr-only diagnostic.'
+        }
+    }
+    finally {
+        $invalidProcess.Dispose()
     }
     Write-Host 'Native AOT reporting, scan, SHA-256 option, and invalid-arity smoke tests passed.'
 }
