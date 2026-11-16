@@ -1,11 +1,16 @@
+using Infoconex.DotNetBinary.Application.AssemblyInspection;
+using Infoconex.DotNetBinary.Application.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Application.InputSelection;
+using Infoconex.DotNetBinary.Domain.Models;
+using Infoconex.DotNetBinary.Infrastructure.AssemblyInspection;
+using Infoconex.DotNetBinary.Infrastructure.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Infrastructure.InputSelection;
 
 namespace Infoconex.DotNetBinary.Cli;
 
 /// <summary>
-/// Adapts explicit inspect and scan arguments into input selection while the
-/// inspection and inventory capabilities remain unimplemented.
+/// Adapts selected inspect and scan arguments to available capability boundaries.
+/// Complete reporting, traversal and command-line functionality remain pending.
 /// </summary>
 public static class CliApplication
 {
@@ -27,9 +32,9 @@ public static class CliApplication
         {
             output.WriteLine("dotnet-binary: static .NET binary inspection (planned)");
             output.WriteLine("Usage: dotnet binary <command> [options]");
-            output.WriteLine("Input selection: inspect <file> (one regular file, any extension)");
+            output.WriteLine("Input selection: inspect <file> [--config <file>] (one regular file, any extension)");
             output.WriteLine("                 scan <directory> [<directory> ...]");
-            output.WriteLine("Status: input selection available; inspection and traversal not implemented yet.");
+            output.WriteLine("Status: selected metadata/configuration evidence available; complete inspection, reporting and traversal not implemented yet.");
             return 0;
         }
 
@@ -42,8 +47,24 @@ public static class CliApplication
         if (arguments.Count > 0 && arguments[0] is "inspect" or "scan")
         {
             var mode = arguments[0] == "inspect" ? InputSelectionMode.Inspect : InputSelectionMode.Scan;
-            var paths = arguments.Skip(1).ToArray();
-            var result = new InputSelectionService(new HostFileSystemInputPathProbe()).Select(mode, paths);
+            if (mode == InputSelectionMode.Scan && arguments.Skip(1).Contains("--config", StringComparer.Ordinal))
+            {
+                error.WriteLine("--config is supported only for one inspect request; scan does not accept a global configuration.");
+                return 2;
+            }
+
+            var hasExplicitConfiguration = mode == InputSelectionMode.Inspect &&
+                arguments.Count == 4 && arguments[2] == "--config";
+            if (mode == InputSelectionMode.Inspect && arguments.Contains("--config", StringComparer.Ordinal) &&
+                !hasExplicitConfiguration)
+            {
+                error.WriteLine("inspect requires exactly one file followed by optional --config <file>.");
+                return 2;
+            }
+
+            var paths = hasExplicitConfiguration ? new[] { arguments[1] } : arguments.Skip(1).ToArray();
+            var selection = new InputSelectionService(new HostFileSystemInputPathProbe());
+            var result = selection.Select(mode, paths);
             if (!result.IsSuccess)
             {
                 foreach (var failure in result.Failures)
@@ -54,13 +75,78 @@ public static class CliApplication
                 return 2;
             }
 
+            if (mode == InputSelectionMode.Inspect)
+            {
+                SelectedInput? configurationInput = null;
+                if (hasExplicitConfiguration)
+                {
+                    var selectedConfiguration = selection.Select(InputSelectionMode.Inspect, [arguments[3]]);
+                    if (!selectedConfiguration.IsSuccess)
+                    {
+                        foreach (var failure in selectedConfiguration.Failures)
+                        {
+                            error.WriteLine(failure.Message);
+                        }
+
+                        return 2;
+                    }
+
+                    configurationInput = selectedConfiguration.Inputs[0];
+                }
+
+                var configuration = new DeploymentConfigurationService(new FileDeploymentConfigurationReader())
+                    .Inspect(result.Inputs[0], configurationInput);
+                if (configuration.Outcome != DeploymentConfigurationOutcome.NotFound)
+                {
+                    output.WriteLine($"Configuration: {configuration.Outcome} ({configuration.Association})");
+                    output.WriteLine($"Configuration source: {SafeDisplay(configuration.Path)}");
+                    foreach (var value in configuration.Values)
+                    {
+                        output.WriteLine($"Configured {value.Field}={SafeDisplay(value.RawValue)}");
+                    }
+
+                    foreach (var request in configuration.RuntimeRequests)
+                    {
+                        foreach (var value in request.Values)
+                        {
+                            output.WriteLine($"Configured {value.Field}={SafeDisplay(value.RawValue)}");
+                        }
+                    }
+
+                    foreach (var diagnostic in configuration.Diagnostics)
+                    {
+                        error.WriteLine($"Configuration {diagnostic.Code} ({diagnostic.Field}).");
+                    }
+
+                    var assembly = new AssemblyInspectionService(new PortableExecutableAssemblyReader())
+                        .Inspect(result.Inputs[0]);
+                    if (assembly.Metadata?.DeclaredTarget is { } declaredTarget)
+                    {
+                        output.WriteLine($"Assembly target ({declaredTarget.EvidenceSource}): {SafeDisplay(declaredTarget.Moniker)}");
+                    }
+                }
+            }
+
             // Do not claim successful inspection or a completed inventory until
             // downstream capabilities are implemented and coordinated.
-            error.WriteLine("Input selection succeeded; inspection and traversal are not implemented yet.");
+            error.WriteLine("Input selection succeeded; complete inspection and traversal are not implemented yet.");
             return 2;
         }
 
         error.WriteLine("The requested command is not implemented yet.");
         return 2;
+    }
+
+    private static string SafeDisplay(string? content)
+    {
+        if (content is null)
+        {
+            return "";
+        }
+
+        const int MaxLength = 256;
+        var limited = string.Concat(content.Take(MaxLength).Select(character =>
+            char.IsControl(character) || character == '\u001b' ? '?' : character));
+        return content.Length > MaxLength ? limited + "..." : limited;
     }
 }
