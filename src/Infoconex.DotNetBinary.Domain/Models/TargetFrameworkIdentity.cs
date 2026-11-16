@@ -48,7 +48,8 @@ public sealed record TargetFrameworkIdentity
             ".NETFramework" when (twoPartVersion &&
                     ((version.Major >= 1 && version.Major <= 3) ||
                     (version.Major == 4 && version.Minor <= 8))) ||
-                (version.Major == 4 && version.Minor == 8 && version.Build == 1) => TargetFrameworkFamily.NetFramework,
+                (version.Major == 4 && ((version.Minor is >= 5 and <= 7 && version.Build is 1 or 2) ||
+                    (version.Minor == 8 && version.Build == 1))) => TargetFrameworkFamily.NetFramework,
             ".NETCoreApp" when twoPartVersion && version.Major is >= 1 and <= 3 => TargetFrameworkFamily.NetCore,
             ".NETCoreApp" when twoPartVersion && version.Major is >= 5 and <= 11 && version.Minor == 0 => TargetFrameworkFamily.ModernDotNet,
             ".NETStandard" when twoPartVersion && ((version.Major == 1 && version.Minor <= 6) ||

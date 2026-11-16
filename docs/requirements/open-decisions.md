@@ -3,7 +3,7 @@
 **Status:** Open technical decisions. The functional behaviors linked from the [requirements index](functional.md) and defined in the [capability specifications](../capabilities/README.md) are approved, but these numerical and contract details are **not** silently invented by the specification.
 
 1. **Inventory resource limits:** Select numerical default maximum depth, candidate count, and candidate/file size. Define command option names, override bounds and safeguards for CPU, metadata parsing and memory.
-2. **Lifecycle reference freshness:** Select an observable stale-data threshold, source allowlist, refresh signature/integrity rules, and cache behavior. Default execution remains offline.
+2. **Lifecycle reference freshness — resolved for CAP-004:** [Implementation policy and rationale](../engineering/lifecycle-assessment.md) defines the 90-day stale-data warning, exact Microsoft HTTPS allowlist, bounded/schema-validated refresh and same-directory atomic user-cache replacement. These are explicitly documented implementation decisions from [Issue #18](https://github.com/infoconex/dotnet-binary-tools/issues/18), not retrospective approved numerical product requirements. Routine execution remains offline.
 3. **CLI spelling and JSON contract:** Finalize canonical argument aliases, report JSON property names and schema version; verify both through compatibility/contract tests.
 4. **Input race handling:** Treat a selected file that disappears after initial validation as a safe read/inspection error; preserve the distinction between an invalid command *at validation* and an error discovered while executing a valid request.
 
