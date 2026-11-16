@@ -110,6 +110,27 @@ public sealed class LifecycleReferenceStoreTests
         });
     }
 
+    [Test]
+    public void OversizedCacheIsRejectedWithoutUnboundedFileRead()
+    {
+        var path = TemporaryCachePath();
+        try
+        {
+            File.WriteAllBytes(path, new byte[LifecycleDatasetCodec.MaxDatasetBytes + 100]);
+            var result = new FileLifecycleDatasetStore(path).Load();
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.UsedBundledFallback, Is.True);
+                Assert.That(result.Dataset.Entries, Is.Not.Empty);
+                Assert.That(result.Warning, Is.Not.Empty);
+            });
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static string TemporaryCachePath() => Path.Combine(Path.GetTempPath(),
         "lifecycle-" + Guid.NewGuid().ToString("N") + ".json");
 }

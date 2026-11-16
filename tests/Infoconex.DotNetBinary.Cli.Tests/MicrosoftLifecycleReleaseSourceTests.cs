@@ -9,6 +9,13 @@ namespace Infoconex.DotNetBinary.Cli.Tests;
 public sealed class MicrosoftLifecycleReleaseSourceTests
 {
     [Test]
+    public void ProductionClientUsesBoundedRequestTimeout()
+    {
+        using var client = MicrosoftLifecycleReleaseSource.CreateHttpClient();
+        Assert.That(client.Timeout, Is.EqualTo(TimeSpan.FromSeconds(15)));
+    }
+
+    [Test]
     public async Task ExplicitDownloadUsesOnlyMicrosoftAllowlistedUri()
     {
         var handler = new ControlledHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)

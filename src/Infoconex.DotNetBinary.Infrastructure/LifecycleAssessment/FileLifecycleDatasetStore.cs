@@ -27,13 +27,7 @@ public sealed class FileLifecycleDatasetStore : ILifecycleDatasetStore
         {
             try
             {
-                var file = new FileInfo(_cachePath);
-                if (file.Length > LifecycleDatasetCodec.MaxDatasetBytes)
-                {
-                    throw new InvalidDataException("Oversized lifecycle reference cache.");
-                }
-
-                return new LifecycleDatasetLoad(LifecycleDatasetCodec.Parse(File.ReadAllBytes(_cachePath)), false, null);
+                return new LifecycleDatasetLoad(LifecycleDatasetCodec.Parse(ReadBoundedCache()), false, null);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
                 InvalidDataException or System.Security.SecurityException)
@@ -44,6 +38,36 @@ public sealed class FileLifecycleDatasetStore : ILifecycleDatasetStore
         }
 
         return new LifecycleDatasetLoad(Bundled(), false, null);
+    }
+
+    private byte[] ReadBoundedCache()
+    {
+        using var stream = new FileStream(_cachePath, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+        if (stream.Length > LifecycleDatasetCodec.MaxDatasetBytes)
+        {
+            throw new InvalidDataException("Oversized lifecycle reference cache.");
+        }
+
+        var bytes = new byte[LifecycleDatasetCodec.MaxDatasetBytes + 1];
+        var count = 0;
+        while (count < bytes.Length)
+        {
+            var read = stream.Read(bytes, count, bytes.Length - count);
+            if (read == 0)
+            {
+                break;
+            }
+
+            count += read;
+        }
+
+        if (count > LifecycleDatasetCodec.MaxDatasetBytes)
+        {
+            throw new InvalidDataException("Oversized lifecycle reference cache.");
+        }
+
+        return bytes[..count];
     }
 
     /// <inheritdoc />
