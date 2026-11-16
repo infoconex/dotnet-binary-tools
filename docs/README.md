@@ -17,4 +17,5 @@
 - [Build configuration](engineering/build-configuration.md), [packaging](engineering/packaging.md), [release gates](engineering/release-gates.md), [workflow](engineering/workflow.md), and [style](engineering/csharp-style.md).
 - [CI/local validation policy and reproducible commands](engineering/ci-local-validation.md).
 - [Security automation and administrator verification](engineering/security-automation.md).
+- [Lifecycle reference evidence and explicit refresh policy](engineering/lifecycle-assessment.md).
 - [Changelog and release-note conventions](../CHANGELOG.md).

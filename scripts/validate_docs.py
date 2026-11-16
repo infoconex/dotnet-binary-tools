@@ -463,7 +463,13 @@ def check_links_and_retired_refs() -> None:
             continue
         source = path.read_text(encoding="utf-8")
         for item in retired:
-            if item in source:
+            # The former repository name must not flag official Microsoft lifecycle URLs
+            # such as learn.microsoft.com/lifecycle/faq/dotnet-framework.
+            candidate = (
+                re.sub(r"https://learn\.microsoft\.com/[^\s)]+", "", source)
+                if item == "dotnet-framework" else source
+            )
+            if item in candidate:
                 error(f"{path.relative_to(ROOT)}: obsolete reference {item}")
         for target in MARKDOWN_LINK.findall(source):
             url = unquote(target.strip().split(" ", 1)[0].strip("<>"))
