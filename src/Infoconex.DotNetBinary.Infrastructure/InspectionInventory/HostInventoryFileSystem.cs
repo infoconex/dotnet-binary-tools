@@ -54,12 +54,18 @@ public sealed class HostInventoryFileSystem : IInventoryFileSystem
         foreach (var entry in new DirectoryInfo(physicalPath).EnumerateFileSystemInfos("*", options))
         {
             var logical = Path.Combine(logicalPath, entry.Name);
-            FileAttributes attributes;
+            var attributes = FileAttributes.Normal;
+            var attributesAvailable = true;
             try
             {
                 attributes = entry.Attributes;
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
+            {
+                attributesAvailable = false;
+            }
+
+            if (!attributesAvailable)
             {
                 // A disappearing entry is still surfaced as a candidate rather than silently ignored.
                 yield return new InventoryDiscoveredPath(logical, entry.FullName, false, false, null);
