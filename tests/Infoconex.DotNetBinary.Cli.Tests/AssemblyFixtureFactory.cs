@@ -1,4 +1,3 @@
-using System.Configuration.Assemblies;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -14,6 +13,7 @@ internal static class AssemblyFixtureFactory
         bool entryPoint = false,
         bool optionalAttributes = false,
         bool malformedOptionalAttribute = false,
+        bool unexpectedAttributeConstructor = false,
         Machine machine = Machine.I386,
         CorFlags flags = CorFlags.ILOnly,
         bool publicKey = false)
@@ -25,11 +25,11 @@ internal static class AssemblyFixtureFactory
         var key = publicKey ? builder.GetOrAddBlob(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 }) : default;
         var assembly = builder.AddAssembly(builder.GetOrAddString("Synthetic.Sample"),
             new Version(3, 2, 1, 0), builder.GetOrAddString("en-US"), key,
-            publicKey ? AssemblyFlags.PublicKey : AssemblyFlags.None, AssemblyHashAlgorithm.Sha1);
+            publicKey ? AssemblyFlags.PublicKey : 0, AssemblyHashAlgorithm.Sha1);
         var systemRuntime = builder.AddAssemblyReference(builder.GetOrAddString("System.Runtime"),
-            new Version(11, 0, 0, 0), default, default, AssemblyFlags.None, default);
+            new Version(11, 0, 0, 0), default, default, 0, default);
         builder.AddAssemblyReference(builder.GetOrAddString("Synthetic.Dependency"),
-            new Version(2, 4, 0, 0), default, default, AssemblyFlags.None, default);
+            new Version(2, 4, 0, 0), default, default, 0, default);
 
         if (target is not null)
         {
@@ -57,6 +57,12 @@ internal static class AssemblyFixtureFactory
                 "System.Reflection", "AssemblyCompanyAttribute", "ignored", malformed: true);
         }
 
+        if (unexpectedAttributeConstructor)
+        {
+            AddStringAttribute(builder, assembly, systemRuntime,
+                "System.Reflection", "AssemblyCompanyAttribute", "ignored", unexpectedSignature: true);
+        }
+
         var method = default(MethodDefinitionHandle);
         if (entryPoint)
         {
@@ -71,7 +77,7 @@ internal static class AssemblyFixtureFactory
             MetadataTokens.FieldDefinitionHandle(1), MetadataTokens.MethodDefinitionHandle(1));
 
         var header = new PEHeaderBuilder(machine: machine,
-            imageCharacteristics: Characteristics.ExecutableImage | Characteristics.Dll);
+            imageCharacteristics: Characteristics.ExecutableImage | (entryPoint ? 0 : Characteristics.Dll));
         var peBuilder = new ManagedPEBuilder(header, new MetadataRootBuilder(builder),
             new BlobBuilder(), entryPoint: method, flags: flags);
         var blob = new BlobBuilder();
@@ -87,18 +93,20 @@ internal static class AssemblyFixtureFactory
         // PE32 data directory #14 is the CLR header. Clearing the directory yields
         // a valid native PE with no managed metadata, without running any executable.
         var pe32Plus = reader.PEHeaders.PEHeader!.Magic == PEMagic.PE32Plus;
-        var offset = reader.PEHeaders.PEHeaderStartOffset + 4 + 20 + (pe32Plus ? 112 : 96) + 14 * 8;
+        var offset = reader.PEHeaders.PEHeaderStartOffset + (pe32Plus ? 112 : 96) + 14 * 8;
         Array.Clear(bytes, offset, 8);
         return bytes;
     }
 
     private static void AddStringAttribute(MetadataBuilder builder, AssemblyDefinitionHandle owner,
         AssemblyReferenceHandle runtime, string attributeNamespace, string attributeName,
-        string value, bool malformed = false)
+        string value, bool malformed = false, bool unexpectedSignature = false)
     {
         var type = builder.AddTypeReference(runtime, builder.GetOrAddString(attributeNamespace),
             builder.GetOrAddString(attributeName));
-        var signature = builder.GetOrAddBlob(new byte[] { 0x20, 0x01, 0x01, 0x0e });
+        var signature = builder.GetOrAddBlob(unexpectedSignature
+            ? new byte[] { 0x20, 0x00, 0x01 }
+            : new byte[] { 0x20, 0x01, 0x01, 0x0e });
         var ctor = builder.AddMemberReference(type, builder.GetOrAddString(".ctor"), signature);
         var data = new BlobBuilder();
         if (malformed)

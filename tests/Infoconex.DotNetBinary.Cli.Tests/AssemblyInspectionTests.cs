@@ -276,6 +276,54 @@ public sealed class AssemblyInspectionTests
         Assert.That(result.Outcome, Is.EqualTo(AssemblyInspectionOutcome.ResourceLimited));
     }
 
+    [Test]
+    public void ReportsHashReadFailureWithoutSuccessfulMetadata()
+    {
+        var result = Inspect(Path.Combine(_directory, "deleted.dll"), hash: true);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Outcome, Is.EqualTo(AssemblyInspectionOutcome.Unreadable));
+            Assert.That(result.Sha256, Is.Null);
+            Assert.That(result.Metadata, Is.Null);
+        });
+    }
+
+    [Test]
+    public void DamagedCliHeaderIsNotMisclassifiedAsNativePe()
+    {
+        var bytes = AssemblyFixtureFactory.Managed();
+        // Damage the CLI metadata RVA while keeping the managed directory present.
+        using (var stream = new MemoryStream(bytes))
+        using (var reader = new System.Reflection.PortableExecutable.PEReader(stream))
+        {
+            var metadataDirectoryOffset = reader.PEHeaders.PEHeaderStartOffset + 96 + 14 * 8;
+            // CorHeader RVA is in the CLI directory; retain directory, but point outside the file.
+            if (metadataDirectoryOffset + 8 < bytes.Length)
+            {
+                bytes[metadataDirectoryOffset] = 0xff;
+                bytes[metadataDirectoryOffset + 1] = 0xff;
+                bytes[metadataDirectoryOffset + 2] = 0xff;
+                bytes[metadataDirectoryOffset + 3] = 0x7f;
+            }
+        }
+
+        var result = Inspect(Write("bad-cli.dll", bytes));
+        Assert.That(result.Outcome, Is.EqualTo(AssemblyInspectionOutcome.CorruptOrUnrecognized));
+    }
+
+    [Test]
+    public void UnexpectedAttributeConstructorCannotManufactureCompanyMetadata()
+    {
+        var result = Inspect(Write("unexpected-attribute.dll",
+            AssemblyFixtureFactory.Managed(unexpectedAttributeConstructor: true)));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Outcome, Is.EqualTo(AssemblyInspectionOutcome.ManagedAssembly));
+            Assert.That(result.Metadata!.Company, Is.Null);
+            Assert.That(result.Diagnostics, Has.Some.Property("Code").EqualTo("UnexpectedAttributeConstructor"));
+        });
+    }
+
     private AssemblyInspectionResult Inspect(string path, bool hash = false)
     {
         var input = new SelectedInput(path, path, InputKind.File);
