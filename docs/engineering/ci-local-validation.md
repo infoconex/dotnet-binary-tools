@@ -110,9 +110,11 @@ pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier linux-x64
 ```
 
 The script rejects a mismatched host or architecture and executes the resulting
-`dotnet-binary` (or `dotnet-binary.exe` on Windows) with `--help` and `--version`,
-checking both exit codes. CI checks only these scaffold commands; this is **not** proof of full inspection,
-runtime-free clean installation, or release readiness.
+`dotnet-binary` (or `dotnet-binary.exe` on Windows) with `--help`, `--version`,
+and an actual self-inspection in `--format json` mode. It parses and checks the
+CAP-006 JSON envelope and exit codes, including on Native AOT. This demonstrates
+the reporting path on that host but **does not** establish complete CAP-007 option
+acceptance, SDK-free clean installation, or CAP-008 release readiness.
 
 The Native AOT and NuGet tool packaging scripts restore the **common locked
 dependency graph** first, then publish or pack with their explicit x64 RID and

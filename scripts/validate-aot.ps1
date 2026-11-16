@@ -49,6 +49,25 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Native help smoke test failed with exit code $LASTEXITCODE." }
     & (Resolve-Path -LiteralPath $binary).Path --version
     if ($LASTEXITCODE -ne 0) { throw "Native version smoke test failed with exit code $LASTEXITCODE." }
+
+    # CAP-006: Execute the actual Native AOT reporting path, not merely help/version.
+    # The published executable is a controlled local candidate: native PE on Windows,
+    # non-PE on Unix. Neither outcome requires loading any inspected assembly.
+    $binaryPath = (Resolve-Path -LiteralPath $binary).Path
+    $jsonReport = & $binaryPath inspect $binaryPath --format json 2>$null | Out-String
+    if ($LASTEXITCODE -ne 0) { throw "Native JSON reporting smoke test failed with exit code $LASTEXITCODE." }
+    try {
+        $report = $jsonReport | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+    }
+    catch {
+        throw 'Native JSON reporting smoke test did not produce one valid JSON document.'
+    }
+    if ($report.schemaVersion -ne '1.0.0' -or $report.command -ne 'inspect' -or
+        $report.candidates.Count -ne 1 -or -not $report.ContainsKey('completion') -or
+        -not $report.ContainsKey('summary')) {
+        throw 'Native JSON reporting smoke test produced an unexpected CAP-006 contract.'
+    }
+    Write-Host 'Native AOT JSON reporting contract smoke test passed.'
 }
 finally {
     Pop-Location

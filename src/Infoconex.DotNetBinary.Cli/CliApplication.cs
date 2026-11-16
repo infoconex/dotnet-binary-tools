@@ -3,18 +3,20 @@ using Infoconex.DotNetBinary.Application.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Application.InputSelection;
 using Infoconex.DotNetBinary.Application.InspectionInventory;
 using Infoconex.DotNetBinary.Application.LifecycleAssessment;
+using Infoconex.DotNetBinary.Application.ResultsReporting;
 using Infoconex.DotNetBinary.Domain.Models;
 using Infoconex.DotNetBinary.Infrastructure.AssemblyInspection;
 using Infoconex.DotNetBinary.Infrastructure.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Infrastructure.InputSelection;
 using Infoconex.DotNetBinary.Infrastructure.InspectionInventory;
 using Infoconex.DotNetBinary.Infrastructure.LifecycleAssessment;
+using Infoconex.DotNetBinary.Infrastructure.ResultsReporting;
 
 namespace Infoconex.DotNetBinary.Cli;
 
 /// <summary>
-/// Adapts selected inspect and scan arguments to the CAP-005 inventory boundary.
-/// Complete reporting and command-line functionality remain pending.
+/// Adapts selected inspect and scan arguments to the CAP-005 inventory and CAP-006 reporting boundaries.
+/// Complete CAP-007 command-line functionality remains pending.
 /// </summary>
 public static class CliApplication
 {
@@ -24,7 +26,7 @@ public static class CliApplication
     /// <param name="arguments">Command-line arguments.</param>
     /// <param name="output">Destination for normal output.</param>
     /// <param name="error">Destination for diagnostic output.</param>
-    /// <returns>Zero for valid inventories, even incomplete; two for invalid commands or roots.</returns>
+    /// <returns>Zero for successfully written inventories, even incomplete; two for invalid commands or reports.</returns>
     public static int Run(IReadOnlyList<string> arguments, TextWriter output, TextWriter error)
     {
         ArgumentNullException.ThrowIfNull(arguments);
@@ -40,8 +42,10 @@ public static class CliApplication
             output.WriteLine("                 scan <directory> [<directory> ...] [--recursive] [--follow-links]");
             output.WriteLine("Inventory bounds: --max-depth N, --max-candidates N, --max-file-mib N,");
             output.WriteLine("                  --max-elapsed-seconds N, --max-cpu-seconds N");
+            output.WriteLine("Reporting: --format human|json, --details (human), --fields name,version,targetFramework,...,");
+            output.WriteLine("           --output <new-file>; field choices: " + string.Join(",", ReportOptions.SupportedFields));
             output.WriteLine("Lifecycle reference update: lifecycle refresh (explicit network request)");
-            output.WriteLine("Status: inventory available; complete JSON reporting and CLI options not implemented yet.");
+            output.WriteLine("Status: CAP-006 reporting available; full CAP-007 command-line options not implemented yet.");
             return 0;
         }
 
@@ -72,7 +76,7 @@ public static class CliApplication
         {
             var mode = arguments[0] == "inspect" ? InputSelectionMode.Inspect : InputSelectionMode.Scan;
             if (!TryParseInventoryArguments(arguments, mode, error, out var paths, out var options,
-                out var configurationPath))
+                out var configurationPath, out var reportingOptions))
             {
                 return 2;
             }
@@ -116,98 +120,20 @@ public static class CliApplication
             var inventory = mode == InputSelectionMode.Inspect
                 ? inventoryService.Inspect(result.Inputs[0], configurationInput, options)
                 : inventoryService.Scan(result.Inputs, options);
-            output.WriteLine($"Inventory roots: {inventory.Roots.Count}");
-            output.WriteLine($"Inventory candidates: {inventory.Summary.TotalCandidates}");
-            output.WriteLine($"Inventory coverage: {inventory.Completion.State}");
-            foreach (var reason in inventory.Completion.Reasons)
+            try
             {
-                output.WriteLine($"Inventory coverage limitation: {reason}");
+                var reports = new ReportService(new InventoryReportRenderer(), new HostReportFileStore(),
+                    TimeProvider.System, () => Guid.NewGuid().ToString("N"));
+                reports.Write(inventory, arguments[0], reportingOptions, output, error);
+                // Incomplete coverage is not itself a failed command.
+                return 0;
             }
-
-            output.WriteLine($"Inventory distribution: managed={inventory.Summary.Managed}; native={inventory.Summary.Native}; " +
-                $"unknown-target={inventory.Summary.UnknownTargets}; failed={inventory.Summary.Failed}; " +
-                $"skipped={inventory.Summary.Skipped}; duplicate={inventory.Summary.Duplicates}; " +
-                $"traversal-errors={inventory.Summary.TraversalErrors}");
-            foreach (var item in inventory.Candidates)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or
+                System.Security.SecurityException or System.Text.Json.JsonException or InvalidOperationException)
             {
-                output.WriteLine($"Candidate ({item.Assembly.Outcome}): {SafeDisplay(item.Input.FullPath)}");
+                error.WriteLine("Report write or serialization failed. No completed report can be claimed.");
+                return 2;
             }
-
-            foreach (var skipped in inventory.Skipped)
-            {
-                output.WriteLine($"Skipped ({skipped.Reason}) under {SafeDisplay(skipped.Root)}: {SafeDisplay(skipped.Path)}");
-            }
-
-            foreach (var traversalError in inventory.Errors)
-            {
-                output.WriteLine($"Traversal error ({traversalError.Code}) under {SafeDisplay(traversalError.Root)}: " +
-                    SafeDisplay(traversalError.Path));
-            }
-
-            if (mode == InputSelectionMode.Inspect)
-            {
-                var candidate = inventory.Candidates[0];
-                var configuration = candidate.Configuration;
-                if (configuration is not null && configuration.Outcome != DeploymentConfigurationOutcome.NotFound)
-                {
-                    output.WriteLine($"Configuration: {configuration.Outcome} ({configuration.Association})");
-                    output.WriteLine($"Configuration source: {SafeDisplay(configuration.Path)}");
-                    foreach (var value in configuration.Values)
-                    {
-                        output.WriteLine($"Configured {value.Field}={SafeDisplay(value.RawValue)}");
-                    }
-
-                    foreach (var request in configuration.RuntimeRequests)
-                    {
-                        foreach (var value in request.Values)
-                        {
-                            output.WriteLine($"Configured {value.Field}={SafeDisplay(value.RawValue)}");
-                        }
-                    }
-
-                    foreach (var diagnostic in configuration.Diagnostics)
-                    {
-                        error.WriteLine($"Configuration {diagnostic.Code} ({diagnostic.Field}).");
-                    }
-
-                }
-
-                var assembly = candidate.Assembly;
-                if (assembly.Metadata?.DeclaredTarget is { } declaredTarget)
-                {
-                    output.WriteLine($"Assembly target ({declaredTarget.EvidenceSource}): {SafeDisplay(declaredTarget.Moniker)}");
-                }
-
-                var lifecycle = candidate.Lifecycle;
-                if (lifecycle?.DatasetWarning is not null)
-                {
-                    error.WriteLine(lifecycle.DatasetWarning);
-                }
-
-                foreach (var finding in lifecycle?.Findings ?? [])
-                {
-                    output.WriteLine($"Lifecycle ({finding.EvidenceKind}, {SafeDisplay(finding.EvidenceSource)}): {finding.Status}");
-                    output.WriteLine($"Lifecycle declaration: {SafeDisplay(finding.DeclaredIdentity)}");
-                    output.WriteLine($"Lifecycle assessment date: {finding.AssessmentDate:yyyy-MM-dd}; dataset: {SafeDisplay(finding.DatasetVersion)}");
-                    output.WriteLine($"Lifecycle source: {finding.SourceIdentity}; {SafeDisplay(finding.SourceUrl ?? "unavailable")}; " +
-                        $"publication: {finding.SourcePublishedOn?.ToString("yyyy-MM-dd") ?? "unknown"}; " +
-                        $"retrieval: {finding.SourceRetrievedOn:yyyy-MM-dd}");
-                    if (finding.EndOfSupport is { } end)
-                    {
-                        output.WriteLine($"Lifecycle published end date: {end:yyyy-MM-dd}");
-                    }
-
-                    output.WriteLine($"Lifecycle limitation: {SafeDisplay(finding.Limitation)}");
-                    if (finding.IsStale)
-                    {
-                        output.WriteLine("Lifecycle warning: local reference data is stale or future-dated; no automatic refresh occurred.");
-                    }
-                }
-            }
-
-            // Incomplete coverage is an honest successful inventory, not an invalid command.
-            // CAP-006 JSON and full CAP-007 parsing remain separate future capabilities.
-            return 0;
         }
 
         error.WriteLine("The requested command is not implemented yet.");
@@ -215,11 +141,13 @@ public static class CliApplication
     }
 
     private static bool TryParseInventoryArguments(IReadOnlyList<string> arguments, InputSelectionMode mode,
-        TextWriter error, out IReadOnlyList<string> paths, out InventoryOptions options, out string? configurationPath)
+        TextWriter error, out IReadOnlyList<string> paths, out InventoryOptions options,
+        out string? configurationPath, out ReportOptions reportingOptions)
     {
         var selectedPaths = new List<string>();
         configurationPath = null;
         options = new InventoryOptions();
+        reportingOptions = new ReportOptions();
         var literalPaths = false;
         for (var index = 1; index < arguments.Count; index++)
         {
@@ -241,6 +169,48 @@ public static class CliApplication
 
                 options = token == "--recursive" ? options with { Recursive = true } :
                     options with { FollowLinks = true };
+                continue;
+            }
+
+            if (!literalPaths && token == "--details")
+            {
+                reportingOptions = reportingOptions with { Details = true };
+                continue;
+            }
+
+            if (!literalPaths && token is "--format" or "--fields" or "--output")
+            {
+                if (++index == arguments.Count)
+                {
+                    error.WriteLine($"{token} requires a value.");
+                    paths = [];
+                    return false;
+                }
+
+                var value = arguments[index];
+                switch (token)
+                {
+                    case "--format":
+                        if (value is not ("human" or "json"))
+                        {
+                            error.WriteLine("--format must be human or json.");
+                            paths = [];
+                            return false;
+                        }
+
+                        reportingOptions = reportingOptions with
+                        {
+                            Format = value == "json" ? ReportFormat.Json : ReportFormat.Human,
+                        };
+                        break;
+                    case "--fields":
+                        reportingOptions = reportingOptions with { Fields = value.Split(',') };
+                        break;
+                    default:
+                        reportingOptions = reportingOptions with { OutputPath = value };
+                        break;
+                }
+
                 continue;
             }
 
@@ -303,6 +273,17 @@ public static class CliApplication
                 _ => "--max-cpu-seconds",
             };
             error.WriteLine($"Invalid {option} value; see --help for supported resource limits.");
+            paths = [];
+            return false;
+        }
+
+        try
+        {
+            reportingOptions.Validate();
+        }
+        catch (ArgumentException exception)
+        {
+            error.WriteLine(exception.Message);
             paths = [];
             return false;
         }
