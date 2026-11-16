@@ -68,6 +68,48 @@ public sealed class LifecycleReferenceStoreTests
         }
     }
 
+    [Test]
+    public void ReplacementFailurePreservesExistingValidOnDiskCache()
+    {
+        var path = TemporaryCachePath();
+        try
+        {
+            var store = new FileLifecycleDatasetStore(path);
+            var original = store.Load().Dataset;
+            store.Replace(original with { Version = "2026-11-15" });
+            var failing = new FileLifecycleDatasetStore(path, new AlwaysFailingCacheWriter());
+
+            Assert.Throws<IOException>(() => failing.Replace(original));
+            Assert.That(new FileLifecycleDatasetStore(path).Load().Dataset.Version, Is.EqualTo("2026-11-15"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void ForgedSourceAndDuplicateJsonKeysAreRejectedBeforeUse()
+    {
+        var bundle = new FileLifecycleDatasetStore(TemporaryCachePath()).Load().Dataset;
+        var bytes = LifecycleDatasetCodec.Serialize(bundle);
+        var json = System.Text.Encoding.UTF8.GetString(bytes);
+        var forged = json.Replace("https://dotnet.microsoft.com/en-us/platform/support/policy",
+            "https://evil.example.net/false-support-data", StringComparison.Ordinal);
+        var duplicate = json.Replace("\"schemaVersion\": 1", "\"schemaVersion\": 1, \"schemaVersion\": 1",
+            StringComparison.Ordinal);
+
+        Assert.Multiple(() =>
+        {
+            Assert.Throws<InvalidDataException>(() =>
+                LifecycleDatasetCodec.Parse(System.Text.Encoding.UTF8.GetBytes(forged)));
+            Assert.Throws<InvalidDataException>(() =>
+                LifecycleDatasetCodec.Parse(System.Text.Encoding.UTF8.GetBytes(duplicate)));
+            Assert.Throws<InvalidDataException>(() =>
+                LifecycleDatasetCodec.Parse(new byte[LifecycleDatasetCodec.MaxDatasetBytes + 1]));
+        });
+    }
+
     private static string TemporaryCachePath() => Path.Combine(Path.GetTempPath(),
         "lifecycle-" + Guid.NewGuid().ToString("N") + ".json");
 }

@@ -1,10 +1,12 @@
 using Infoconex.DotNetBinary.Application.AssemblyInspection;
 using Infoconex.DotNetBinary.Application.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Application.InputSelection;
+using Infoconex.DotNetBinary.Application.LifecycleAssessment;
 using Infoconex.DotNetBinary.Domain.Models;
 using Infoconex.DotNetBinary.Infrastructure.AssemblyInspection;
 using Infoconex.DotNetBinary.Infrastructure.DeploymentConfiguration;
 using Infoconex.DotNetBinary.Infrastructure.InputSelection;
+using Infoconex.DotNetBinary.Infrastructure.LifecycleAssessment;
 
 namespace Infoconex.DotNetBinary.Cli;
 
@@ -34,6 +36,7 @@ public static class CliApplication
             output.WriteLine("Usage: dotnet binary <command> [options]");
             output.WriteLine("Input selection: inspect <file> [--config <file>] (one regular file, any extension)");
             output.WriteLine("                 scan <directory> [<directory> ...]");
+            output.WriteLine("Lifecycle reference update: lifecycle refresh (explicit network request)");
             output.WriteLine("Status: selected metadata/configuration evidence available; complete inspection, reporting and traversal not implemented yet.");
             return 0;
         }
@@ -41,6 +44,23 @@ public static class CliApplication
         if (arguments.Count == 1 && arguments[0] == "--version")
         {
             output.WriteLine(typeof(CliApplication).Assembly.GetName().Version?.ToString() ?? "unknown");
+            return 0;
+        }
+
+        if (arguments.Count == 2 && arguments[0] == "lifecycle" && arguments[1] == "refresh")
+        {
+            using var client = MicrosoftLifecycleReleaseSource.CreateHttpClient();
+            var refresh = new LifecycleRefreshService(new FileLifecycleDatasetStore(),
+                new MicrosoftLifecycleReleaseSource(client), new MicrosoftReleaseIndexReader(), TimeProvider.System)
+                .RefreshAsync().GetAwaiter().GetResult();
+            if (!refresh.Succeeded)
+            {
+                error.WriteLine(refresh.Warning);
+                error.WriteLine($"Retained lifecycle dataset version: {SafeDisplay(refresh.Dataset.Version)}");
+                return 2;
+            }
+
+            output.WriteLine($"Lifecycle dataset refreshed: {SafeDisplay(refresh.Dataset.Version)}");
             return 0;
         }
 
@@ -118,11 +138,39 @@ public static class CliApplication
                         error.WriteLine($"Configuration {diagnostic.Code} ({diagnostic.Field}).");
                     }
 
-                    var assembly = new AssemblyInspectionService(new PortableExecutableAssemblyReader())
-                        .Inspect(result.Inputs[0]);
-                    if (assembly.Metadata?.DeclaredTarget is { } declaredTarget)
+                }
+
+                var assembly = new AssemblyInspectionService(new PortableExecutableAssemblyReader())
+                    .Inspect(result.Inputs[0]);
+                if (assembly.Metadata?.DeclaredTarget is { } declaredTarget)
+                {
+                    output.WriteLine($"Assembly target ({declaredTarget.EvidenceSource}): {SafeDisplay(declaredTarget.Moniker)}");
+                }
+
+                var lifecycle = new LifecycleAssessmentService(new FileLifecycleDatasetStore(), TimeProvider.System)
+                    .Assess(assembly.Metadata?.DeclaredTarget, configuration);
+                if (lifecycle.DatasetWarning is not null)
+                {
+                    error.WriteLine(lifecycle.DatasetWarning);
+                }
+
+                foreach (var finding in lifecycle.Findings)
+                {
+                    output.WriteLine($"Lifecycle ({finding.EvidenceKind}, {SafeDisplay(finding.EvidenceSource)}): {finding.Status}");
+                    output.WriteLine($"Lifecycle declaration: {SafeDisplay(finding.DeclaredIdentity)}");
+                    output.WriteLine($"Lifecycle assessment date: {finding.AssessmentDate:yyyy-MM-dd}; dataset: {SafeDisplay(finding.DatasetVersion)}");
+                    output.WriteLine($"Lifecycle source: {finding.SourceIdentity}; {SafeDisplay(finding.SourceUrl ?? "unavailable")}; " +
+                        $"publication: {finding.SourcePublishedOn?.ToString("yyyy-MM-dd") ?? "unknown"}; " +
+                        $"retrieval: {finding.SourceRetrievedOn:yyyy-MM-dd}");
+                    if (finding.EndOfSupport is { } end)
                     {
-                        output.WriteLine($"Assembly target ({declaredTarget.EvidenceSource}): {SafeDisplay(declaredTarget.Moniker)}");
+                        output.WriteLine($"Lifecycle published end date: {end:yyyy-MM-dd}");
+                    }
+
+                    output.WriteLine($"Lifecycle limitation: {SafeDisplay(finding.Limitation)}");
+                    if (finding.IsStale)
+                    {
+                        output.WriteLine("Lifecycle warning: local reference data is stale or future-dated; no automatic refresh occurred.");
                     }
                 }
             }

@@ -15,7 +15,7 @@ public sealed class LifecycleRefreshServiceTests
           {"channel-version":"11.0","product":".NET","support-phase":"active", "latest-release-date":"2026-11-10","eol-date":"2028-11-14"},
           {"channel-version":"10.0","product":".NET","support-phase":"active", "latest-release-date":"2026-11-10","eol-date":"2028-11-14"},
           {"channel-version":"8.0","product":".NET","support-phase":"eol", "latest-release-date":"2026-11-10","eol-date":"2026-11-10"},
-          {"channel-version":"3.1","product":"Core","support-phase":"eol", "latest-release-date":"2022-12-13","eol-date":"2022-12-13"}
+          {"channel-version":"3.1","product":".NET Core","support-phase":"eol", "latest-release-date":"2022-12-13","eol-date":"2022-12-13"}
         ]}
         """;
 
@@ -124,19 +124,5 @@ public sealed class LifecycleRefreshServiceTests
         altered = ValidIndex.Replace("\"product\":\".NET\"", "\"product\":\"UNTRUSTED\"", StringComparison.Ordinal);
         Assert.Throws<InvalidDataException>(() => reader.Read(Encoding.UTF8.GetBytes(altered),
             LifecycleAssessmentServiceTests.Dataset(), new DateOnly(2026, 11, 15)));
-    }
-}
-
-internal sealed class FakeReleaseSource(string json) : ILifecycleReleaseSource
-{
-    public bool FailDownload { get; set; }
-
-    public int Attempts { get; private set; }
-
-    public Task<byte[]> FetchAsync(CancellationToken cancellationToken = default)
-    {
-        Attempts++;
-        return FailDownload ? Task.FromException<byte[]>(new HttpRequestException("synthetic error")) :
-            Task.FromResult(Encoding.UTF8.GetBytes(json));
     }
 }

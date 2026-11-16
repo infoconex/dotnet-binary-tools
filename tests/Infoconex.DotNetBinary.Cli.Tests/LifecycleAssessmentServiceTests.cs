@@ -1,5 +1,6 @@
 using Infoconex.DotNetBinary.Application.LifecycleAssessment;
 using Infoconex.DotNetBinary.Domain.Models;
+using Infoconex.DotNetBinary.Infrastructure.LifecycleAssessment;
 using NUnit.Framework;
 
 namespace Infoconex.DotNetBinary.Cli.Tests;
@@ -55,6 +56,59 @@ public sealed class LifecycleAssessmentServiceTests
             Assert.That(finding.Status, Is.EqualTo(LifecycleStatus.Unknown));
             Assert.That(finding.Limitation, Does.Contain("Windows"));
             Assert.That(finding.EndOfSupport, Is.Null);
+        });
+    }
+
+    [Test]
+    public void KnownFrameworkPatchVersionReceivesDatedQualifiedAssessment()
+    {
+        var bundle = new FileLifecycleDatasetStore(Path.Combine(Path.GetTempPath(),
+            "unused-" + Guid.NewGuid().ToString("N") + ".json")).Load().Dataset;
+        var store = new FakeLifecycleStore(bundle);
+        var finding = Service(store).Assess(new TargetFrameworkIdentity(".NETFramework,Version=v4.6.2"), null)
+            .Findings.Single();
+        Assert.Multiple(() =>
+        {
+            Assert.That(finding.Status, Is.EqualTo(LifecycleStatus.Unknown));
+            Assert.That(finding.EndOfSupport, Is.EqualTo(new DateOnly(2027, 1, 13)));
+            Assert.That(finding.SourceUrl, Does.Contain("microsoft-net-framework"));
+            Assert.That(finding.Limitation, Does.Contain("Windows"));
+        });
+    }
+
+    [TestCase(".NETCoreApp,Version=v3.1", LifecycleStatus.OutOfSupport)]
+    [TestCase(".NETCoreApp,Version=v11.0", LifecycleStatus.Supported)]
+    public void BundledCoreAndModernReleaseStatusUsesDistinctKnownEntries(string target, LifecycleStatus expected)
+    {
+        var bundle = new FileLifecycleDatasetStore(Path.Combine(Path.GetTempPath(),
+            "unused-" + Guid.NewGuid().ToString("N") + ".json")).Load().Dataset;
+        var finding = Service(new FakeLifecycleStore(bundle)).Assess(new TargetFrameworkIdentity(target), null)
+            .Findings.Single();
+        Assert.That(finding.Status, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void AmbiguousFrameworkClrVersionWithoutSkuIsNotMistakenForFrameworkSupport()
+    {
+        var request = new DeploymentRuntimeRequest("configuration.startup.supportedRuntime[0]", [
+            new DeploymentConfigurationValue("configuration.startup.supportedRuntime[0].@version", "v4.0.30319")]);
+        var configuration = new DeploymentConfigurationResult(DeploymentConfigurationOutcome.Parsed,
+            "a.exe.config", DeploymentConfigurationAssociation.Automatic, [request], [], []);
+
+        var finding = Service(new FakeLifecycleStore(Dataset())).Assess(null, configuration).Findings.Single();
+        Assert.That(finding.Status, Is.EqualTo(LifecycleStatus.Unknown));
+    }
+
+    [Test]
+    public void ExactlyNinetyDaysIsFreshWhileNinetyOneDaysIsStale()
+    {
+        var target = new TargetFrameworkIdentity(".NETCoreApp,Version=v10.0");
+        var store = new FakeLifecycleStore(Dataset());
+        Assert.Multiple(() =>
+        {
+            Assert.That(Service(store, ReferenceDate.AddDays(90)).Assess(target, null).Findings[0].IsStale, Is.False);
+            Assert.That(Service(store, ReferenceDate.AddDays(91)).Assess(target, null).Findings[0].IsStale, Is.True);
+            Assert.That(Service(store, ReferenceDate.AddDays(-1)).Assess(target, null).Findings[0].IsStale, Is.True);
         });
     }
 
@@ -135,6 +189,7 @@ public sealed class LifecycleAssessmentServiceTests
             Assert.That(finding.SourceRetrievedOn, Is.EqualTo(ReferenceDate));
             Assert.That(finding.SourcePublishedOn, Is.EqualTo(new DateOnly(2026, 11, 10)));
             Assert.That(finding.SourceUrl, Does.StartWith("https://"));
+            Assert.That(finding.SourceIdentity, Does.StartWith("Microsoft"));
             Assert.That(finding.AssessmentDate, Is.EqualTo(date));
             Assert.That(finding.Status, Is.EqualTo(LifecycleStatus.Supported));
         });
@@ -189,34 +244,4 @@ public sealed class LifecycleAssessmentServiceTests
         return new DeploymentConfigurationResult(DeploymentConfigurationOutcome.Parsed, "app.runtimeconfig.json",
             DeploymentConfigurationAssociation.Automatic, [request], [], []);
     }
-}
-
-internal sealed class FakeLifecycleStore(LifecycleReferenceDataset dataset) : ILifecycleDatasetStore
-{
-    public int LoadCount { get; private set; }
-
-    public LifecycleReferenceDataset Current { get; private set; } = dataset;
-
-    public bool FailReplacement { get; set; }
-
-    public LifecycleDatasetLoad Load()
-    {
-        LoadCount++;
-        return new LifecycleDatasetLoad(Current, false, null);
-    }
-
-    public void Replace(LifecycleReferenceDataset replacement)
-    {
-        if (FailReplacement)
-        {
-            throw new IOException("synthetic atomic replacement failure");
-        }
-
-        Current = replacement;
-    }
-}
-
-internal sealed class FixedTimeProvider(DateOnly date) : TimeProvider
-{
-    public override DateTimeOffset GetUtcNow() => new(date.Year, date.Month, date.Day, 12, 0, 0, TimeSpan.Zero);
 }
