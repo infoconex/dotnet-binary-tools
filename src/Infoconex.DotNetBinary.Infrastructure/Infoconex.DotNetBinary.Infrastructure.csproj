@@ -2,6 +2,8 @@
   <PropertyGroup>
     <AssemblyName>Infoconex.DotNetBinary.Infrastructure</AssemblyName>
     <RootNamespace>Infoconex.DotNetBinary.Infrastructure</RootNamespace>
+    <!-- LibraryImport source-generated Unix file-kind interop requires /unsafe. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Infoconex.DotNetBinary.Application/Infoconex.DotNetBinary.Application.csproj" />
