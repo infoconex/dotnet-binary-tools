@@ -52,6 +52,41 @@ advertised OS and test the NuGet tool from a
 clean source and tool path. Native AOT still depends on OS ABI and system
 libraries; Linux builds target a compatible glibc baseline.
 
+## CAP-008 unpublished distribution acceptance
+
+The [CAP-008 implementation issue](https://github.com/infoconex/dotnet-binary-tools/issues/26)
+adds repository-controlled checks that package each previously tested native
+executable with its license using `scripts/package-standalone.ps1`, and
+assemble the three platform artifacts with `scripts/assemble-distribution.ps1`.
+`scripts/distribution_inventory.py` validates exactly three standalone archives,
+three RID-native NuGet packages, and one top-level NuGet pointer, including
+versions, source-commit metadata, commands, executable paths, native executable
+modes, safe archive members and SHA-256 digests. These are unpublished CI
+artifacts, not a release candidate accepted for public distribution.
+
+The .NET 11 SDK's actual **v2 RID-aware tool format** stores the pointer-to-RID
+mapping in `tools/any/any/DotnetToolSettings.xml`, under
+`RuntimeIdentifierPackages`; it does **not** expose those references as ordinary
+NuGet nuspec dependencies. Each native subpackage has its own
+`tools/any/<rid>/DotnetToolSettings.xml` command/entry point. This was observed
+in the [first CAP-008 three-OS CI artifacts](https://github.com/infoconex/dotnet-binary-tools/actions/runs/44031362119)
+and confirmed with a local, offline audit of the actual four package files and
+three archives. The initial aggregator validator's nuspec-dependency assumption
+failed and was corrected; this is a repository-specific verification of
+[Microsoft's documented RID-aware packaging model](https://learn.microsoft.com/en-us/dotnet/core/tools/rid-specific-tools).
+
+The installation check now supplies a dedicated local-feed `nuget.config`
+and an isolated package cache. `--add-source` alone would permit existing feeds
+to race to supply the same package ID/version. Per-platform CI compares actual
+same-fixture `inspect` and `scan` JSON for the installed tool and the standalone
+binary after excluding only their distinct generation timestamps. The CI
+aggregation step verifies the *complete* four-package set rather than assuming
+that a one-host local installation proved all RID references are present.
+
+These checks do **not** satisfy Issue #4: native SDK/runtime-free Windows and
+macOS consumers remain separately required for v0.1 publication. Ordinary PR
+CI does not contain a NuGet push, tag, release or public upload action.
+
 ## Future installation (not published)
 
 ```shell
