@@ -56,9 +56,28 @@ try {
         if (-not (Test-Path -LiteralPath $package -PathType Leaf)) { throw "Expected NuGet tool package missing: $package" }
     }
 
-    Write-Host "Installing $version into fresh tool directory $installationPath"
-    & dotnet tool install Infoconex.DotNetBinary.Tools --version $version --tool-path $installationPath --add-source $packageDirectory --ignore-failed-sources
-    if ($LASTEXITCODE -ne 0) { throw "Clean local NuGet tool installation failed with exit code $LASTEXITCODE." }
+    # --add-source alone permits an unrelated configured feed to supply the
+    # same ID/version. A dedicated config and cache make this a local-only test.
+    $nugetConfig = Join-Path $installationPath 'nuget.config'
+    $escapedSource = [System.Security.SecurityElement]::Escape($packageDirectory)
+    @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="staged" value="$escapedSource" />
+  </packageSources>
+  <auditSources><clear /></auditSources>
+</configuration>
+"@ | Set-Content -LiteralPath $nugetConfig -Encoding utf8NoBOM
+    $previousPackages = $env:NUGET_PACKAGES
+    try {
+        $env:NUGET_PACKAGES = Join-Path $installationPath 'nuget-cache'
+        Write-Host "Installing $version from isolated local feed into $installationPath"
+        & dotnet tool install Infoconex.DotNetBinary.Tools --version $version --tool-path $installationPath --configfile $nugetConfig --no-cache
+        if ($LASTEXITCODE -ne 0) { throw "Clean local NuGet tool installation failed with exit code $LASTEXITCODE." }
+    }
+    finally { $env:NUGET_PACKAGES = $previousPackages }
 
     Write-Host 'Top-level installed tool paths:'
     Get-ChildItem -LiteralPath $installationPath -Force | ForEach-Object { Write-Host "  $($_.Name)" }
@@ -79,6 +98,34 @@ try {
     }
     finally { $env:PATH = $originalPath }
 
-    Write-Host "Verified pointer and $RuntimeIdentifier packages, clean tool installation, and both entry points."
+    # Validate identical feature behavior for the same synthetic fixtures.
+    # Compare semantic content; exclude only the per-execution report timestamp.
+    $native = Join-Path $root "artifacts/aot/$RuntimeIdentifier/dotnet-binary"
+    if ($IsWindows) { $native = "$native.exe" }
+    if (-not (Test-Path -LiteralPath $native -PathType Leaf)) {
+        throw 'Standalone Native AOT executable is required for distribution parity.'
+    }
+    $fixtures = Join-Path $installationPath 'fixtures'
+    New-Item -ItemType Directory -Path $fixtures -Force | Out-Null
+    $sample = Join-Path $fixtures 'synthetic.exe'
+    [System.IO.File]::WriteAllBytes($sample, [byte[]](0x4d, 0x5a, 0x00, 0x00))
+
+    foreach ($arguments in @(
+        @('inspect', $sample, '--format', 'json', '--sha256'),
+        @('scan', $fixtures, '--format', 'json', '--max-candidates', '1')
+    )) {
+        $directOutput = & $native @arguments 2>$null | Out-String
+        if ($LASTEXITCODE -ne 0) { throw 'Standalone distribution parity command failed.' }
+        $installedOutput = & (Resolve-Path -LiteralPath $shim).Path @arguments 2>$null | Out-String
+        if ($LASTEXITCODE -ne 0) { throw 'Installed tool distribution parity command failed.' }
+        $direct = $directOutput | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        $installed = $installedOutput | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        foreach ($report in @($direct, $installed)) { [void]$report.Remove('generatedAtUtc') }
+        if (($direct | ConvertTo-Json -Depth 100 -Compress) -cne ($installed | ConvertTo-Json -Depth 100 -Compress)) {
+            throw 'Standalone and installed tool disagree on semantic JSON report contract.'
+        }
+    }
+
+    Write-Host "Verified pointer and $RuntimeIdentifier packages, isolated tool installation, both entry points and inspect/scan parity."
 }
 finally { Pop-Location }

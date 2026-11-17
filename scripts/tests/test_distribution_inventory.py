@@ -113,6 +113,18 @@ class DistributionInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "executable"):
             validate_distribution(self.packages, self.archives, VERSION, SOURCE_SHA)
 
+    def test_invalid_source_sha_cannot_be_reported_as_release_provenance(self):
+        with self.assertRaisesRegex(ValueError, "source SHA"):
+            validate_distribution(self.packages, self.archives, VERSION, "unverified")
+
+    def test_SC_DST_008_pull_request_workflow_has_no_publication_action(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/native-aot-smoke.yml").read_text(encoding="utf-8")
+        self.assertIn("contents: read", workflow)
+        self.assertNotIn("packages: write", workflow)
+        self.assertNotIn("dotnet nuget push", workflow)
+        self.assertNotIn("gh release create", workflow)
+        self.assertNotIn("git tag ", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

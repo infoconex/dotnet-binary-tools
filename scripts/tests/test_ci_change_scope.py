@@ -72,6 +72,10 @@ class ChangeScopeTests(unittest.TestCase):
             "scripts/write-artifact-checksums.ps1",
             "scripts/validate-linux-runtime-free.ps1",
             "scripts/evaluate-package-locks.ps1",
+            "scripts/package-standalone.ps1",
+            "scripts/assemble-distribution.ps1",
+            "scripts/distribution_inventory.py",
+            "scripts/tests/test_distribution_inventory.py",
         ):
             with self.subTest(changed_file=changed_file):
                 result = classify([changed_file])
