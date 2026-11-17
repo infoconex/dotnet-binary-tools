@@ -58,7 +58,7 @@ def _safe_names(names: list[str], origin: str) -> None:
         normalized.add(folded)
 
 
-def _read_nuspec(package_path: Path, expected_id: str, version: str) -> ET.Element:
+def _read_nuspec(package_path: Path, expected_id: str, version: str, source_sha: str, rid: str | None) -> None:
     with zipfile.ZipFile(package_path) as package:
         members = package.infolist()
         if not members or len(members) > 10000:
@@ -75,21 +75,47 @@ def _read_nuspec(package_path: Path, expected_id: str, version: str) -> ET.Eleme
             raise ValueError(f"invalid nuspec XML in {package_path.name}") from exc
         if _text(metadata, "id") != expected_id or _text(metadata, "version") != version:
             raise ValueError(f"NuGet identity/version mismatch in {package_path.name}")
-        return metadata
+        repository = _child(metadata, "repository")
+        if repository.attrib.get("commit", "").lower() != source_sha.lower():
+            raise ValueError(f"NuGet package source SHA mismatch in {package_path.name}")
+        package_types = _child(metadata, "packageTypes")
+        actual_types = [item.attrib.get("name") for item in package_types if _local_name(item) == "packageType"]
+        expected_type = "DotnetToolRidPackage" if rid else "DotnetTool"
+        if actual_types != [expected_type]:
+            raise ValueError(f"NuGet package type mismatch in {package_path.name}")
+
+        # .NET SDK 10+ encodes the pointer/RID mapping in DotnetToolSettings.xml
+        # (DotNetCliTool Version=2), not in ordinary nuspec dependencies.
+        settings_name = f"tools/any/{rid or 'any'}/DotnetToolSettings.xml"
+        matching = [item for item in members if item.filename == settings_name]
+        if len(matching) != 1 or matching[0].file_size > 1024 * 1024:
+            raise ValueError(f"NuGet tool settings missing or unbounded in {package_path.name}")
+        try:
+            settings = ET.fromstring(package.read(matching[0]))
+        except ET.ParseError as exc:
+            raise ValueError(f"invalid NuGet tool settings XML in {package_path.name}") from exc
+        if _local_name(settings) != "DotNetCliTool" or settings.attrib.get("Version") != "2":
+            raise ValueError(f"incorrect RID-aware tool settings version in {package_path.name}")
+        commands = [item for item in _child(settings, "Commands") if _local_name(item) == "Command"]
+        if len(commands) != 1 or commands[0].attrib.get("Name") != "dotnet-binary":
+            raise ValueError(f"incorrect dotnet-binary command metadata in {package_path.name}")
+        if rid:
+            entrypoint = "dotnet-binary.exe" if rid == "win-x64" else "dotnet-binary"
+            if commands[0].attrib.get("EntryPoint") != entrypoint or commands[0].attrib.get("Runner") != "executable":
+                raise ValueError(f"incorrect native executable entry point in {package_path.name}")
+            if f"tools/any/{rid}/{entrypoint}" not in [item.filename for item in members]:
+                raise ValueError(f"NuGet RID package missing executable {entrypoint}")
+        else:
+            _validate_pointer(settings)
 
 
-def _validate_pointer(metadata: ET.Element, version: str) -> None:
-    dependencies = _child(metadata, "dependencies")
-    actual = []
-    for dependency in dependencies.iter():
-        if _local_name(dependency) == "dependency":
-            actual.append((dependency.attrib.get("id"), dependency.attrib.get("version")))
-    expected_ids = {f"{PACKAGE_ID}.{rid}" for rid in SUPPORTED_RIDS}
-    actual_ids = [name for name, _ in actual]
-    if set(actual_ids) != expected_ids or len(actual_ids) != len(expected_ids):
-        raise ValueError("pointer dependencies must contain exactly the approved RID packages")
-    if any(dependency_version not in (version, f"[{version}]") for _, dependency_version in actual):
-        raise ValueError("pointer dependencies require the exact matching version")
+def _validate_pointer(settings: ET.Element) -> None:
+    rid_packages = _child(settings, "RuntimeIdentifierPackages")
+    actual = [(item.attrib.get("RuntimeIdentifier"), item.attrib.get("Id"))
+              for item in rid_packages if _local_name(item) == "RuntimeIdentifierPackage"]
+    expected = {(rid, f"{PACKAGE_ID}.{rid}") for rid in SUPPORTED_RIDS}
+    if set(actual) != expected or len(actual) != len(expected):
+        raise ValueError("RuntimeIdentifierPackages must name exactly the approved three x64 packages")
 
 
 def _validate_native_archive(archive_path: Path, rid: str) -> None:
@@ -153,9 +179,8 @@ def validate_distribution(packages: Path, standalone: Path, version: str, source
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"unsafe NuGet artifact path {name}")
         package_id = name[: -len(f".{version}.nupkg")]
-        metadata = _read_nuspec(path, package_id, version)
-        if package_id == PACKAGE_ID:
-            _validate_pointer(metadata, version)
+        rid = None if package_id == PACKAGE_ID else package_id[len(PACKAGE_ID) + 1:]
+        _read_nuspec(path, package_id, version, source_sha, rid)
 
     for rid in SUPPORTED_RIDS:
         name = f"dotnet-binary-{version}-{rid}.{'zip' if rid == 'win-x64' else 'tar.gz'}"

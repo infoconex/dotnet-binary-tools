@@ -35,19 +35,37 @@ class DistributionInventoryTests(unittest.TestCase):
     def create_packages(self):
         for rid in (*RIDS, None):
             package_id = ID if rid is None else f"{ID}.{rid}"
-            dependencies = "" if rid else "".join(
-                f'<dependency id="{ID}.{target}" version="[{VERSION}]" />'
-                for target in RIDS
-            )
+            package_type = "DotnetToolRidPackage" if rid else "DotnetTool"
             nuspec = (
                 '<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">'
                 f'<metadata><id>{package_id}</id><version>{VERSION}</version>'
-                f'<dependencies><group targetFramework="net11.0">{dependencies}</group></dependencies>'
+                f'<packageTypes><packageType name="{package_type}" /></packageTypes>'
+                f'<repository type="git" commit="{SOURCE_SHA}" />'
                 '</metadata></package>'
             )
+            if rid:
+                settings_path = f"tools/any/{rid}/DotnetToolSettings.xml"
+                executable = "dotnet-binary.exe" if rid == "win-x64" else "dotnet-binary"
+                settings = (
+                    '<DotNetCliTool Version="2"><Commands>'
+                    f'<Command Name="dotnet-binary" EntryPoint="{executable}" Runner="executable" />'
+                    '</Commands></DotNetCliTool>'
+                )
+            else:
+                settings_path = "tools/any/any/DotnetToolSettings.xml"
+                packages = "".join(
+                    f'<RuntimeIdentifierPackage RuntimeIdentifier="{target}" Id="{ID}.{target}" />'
+                    for target in RIDS
+                )
+                settings = (
+                    '<DotNetCliTool Version="2"><Commands><Command Name="dotnet-binary" /></Commands>'
+                    f'<RuntimeIdentifierPackages>{packages}</RuntimeIdentifierPackages></DotNetCliTool>'
+                )
             with zipfile.ZipFile(self.packages / f"{package_id}.{VERSION}.nupkg", "w") as package:
                 package.writestr(f"{package_id}.nuspec", nuspec)
-                package.writestr("tools/net11.0/any/placeholder", "test")
+                package.writestr(settings_path, settings)
+                if rid:
+                    package.writestr(f"tools/any/{rid}/{executable}", b"native")
 
     def create_archives(self):
         for rid in RIDS:
@@ -81,11 +99,29 @@ class DistributionInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unexpected"):
             validate_distribution(self.packages, self.archives, VERSION, SOURCE_SHA)
 
-    def test_pointer_manifest_must_reference_all_exact_versioned_RID_packages(self):
+    def test_pointer_tool_settings_must_reference_all_approved_RID_packages(self):
         pointer = self.packages / f"{ID}.{VERSION}.nupkg"
         with zipfile.ZipFile(pointer, "w") as package:
-            package.writestr(f"{ID}.nuspec", f'<package><metadata><id>{ID}</id><version>{VERSION}</version></metadata></package>')
-        with self.assertRaisesRegex(ValueError, "dependencies"):
+            package.writestr(f"{ID}.nuspec", (
+                f'<package><metadata><id>{ID}</id><version>{VERSION}</version>'
+                f'<repository commit="{SOURCE_SHA}" /><packageTypes>'
+                '<packageType name="DotnetTool" /></packageTypes></metadata></package>'
+            ))
+            package.writestr("tools/any/any/DotnetToolSettings.xml", (
+                '<DotNetCliTool Version="2"><Commands><Command Name="dotnet-binary" />'
+                '</Commands></DotNetCliTool>'
+            ))
+        with self.assertRaisesRegex(ValueError, "RuntimeIdentifierPackages"):
+            validate_distribution(self.packages, self.archives, VERSION, SOURCE_SHA)
+
+    def test_package_repository_commit_must_match_candidate_SHA(self):
+        candidate = self.packages / f"{ID}.linux-x64.{VERSION}.nupkg"
+        with zipfile.ZipFile(candidate, "w") as package:
+            package.writestr(f"{ID}.linux-x64.nuspec", (
+                f'<package><metadata><id>{ID}.linux-x64</id><version>{VERSION}</version>'
+                f'<repository type="git" commit="{"b" * 40}" /></metadata></package>'
+            ))
+        with self.assertRaisesRegex(ValueError, "source SHA"):
             validate_distribution(self.packages, self.archives, VERSION, SOURCE_SHA)
 
     def test_wrong_standalone_executable_name_is_rejected(self):
