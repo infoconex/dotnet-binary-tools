@@ -43,11 +43,26 @@ jobs:
         with:
           dotnet-version: '11.0.x'
 
-      - name: Regenerate CLI lock in an isolated, empty process environment
+      - name: Prepare process-only connection tracing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v strace >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y strace
+          fi
+          command -v strace >/dev/null 2>&1
+          # Count only metadata traffic occurring during the restore process.
+          sudo iptables -Z IMDS_DENY
+          sudo ip6tables -Z IMDS_DENY
+
+      - name: Diagnose restore-origin versus background metadata traffic
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/issue28-home" "$RUNNER_TEMP/issue28-packages"
+          trace_file="$RUNNER_TEMP/issue28-connect.trace"
+          set +e
           env -i \
             PATH="$PATH" \
             HOME="$RUNNER_TEMP/issue28-home" \
@@ -56,12 +71,30 @@ jobs:
             NUGET_PACKAGES="$RUNNER_TEMP/issue28-packages" \
             DOTNET_CLI_TELEMETRY_OPTOUT=1 \
             DOTNET_NOLOGO=1 \
-            dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj \
+            strace -f -qq -e trace=connect -o "$trace_file" \
+              dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj \
               --configfile nuget.config --force-evaluate
+          restore_exit=$?
+          set -e
           v4_hits=$(sudo iptables -nvxL IMDS_DENY | awk '$3 == "REJECT" {print $1}')
           v6_hits=$(sudo ip6tables -nvxL IMDS_DENY | awk '$3 == "REJECT" {print $1}')
+          tracer_hits=$(grep -Ec '169[.]254[.]|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$trace_file" || true)
+          echo "Metadata firewall: IPv4 rejected packets=${v4_hits:-unknown}; IPv6 rejected packets=${v6_hits:-unknown}."
+          echo "Restoration process tree: metadata connection attempts=${tracer_hits}."
+          echo 'Blocked IPv4 destination counters:'
+          sudo iptables -nvxL OUTPUT | awk '$3 == "IMDS_DENY" {print $9 ": " $1 " packets"}'
+          echo 'Blocked IPv6 destination counters:'
+          sudo ip6tables -nvxL OUTPUT | awk '$3 == "IMDS_DENY" {print $9 ": " $1 " packets"}'
+          if [ "$restore_exit" -ne 0 ]; then
+            echo "STOP: restore failed with exit code $restore_exit." >&2
+            exit 1
+          fi
+          if [ "${tracer_hits:-missing}" != '0' ]; then
+            echo 'STOP: restore process tree attempted metadata-network access.' >&2
+            exit 1
+          fi
           if [ "${v4_hits:-missing}" != '0' ] || [ "${v6_hits:-missing}" != '0' ]; then
-            echo 'STOP: restore attempted metadata-network access.' >&2
+            echo 'STOP: runner-level metadata traffic occurred outside the traced restore process tree; investigate before accepting artifact.' >&2
             exit 1
           fi
           python3 - <<'PY'
