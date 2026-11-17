@@ -15,7 +15,7 @@ For a new approved requirement, begin with a meaningful failing test, implement 
 | Adapter component | Filesystem, metadata and configuration operations with controlled fixtures. |
 | CLI integration | Argument validation, stdout/stderr, stable JSON, report file behavior and exit semantics. |
 | Negative/security | Corrupt binaries, malformed metadata, oversized data, access failures, symlink loops, and resource limits. |
-| Cross-platform | Windows, Linux and macOS x64 behavior, including platform-specific path/link rules. |
+| Cross-platform | Windows, Linux and macOS x64/ARM64 behavior, including platform-specific path/link rules. |
 | Distribution | Native AOT execution without installed .NET and NuGet tool installation on clean consumers. |
 
 The approved scenario strategy is a **focused** set of normative Given/When/Then cases plus independently traceable tests for Unicode and spaces in paths, case sensitivity, permissions, links, and other boundary variations.

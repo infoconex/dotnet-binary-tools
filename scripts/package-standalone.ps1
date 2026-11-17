@@ -3,22 +3,24 @@
 Packages one already-validated host Native AOT executable for staged review.
 
 .DESCRIPTION
-Does not publish, sign, download or upload artifacts. Use the matching x64
+Does not publish, sign, download or upload artifacts. Use the matching native
 host and validate-aot.ps1 first. Unix tar archives preserve executable mode.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('linux-x64', 'win-x64', 'osx-x64')]
+    [ValidateSet('linux-x64', 'linux-arm64', 'win-x64', 'win-arm64', 'osx-x64', 'osx-arm64')]
     [string]$RuntimeIdentifier
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$hostRid = if ($IsWindows) { 'win-x64' } elseif ($IsLinux) { 'linux-x64' } elseif ($IsMacOS) { 'osx-x64' } else { throw 'Unsupported packaging host.' }
-if ($RuntimeIdentifier -ne $hostRid -or [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne [System.Runtime.InteropServices.Architecture]::X64) {
-    throw "Standalone packaging requires the matching x64 host: $RuntimeIdentifier."
+$hostArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+$architecture = switch ($hostArchitecture.ToString()) { 'X64' { 'x64' } 'Arm64' { 'arm64' } default { throw "Unsupported native architecture: $hostArchitecture" } }
+$hostRid = if ($IsWindows) { "win-$architecture" } elseif ($IsLinux) { "linux-$architecture" } elseif ($IsMacOS) { "osx-$architecture" } else { throw 'Unsupported packaging host.' }
+if ($RuntimeIdentifier -ne $hostRid) {
+    throw "Standalone packaging requires the matching native host: $RuntimeIdentifier; host $hostRid."
 }
 
 $project = Join-Path $root 'src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj'

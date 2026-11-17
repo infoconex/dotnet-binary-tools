@@ -42,11 +42,12 @@ def property_values(root: ET.Element, name: str) -> list[str]:
 
 
 def validate_cli_rids(root: ET.Element) -> list[str]:
-    """Protect x64 distribution while covering arm64 macOS restore hosts."""
+    """Require exactly the six owner-approved native restore and package RIDs."""
     issues = []
+    rids = {"win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64"}
     expected = {
-        "RuntimeIdentifiers": {"win-x64", "linux-x64", "osx-x64", "osx-arm64"},
-        "ToolPackageRuntimeIdentifiers": {"win-x64", "linux-x64", "osx-x64"},
+        "RuntimeIdentifiers": rids,
+        "ToolPackageRuntimeIdentifiers": rids,
     }
     for key, required in expected.items():
         values = property_values(root, key)
@@ -143,7 +144,7 @@ def main() -> int:
         print(f"ERROR: {message}", file=sys.stderr)
     if errors:
         return 1
-    print("Validated inward Domain/Application/Infrastructure/CLI project references and x64 Native AOT metadata.")
+    print("Validated inward Domain/Application/Infrastructure/CLI references and six native AOT RIDs.")
     return 0
 
 

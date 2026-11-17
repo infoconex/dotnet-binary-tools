@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-Assembles and audits the complete unpublished three-RID distribution set.
+Assembles and audits the complete unpublished six-RID distribution set.
 
 .DESCRIPTION
-Consumes the three distinct CI artifacts from matching OS builders. Copies
-exactly one top-level pointer, three native NuGet subpackages and three native
+Consumes six distinct CI artifacts from matching OS builders. Copies
+exactly one top-level pointer, six native NuGet subpackages and six native
 standalone archives. Does not install, sign, tag, release or publish anything.
 #>
 [CmdletBinding()]
@@ -43,13 +43,13 @@ function Copy-UniqueArtifact([string]$Rid, [string]$Name, [string]$Target) {
     Copy-Item -LiteralPath $matches[0].FullName -Destination $output
 }
 
-foreach ($rid in @('win-x64', 'linux-x64', 'osx-x64')) {
+foreach ($rid in @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')) {
     Copy-UniqueArtifact $rid "Infoconex.DotNetBinary.Tools.$rid.$version.nupkg" $packages
-    $extension = if ($rid -eq 'win-x64') { 'zip' } else { 'tar.gz' }
+    $extension = if ($rid.StartsWith('win-')) { 'zip' } else { 'tar.gz' }
     Copy-UniqueArtifact $rid "dotnet-binary-$version-$rid.$extension" $standalone
 }
 # Top-level pointer is independent of the host OS, so select one canonical
-# instance after all three native subpackages have been staged.
+# instance after all six native subpackages have been staged.
 Copy-UniqueArtifact 'linux-x64' "Infoconex.DotNetBinary.Tools.$version.nupkg" $packages
 
 $manifest = Join-Path $destination 'release-inventory.json'

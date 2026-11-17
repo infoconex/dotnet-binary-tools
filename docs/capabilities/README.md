@@ -11,7 +11,7 @@ This README is the index for the individual capability specifications. Each capa
 | [CAP-005](CAP-005.md) | Inspection Inventory | Coordinate single-file and directory inspections, safely traverse directories, aggregate findings and record completeness. |
 | [CAP-006](CAP-006.md) | Results and Reporting | Serialize a common structured report, present human output and safely persist reports. |
 | [CAP-007](CAP-007.md) | Command-Line Interface | Interpret commands/options, present help and diagnostics, and apply exit semantics without owning inspection behavior. |
-| [CAP-008](CAP-008.md) | Distribution | Deliver verified x64 standalone Native AOT executables and a NuGet .NET Tool on Windows, Linux and macOS. |
+| [CAP-008](CAP-008.md) | Distribution | Deliver verified x64/ARM64 standalone Native AOT executables and a NuGet .NET Tool on Windows, Linux and macOS. |
 
 ## Shared product boundaries
 
@@ -19,7 +19,7 @@ This README is the index for the individual capability specifications. Each capa
 - Declared assembly targets, configured deployment runtime requests, and actual observed running runtimes are different facts. v0.1 does not observe installed or running runtimes; it reports unknowns rather than guessing.
 - Directory inventories preserve individual failures, skipped paths, resource limits, and whether coverage is complete. A successful report can still describe partial coverage; invalid explicitly supplied inputs fail the request.
 - Results share an evidence-preserving, versioned report contract. Lifecycle advice uses dated, source-backed data and is offline by default.
-- The initial distribution goal is Windows, Linux, and macOS x64; ARM64, package publishing, and release acceptance require separate evidence and authorization.
+- The initial distribution goal is Windows, Linux, and macOS x64 and ARM64 (six native RIDs); package publishing and release acceptance still require separate evidence and owner authorization.
 
 ## Specification authority and verification
 

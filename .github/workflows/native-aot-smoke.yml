@@ -43,10 +43,16 @@ jobs:
         include:
           - os: ubuntu-latest
             rid: linux-x64
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
           - os: windows-latest
             rid: win-x64
+          - os: windows-11-vs2026-arm
+            rid: win-arm64
           - os: macos-15-intel
             rid: osx-x64
+          - os: macos-15
+            rid: osx-arm64
     steps:
       - name: Note intentionally omitted Native AOT validation
         if: needs.scope.outputs.aot != 'true'
@@ -120,9 +126,9 @@ jobs:
       - name: Validate Linux runtime-independent consumer
         if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
         shell: pwsh
-        run: ./scripts/validate-linux-runtime-free.ps1
+        run: ./scripts/validate-linux-runtime-free.ps1 -RuntimeIdentifier '${{ matrix.rid }}'
       - name: Verify committed NuGet locks reject dependency drift
-        if: needs.scope.outputs.aot == 'true' && runner.os == 'Linux'
+        if: needs.scope.outputs.aot == 'true' && matrix.rid == 'linux-x64'
         shell: pwsh
         run: ./scripts/evaluate-package-locks.ps1
       - name: Record SHA-256 artifact checksums
@@ -155,7 +161,7 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Download all three host-native artifacts
+      - name: Download all six host-native artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: pre-release-*

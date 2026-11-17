@@ -1,10 +1,10 @@
-# FR-DST-007: Require separate owner approval before tagging, releasing or publishing packages and defer ARM64 until its own verified acceptance evidence exists.
+# FR-DST-007: Require separate owner approval before tagging, releasing or publishing packages and exclude targets lacking verified platform-specific acceptance.
 
 **Capability:** [CAP-008 — Distribution](../../../capabilities/CAP-008.md) · [Verification evidence](../../../testing/traceability.md)
 
 ## Requirement
 
-Require separate owner approval before tagging, releasing or publishing packages and defer ARM64 until its own verified acceptance evidence exists.
+Require separate owner approval before tagging, releasing or publishing packages and exclude any target lacking verified platform-specific acceptance evidence.
 
 ## Acceptance scenarios
 
@@ -16,10 +16,10 @@ Require separate owner approval before tagging, releasing or publishing packages
 
 **Then** no public tag, GitHub Release or NuGet push occurs.
 
-### SC-DST-009: Avoid unsupported ARM64 claims
+### SC-DST-009: Avoid unsupported target claims
 
-**Given** ARM64 packages have not completed platform-specific acceptance
+**Given** an unknown RID or a release target that has not completed native and clean-consumer acceptance
 
 **When** supported RID metadata is generated
 
-**Then** ARM64 is absent from the v0.1 advertised release set.
+**Then** unknown RID packages are rejected and the unverified target is not advertised as release-ready; packaging alone is not evidence of compatibility.

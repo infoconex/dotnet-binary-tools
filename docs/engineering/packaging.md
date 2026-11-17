@@ -5,25 +5,23 @@
 `0.1.0-preview.1` is not an actual published release.
 
 Initial delivery includes a standalone Native AOT executable and a NuGet
-.NET Tool, supporting **linux-x64, win-x64 and osx-x64** (not ARM64). The tool
+.NET Tool, supporting **win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, and osx-arm64**. The tool
 exposes `dotnet-binary` and, after tool installation, `dotnet binary`.
 
 ## Reproducible local pre-release checks
 
 Install .NET 11, PowerShell 7, NuGet access and the native compiler prerequisites
-for the matching x64 host. In the repository root:
+for a matching native x64/ARM64 host. In the repository root:
 
 ```shell
 pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier linux-x64
 pwsh ./scripts/validate-tool-package.ps1 -RuntimeIdentifier linux-x64
 ```
 
-Use `win-x64` on Windows x64 or `osx-x64` on Intel macOS. Both scripts first
+Use the corresponding RID on Windows or macOS, including Apple Silicon. Both scripts first
 restore the CLI project's declared multi-RID dependency graph in NuGet
 `--locked-mode`, without passing an individual `-r` to restore. The graph
-includes an extra `osx-arm64` **restore-only** target for Apple Silicon
-development and managed CI; the package manifest still names only the
-approved three x64 targets. The first script publishes for the host RID
+and tool metadata both declare the same six approved native RIDs. The first script publishes for the host RID
 with `--no-restore` and smoke-tests `--help`/`--version`. The second builds
 both the matching Native AOT RID package and the top-level pointer package
 without restoring again, then installs the latter into a fresh private `--tool-path` from the
@@ -32,7 +30,7 @@ observed Windows runner) and `dotnet binary`.
 Neither script pushes artifacts or updates a global tool installation.
 `scripts/write-artifact-checksums.ps1` writes SHA-256 manifests for generated
 artifact directories. On Linux, provision the `ubuntu:24.04` container image
-separately, then run `scripts/validate-linux-runtime-free.ps1` to verify the
+separately, then run `scripts/validate-linux-runtime-free.ps1 -RuntimeIdentifier linux-x64` (or `linux-arm64` on ARM64) to verify the
 published executable works without an installed .NET runtime or network.
 
 In .NET 10 and later, a RID-specific Native AOT tool uses **two package
@@ -57,9 +55,9 @@ libraries; Linux builds target a compatible glibc baseline.
 The [CAP-008 implementation issue](https://github.com/infoconex/dotnet-binary-tools/issues/26)
 adds repository-controlled checks that package each previously tested native
 executable with its license using `scripts/package-standalone.ps1`, and
-assemble the three platform artifacts with `scripts/assemble-distribution.ps1`.
-`scripts/distribution_inventory.py` validates exactly three standalone archives,
-three RID-native NuGet packages, and one top-level NuGet pointer, including
+assemble the six native-platform artifacts with `scripts/assemble-distribution.ps1` ([expansion Issue #28](https://github.com/infoconex/dotnet-binary-tools/issues/28)).
+`scripts/distribution_inventory.py` validates exactly six standalone archives,
+six RID-native NuGet packages, and one top-level NuGet pointer, including
 versions, source-commit metadata, commands, executable paths, native executable
 modes, safe archive members and SHA-256 digests. These are unpublished CI
 artifacts, not a release candidate accepted for public distribution.
@@ -80,11 +78,11 @@ and an isolated package cache. `--add-source` alone would permit existing feeds
 to race to supply the same package ID/version. Per-platform CI compares actual
 same-fixture `inspect` and `scan` JSON for the installed tool and the standalone
 binary after excluding only their distinct generation timestamps. The CI
-aggregation step verifies the *complete* four-package set rather than assuming
+aggregation step verifies the *complete* seven-package set rather than assuming
 that a one-host local installation proved all RID references are present.
 
 These checks do **not** satisfy Issue #4: native SDK/runtime-free Windows and
-macOS consumers remain separately required for v0.1 publication. Ordinary PR
+macOS consumers on both architectures remain separately required for v0.1 publication. Ordinary PR
 CI does not contain a NuGet push, tag, release or public upload action.
 
 ## Future installation (not published)

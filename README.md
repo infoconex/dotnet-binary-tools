@@ -29,7 +29,7 @@ Results separate declared assembly target, requested deployment runtime, and act
 
 Both commands share one versioned JSON report envelope; `--fields` filters only per-assembly properties. Results go to stdout by default or to `--output`, using non-overwriting UTC timestamped collision-safe filenames. Diagnostics go to stderr.
 
-Initial release goal: both standalone Native AOT executables and NuGet .NET Tool (`Infoconex.DotNetBinary.Tools`) on **Windows x64, Linux x64, macOS x64**; ARM64 is deferred. No NuGet package or standalone executable has been published.
+Initial release goal: both standalone Native AOT executables and NuGet .NET Tool (`Infoconex.DotNetBinary.Tools`) on **Windows, Linux and macOS, each for x64 and ARM64** (six native targets). Per-platform release gates still apply. No NuGet package or standalone executable has been published.
 
 ## Build from source
 

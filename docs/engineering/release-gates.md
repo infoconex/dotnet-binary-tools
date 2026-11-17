@@ -34,9 +34,9 @@ Keep the following evidence together for a frozen, reviewed candidate SHA:
 | --- | --- |
 | Identity | Source SHA, exact SDK/PowerShell/compiler versions, host OS, package ID and version, license and [changelog](../../CHANGELOG.md) entry. |
 | Specifications | All selected CAP/FR/NFR/ARCH/scenario acceptance criteria mapped to observed tests; no drafts recorded as passing. |
-| Validation | Explicit full engineering, managed NUnit/coverage/style, CodeQL/security, dependency review and three-RID AOT runs on the exact SHA. |
-| NuGet tool | Top-level pointer and matching-version RID-specific `.nupkg` archives for all three x64 OSes; clean local install and both CLI entry points per OS. |
-| Standalone AOT | Three native outputs and SHA-256 manifests; successful `--help`, `--version` and meaningful behavior tests in consumer environments **without .NET SDK or runtime**. Track Windows/macOS clean-consumer evidence in [Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4). |
+| Validation | Explicit full engineering, managed NUnit/coverage/style, CodeQL/security, dependency review and six-RID native AOT runs on the exact SHA. |
+| NuGet tool | Top-level pointer and matching-version RID-specific `.nupkg` archives for all six native targets; clean local install and both CLI entry points per target. |
+| Standalone AOT | Six native outputs and SHA-256 manifests; successful `--help`, `--version` and meaningful behavior tests in consumer environments **without .NET SDK or runtime**. Track Windows/macOS clean-consumer evidence on both architectures in [Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4). |
 | Security | NuGet audit/Dependabot/CodeQL and secret protections verified; dependency inventory, advisories and security exceptions reviewed. |
 | Supply chain | Final package/binary checksums, a verified dependency SBOM, build provenance attestation tied to immutable digests and SHA, publication permissions and chain of custody. |
 | Operational | Version naming, download/install instructions, release notes, rollback and revocation plan, and independent owner decision. |

@@ -3,24 +3,25 @@
 Packs the native .NET tool and verifies isolated installation and invocation.
 
 .DESCRIPTION
-Requires .NET 11, native AOT toolchain and a matching x64 host. Creates both
+Requires .NET 11, native AOT toolchain and a matching x64/ARM64 host. Creates both
 the RID-specific Native AOT package and the top-level pointer package without
 publishing either to NuGet. Test installation uses a fresh, private tool path.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('linux-x64', 'win-x64', 'osx-x64')]
+    [ValidateSet('linux-x64', 'linux-arm64', 'win-x64', 'win-arm64', 'osx-x64', 'osx-arm64')]
     [string]$RuntimeIdentifier
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$hostRid = if ($IsWindows) { 'win-x64' } elseif ($IsLinux) { 'linux-x64' } elseif ($IsMacOS) { 'osx-x64' } else { throw 'Unsupported operating system for tool packaging.' }
 $hostArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
-if ($RuntimeIdentifier -ne $hostRid -or $hostArchitecture -ne [System.Runtime.InteropServices.Architecture]::X64) {
-    throw "Tool packaging requires a matching x64 host: requested $RuntimeIdentifier; host $hostRid ($hostArchitecture)."
+$architecture = switch ($hostArchitecture.ToString()) { 'X64' { 'x64' } 'Arm64' { 'arm64' } default { throw "Unsupported native architecture: $hostArchitecture" } }
+$hostRid = if ($IsWindows) { "win-$architecture" } elseif ($IsLinux) { "linux-$architecture" } elseif ($IsMacOS) { "osx-$architecture" } else { throw 'Unsupported operating system for tool packaging.' }
+if ($RuntimeIdentifier -ne $hostRid) {
+    throw "Tool packaging requires a matching host: requested $RuntimeIdentifier; host $hostRid ($hostArchitecture)."
 }
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
