@@ -100,8 +100,6 @@ method/unexecuted-method details, JSON metrics and a Markdown summary. Open
 The settings explicitly exclude spawned CLI subprocesses from test-host
 instrumentation, using Microsoft's documented `CollectFromChildProcesses`
 option. Process-level contract tests still execute and assert real CLI behavior.
-Coverage collection serializes NUnit test hosts to avoid concurrent collector
-aggregation, while the independent managed test matrix remains unchanged.
 
 ### Native AOT CLI smoke test
 
