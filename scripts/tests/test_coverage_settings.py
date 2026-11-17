@@ -32,6 +32,10 @@ class CoverageSettingsTests(unittest.TestCase):
         self.assertIsNotNone(setting, "Child-process collection must be explicit.")
         self.assertEqual("false", setting.lower())
 
+    def test_coverage_aggregation_uses_one_test_host_at_a_time(self):
+        config = ElementTree.parse(ROOT / "coverage.runsettings")
+        self.assertEqual("1", config.findtext(".//RunConfiguration/MaxCpuCount"))
+
 
 if __name__ == "__main__":
     unittest.main()
