@@ -3,7 +3,7 @@ using Infoconex.DotNetBinary.Domain.Models;
 namespace Infoconex.DotNetBinary.Application.InputSelection;
 
 /// <summary>Validates a complete explicit input request before any downstream work.</summary>
-public sealed class InputSelectionService(IInputPathProbe pathProbe)
+public sealed class InputSelectionService(IInputPathProbe pathProbe) : IInputSelectionUseCase
 {
     private readonly IInputPathProbe _pathProbe = pathProbe ?? throw new ArgumentNullException(nameof(pathProbe));
 

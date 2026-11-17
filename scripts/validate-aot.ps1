@@ -67,7 +67,44 @@ try {
         -not $report.ContainsKey('summary')) {
         throw 'Native JSON reporting smoke test produced an unexpected CAP-006 contract.'
     }
-    Write-Host 'Native AOT JSON reporting contract smoke test passed.'
+    # CAP-007: check real option binding, a scan operation, invalid syntax and exit-code discipline.
+    $hashJson = & $binaryPath inspect $binaryPath --format json --sha256 2>$null | Out-String
+    if ($LASTEXITCODE -ne 0) { throw 'Native opt-in SHA-256 inspection failed.' }
+    $hashReport = $hashJson | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+    if ($hashReport.candidates.Count -ne 1 -or $hashReport.candidates[0].sha256 -notmatch '^[0-9a-f]{64}$') {
+        throw 'Native opt-in SHA-256 did not propagate to the inspection service.'
+    }
+
+    $scanJson = & $binaryPath scan (Split-Path -Parent $binaryPath) --format json --max-candidates 1 2>$null | Out-String
+    if ($LASTEXITCODE -ne 0) { throw 'Native directory scan failed.' }
+    $scanReport = $scanJson | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+    if ($scanReport.schemaVersion -ne '1.0.0' -or $scanReport.command -ne 'scan' -or $scanReport.inputs.Count -ne 1) {
+        throw 'Native scan did not produce the expected command envelope.'
+    }
+
+    # Isolate the intentional nonzero exit so it cannot become this script's own
+    # $LASTEXITCODE on successful completion (pwsh would then fail the CI step).
+    $invalidStart = [System.Diagnostics.ProcessStartInfo]::new($binaryPath)
+    $invalidStart.ArgumentList.Add('inspect')
+    $invalidStart.RedirectStandardOutput = $true
+    $invalidStart.RedirectStandardError = $true
+    $invalidProcess = [System.Diagnostics.Process]::Start($invalidStart)
+    try {
+        $invalidStdout = $invalidProcess.StandardOutput.ReadToEnd()
+        $invalidStderr = $invalidProcess.StandardError.ReadToEnd()
+        if (-not $invalidProcess.WaitForExit(30000)) {
+            $invalidProcess.Kill()
+            throw 'Native invalid-arity smoke test exceeded 30 seconds.'
+        }
+        if ($invalidProcess.ExitCode -ne 2 -or $invalidStdout.Length -ne 0 -or
+            $invalidStderr -notmatch 'exactly one') {
+            throw 'Native CLI did not reject invalid arity with the expected exit code and stderr-only diagnostic.'
+        }
+    }
+    finally {
+        $invalidProcess.Dispose()
+    }
+    Write-Host 'Native AOT reporting, scan, SHA-256 option, and invalid-arity smoke tests passed.'
 }
 finally {
     Pop-Location

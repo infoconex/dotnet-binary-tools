@@ -15,9 +15,11 @@ public sealed class InventoryCandidateInspectionService(
     private readonly LifecycleAssessmentService _lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
 
     /// <inheritdoc />
-    public InventoryEvidence Inspect(SelectedInput file, SelectedInput? explicitConfiguration, long maxFileBytes)
+    public InventoryEvidence Inspect(SelectedInput file, SelectedInput? explicitConfiguration, long maxFileBytes,
+        bool computeSha256 = false)
     {
-        var assembly = _assembly.Inspect(file, new AssemblyInspectionOptions(MaxFileBytes: maxFileBytes));
+        var assembly = _assembly.Inspect(file,
+            new AssemblyInspectionOptions(ComputeSha256: computeSha256, MaxFileBytes: maxFileBytes));
         var configuration = _configuration.Inspect(file, explicitConfiguration);
         var lifecycle = _lifecycle.Assess(assembly.Metadata?.DeclaredTarget, configuration);
         return new InventoryEvidence(assembly, configuration, lifecycle);

@@ -10,7 +10,7 @@ public sealed class CliApplicationTests
     [TestCase("--help")]
     [TestCase("-h")]
     [TestCase("help")]
-    public void HelpClearlyStatesFeatureStatus(string option)
+    public void HelpClearlyDescribesCompleteCommandSurface(string option)
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
@@ -20,7 +20,8 @@ public sealed class CliApplicationTests
         Assert.Multiple(() =>
         {
             Assert.That(code, Is.Zero);
-            Assert.That(output.ToString(), Does.Contain("not implemented yet"));
+            Assert.That(output.ToString(), Does.Contain("--sha256"));
+            Assert.That(output.ToString(), Does.Not.Contain("not implemented yet"));
             Assert.That(error.ToString(), Is.Empty);
         });
     }
