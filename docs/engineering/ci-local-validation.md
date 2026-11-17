@@ -97,6 +97,9 @@ TRX files under ignored `artifacts/coverage/raw`, with separate CI artifacts
 per OS. The Python renderer produces annotated source-level HTML,
 method/unexecuted-method details, JSON metrics and a Markdown summary. Open
 `report/index.html` from the downloadable GitHub Actions artifact ZIP.
+The settings explicitly exclude spawned CLI subprocesses from test-host
+instrumentation, using Microsoft's documented `CollectFromChildProcesses`
+option. Process-level contract tests still execute and assert real CLI behavior.
 
 ### Native AOT CLI smoke test
 

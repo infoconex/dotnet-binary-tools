@@ -6,6 +6,8 @@
         <Configuration>
           <Format>cobertura</Format>
           <IncludeTestAssembly>False</IncludeTestAssembly>
+          <!-- CLI process-contract tests run separately from NUnit coverage counters. -->
+          <CollectFromChildProcesses>False</CollectFromChildProcesses>
           <CodeCoverage>
             <ModulePaths>
               <Include>

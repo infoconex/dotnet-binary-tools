@@ -26,6 +26,12 @@ class CoverageSettingsTests(unittest.TestCase):
         config = ElementTree.parse(ROOT / "coverage.runsettings")
         self.assertEqual("false", config.findtext(".//IncludeTestAssembly").lower())
 
+    def test_process_contract_tests_do_not_mix_child_process_counters(self):
+        config = ElementTree.parse(ROOT / "coverage.runsettings")
+        setting = config.findtext(".//CollectFromChildProcesses")
+        self.assertIsNotNone(setting, "Child-process collection must be explicit.")
+        self.assertEqual("false", setting.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
