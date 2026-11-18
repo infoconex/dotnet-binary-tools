@@ -1,8 +1,7 @@
 # Temporary, branch-only bootstrap. Remove after the verified lock file is committed.
 name: Issue 28 isolated lock refresh
 on:
-  push:
-    branches: [issue/28-six-rid-distribution]
+  workflow_dispatch:
 
 permissions:
   contents: read
