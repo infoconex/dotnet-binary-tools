@@ -1,7 +1,8 @@
 # Temporary, branch-only bootstrap. Remove after the verified lock file is committed.
 name: Issue 28 isolated lock refresh
 on:
-  workflow_dispatch:
+  push:
+    branches: [issue/28-six-rid-distribution]
 
 permissions:
   contents: read
@@ -23,7 +24,7 @@ jobs:
           set -euo pipefail
           sudo iptables -N IMDS_DENY
           sudo iptables -A IMDS_DENY -j REJECT
-          sudo iptables -I OUTPUT -d 169.254.0.0/16 -j IMDS_DENY
+          sudo iptables -I OUTPUT -d 169.254.169.254/32 -j IMDS_DENY
           sudo iptables -I OUTPUT -d 100.100.100.200/32 -j IMDS_DENY
           sudo ip6tables -N IMDS_DENY
           sudo ip6tables -A IMDS_DENY -j REJECT
@@ -85,13 +86,13 @@ jobs:
           v4_hits=$(sudo iptables -nvxL IMDS_DENY | awk '$3 == "REJECT" {print $1}')
           v6_hits=$(sudo ip6tables -nvxL IMDS_DENY | awk '$3 == "REJECT" {print $1}')
           if [ -f "$trace_file" ]; then
-            grep -E '169[.]254[.]|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$trace_file" >"$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log" || true
+            grep -E '169[.]254[.]169[.]254|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$trace_file" >"$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log" || true
             grep -E 'execve\(|exit_group\(' "$trace_file" >"$ISSUE28_DIAGNOSTIC_DIR/process-lifecycle.log" || true
           else
             echo 'No trace file was produced.' >"$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log"
             echo 'No trace file was produced.' >"$ISSUE28_DIAGNOSTIC_DIR/process-lifecycle.log"
           fi
-          tracer_hits=$(grep -Ec '169[.]254[.]|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log" || true)
+          tracer_hits=$(grep -Ec '169[.]254[.]169[.]254|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log" || true)
           {
             echo 'IPv4 blocked destinations (packets):'
             sudo iptables -nvxL OUTPUT | awk '$3 == "IMDS_DENY" {print $9 ": " $1}'
@@ -142,6 +143,7 @@ jobs:
             echo "- **Traced metadata connection attempts:** $tracer_hits"
             echo '- **Bounded runtime:** 120 seconds, then TERM and a 5-second kill grace period'
             echo '- **MSBuild process reuse:** disabled via environment and /nr:false'
+            echo '- **Metadata firewall:** exact IMDS endpoints only; unrelated 169.254.169.123 NTP time synchronization remains available'
             echo '- **Source:** repository nuget.config (nuget.org only); no credentials passed to restore'
             echo
             echo 'Review the downloadable diagnostic artifact for restore output, process lifecycle, metadata connection attempts and per-destination firewall counters.'
