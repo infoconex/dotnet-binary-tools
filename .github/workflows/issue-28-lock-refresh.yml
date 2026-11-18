@@ -74,11 +74,13 @@ jobs:
             DOTNET_CLI_HOME="$RUNNER_TEMP/issue28-home" \
             NUGET_PACKAGES="$RUNNER_TEMP/issue28-packages" \
             DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+            DOTNET_CLI_USE_MSBUILD_SERVER=false \
+            MSBUILDDISABLENODEREUSE=1 \
             DOTNET_NOLOGO=1 \
             timeout --signal=TERM --kill-after=5s 120s \
             strace -f -qq -e trace=connect,execve,exit_group -o "$trace_file" \
               dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj \
-              --configfile nuget.config --force-evaluate >"$restore_log" 2>&1
+              --configfile nuget.config --force-evaluate /nr:false >"$restore_log" 2>&1
           restore_exit=$?
           set -e
           v4_hits=$(sudo iptables -nvxL IMDS_DENY | awk '$3 == "REJECT" {print $1}')
@@ -140,6 +142,7 @@ jobs:
             echo "- **Blocked IPv6 packets:** ${v6_hits:-unknown}"
             echo "- **Traced metadata connection attempts:** $tracer_hits"
             echo '- **Bounded runtime:** 120 seconds, then TERM and a 5-second kill grace period'
+            echo '- **MSBuild process reuse:** disabled via environment and /nr:false'
             echo '- **Source:** repository nuget.config (nuget.org only); no credentials passed to restore'
             echo
             echo 'Review the downloadable diagnostic artifact for restore output, process lifecycle, metadata connection attempts and per-destination firewall counters.'
