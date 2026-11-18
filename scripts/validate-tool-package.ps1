@@ -23,6 +23,7 @@ $hostRid = if ($IsWindows) { "win-$architecture" } elseif ($IsLinux) { "linux-$a
 if ($RuntimeIdentifier -ne $hostRid) {
     throw "Tool packaging requires a matching host: requested $RuntimeIdentifier; host $hostRid ($hostArchitecture)."
 }
+Write-Host "Native tool-package host verified: requested $RuntimeIdentifier; observed $hostRid ($hostArchitecture)."
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Push-Location $root
