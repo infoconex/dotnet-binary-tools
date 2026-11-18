@@ -3,25 +3,27 @@
 Packs the native .NET tool and verifies isolated installation and invocation.
 
 .DESCRIPTION
-Requires .NET 11, native AOT toolchain and a matching x64 host. Creates both
+Requires .NET 11, native AOT toolchain and a matching x64/ARM64 host. Creates both
 the RID-specific Native AOT package and the top-level pointer package without
 publishing either to NuGet. Test installation uses a fresh, private tool path.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('linux-x64', 'win-x64', 'osx-x64')]
+    [ValidateSet('linux-x64', 'linux-arm64', 'win-x64', 'win-arm64', 'osx-x64', 'osx-arm64')]
     [string]$RuntimeIdentifier
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$hostRid = if ($IsWindows) { 'win-x64' } elseif ($IsLinux) { 'linux-x64' } elseif ($IsMacOS) { 'osx-x64' } else { throw 'Unsupported operating system for tool packaging.' }
 $hostArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
-if ($RuntimeIdentifier -ne $hostRid -or $hostArchitecture -ne [System.Runtime.InteropServices.Architecture]::X64) {
-    throw "Tool packaging requires a matching x64 host: requested $RuntimeIdentifier; host $hostRid ($hostArchitecture)."
+$architecture = switch ($hostArchitecture.ToString()) { 'X64' { 'x64' } 'Arm64' { 'arm64' } default { throw "Unsupported native architecture: $hostArchitecture" } }
+$hostRid = if ($IsWindows) { "win-$architecture" } elseif ($IsLinux) { "linux-$architecture" } elseif ($IsMacOS) { "osx-$architecture" } else { throw 'Unsupported operating system for tool packaging.' }
+if ($RuntimeIdentifier -ne $hostRid) {
+    throw "Tool packaging requires a matching host: requested $RuntimeIdentifier; host $hostRid ($hostArchitecture)."
 }
+Write-Host "Native tool-package host verified: requested $RuntimeIdentifier; observed $hostRid ($hostArchitecture)."
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Push-Location $root
@@ -56,8 +58,10 @@ try {
         if (-not (Test-Path -LiteralPath $package -PathType Leaf)) { throw "Expected NuGet tool package missing: $package" }
     }
 
-    # --add-source alone permits an unrelated configured feed to supply the
-    # same ID/version. A dedicated config and cache make this a local-only test.
+    # The tool and its RID packages must come from our unpublished local feed.
+    # An empty NuGet cache can expose missing Microsoft SDK host packs on ARM64
+    # runners. Permit only those Microsoft host packs from nuget.org, never our
+    # tool ID, so this still proves the tool is installed from staged packages.
     $nugetConfig = Join-Path $installationPath 'nuget.config'
     $escapedSource = [System.Security.SecurityElement]::Escape($packageDirectory)
     @"
@@ -66,16 +70,29 @@ try {
   <packageSources>
     <clear />
     <add key="staged" value="$escapedSource" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
   </packageSources>
+  <packageSourceMapping>
+    <packageSource key="staged">
+      <package pattern="Infoconex.DotNetBinary.Tools" />
+      <package pattern="Infoconex.DotNetBinary.Tools.*" />
+    </packageSource>
+    <packageSource key="nuget.org">
+      <package pattern="Microsoft.NETCore.App.Host.*" />
+    </packageSource>
+  </packageSourceMapping>
   <auditSources><clear /></auditSources>
 </configuration>
 "@ | Set-Content -LiteralPath $nugetConfig -Encoding utf8NoBOM
     $previousPackages = $env:NUGET_PACKAGES
     try {
         $env:NUGET_PACKAGES = Join-Path $installationPath 'nuget-cache'
-        Write-Host "Installing $version from isolated local feed into $installationPath"
+        Write-Host "Installing $version with staged-only tool packages and NuGet.org restricted to Microsoft SDK host packs into $installationPath"
+        Write-Host "  Infoconex.DotNetBinary.Tools and RID packages: $packageDirectory"
+        Write-Host "  Microsoft.NETCore.App.Host.* only: https://api.nuget.org/v3/index.json"
+        Write-Host "  Isolated NuGet package cache: $env:NUGET_PACKAGES"
         & dotnet tool install Infoconex.DotNetBinary.Tools --version $version --tool-path $installationPath --configfile $nugetConfig --no-cache
-        if ($LASTEXITCODE -ne 0) { throw "Clean local NuGet tool installation failed with exit code $LASTEXITCODE." }
+        if ($LASTEXITCODE -ne 0) { throw "Isolated staged NuGet tool installation failed with exit code $LASTEXITCODE." }
     }
     finally { $env:NUGET_PACKAGES = $previousPackages }
 

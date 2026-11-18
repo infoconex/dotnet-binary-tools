@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Restores, publishes, and smoke-tests the native CLI for the host's x64 RID.
+Restores, publishes, and smoke-tests the native CLI for its x64/ARM64 host RID.
 
 .DESCRIPTION
 Runs without provisioning the SDK or native compiler prerequisites. The host
@@ -9,17 +9,18 @@ must match the requested RID; cross-compilation is not considered validation.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('linux-x64', 'win-x64', 'osx-x64')]
+    [ValidateSet('linux-x64', 'linux-arm64', 'win-x64', 'win-arm64', 'osx-x64', 'osx-arm64')]
     [string]$RuntimeIdentifier
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$hostRid = if ($IsWindows) { 'win-x64' } elseif ($IsLinux) { 'linux-x64' } elseif ($IsMacOS) { 'osx-x64' } else { throw 'Unsupported operating system for Native AOT.' }
 $hostArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
-if ($RuntimeIdentifier -ne $hostRid -or $hostArchitecture -ne [System.Runtime.InteropServices.Architecture]::X64) {
-    throw "Native AOT validation requires a matching x64 host: requested $RuntimeIdentifier; host $hostRid ($hostArchitecture)."
+$architecture = switch ($hostArchitecture.ToString()) { 'X64' { 'x64' } 'Arm64' { 'arm64' } default { throw "Unsupported native architecture: $hostArchitecture" } }
+$hostRid = if ($IsWindows) { "win-$architecture" } elseif ($IsLinux) { "linux-$architecture" } elseif ($IsMacOS) { "osx-$architecture" } else { throw 'Unsupported operating system for Native AOT.' }
+if ($RuntimeIdentifier -ne $hostRid) {
+    throw "Native AOT validation requires a matching host: requested $RuntimeIdentifier; host $hostRid ($hostArchitecture)."
 }
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path

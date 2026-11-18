@@ -77,7 +77,7 @@ A developer restoring from the solution root also gets this root NuGet configura
 
 `Directory.Build.props` enables `RestorePackagesWithLockFile` for solution projects. All six internal projects have checked-in `packages.lock.json` files. They protect the repository's own builds and tests; these library-project locks do **not** constrain a future external consumer of the libraries, whose top-level application resolves its own dependency graph.
 
-The CLI uses a single cross-platform restore graph with `linux-x64`, `win-x64`, `osx-x64` **and `osx-arm64`**. The Apple Silicon RID is included for consistent dependency resolution on arm64 macOS development and CI hosts; `ToolPackageRuntimeIdentifiers` remains restricted to the three approved **x64** distribution targets. Declaring restore RIDs does not authorize or validate an arm64 release. The managed, Native AOT and NuGet packaging scripts all use locked restore without passing an individual RID, followed by `--no-restore` build, publish or pack operations with the appropriate target RID.
+The CLI uses a single cross-platform restore graph for **six RIDs**: `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64`. `ToolPackageRuntimeIdentifiers` names the same six targets as approved in [Issue #28](https://github.com/infoconex/dotnet-binary-tools/issues/28). Declaring restore RIDs does not establish platform release acceptance. The managed, Native AOT and NuGet packaging scripts all use locked restore without passing an individual RID, followed by `--no-restore` build, publish or pack operations with the matching native target RID.
 
 This decision follows the
 [Microsoft .NET multitargeting guidance](https://learn.microsoft.com/en-us/visualstudio/msbuild/net-sdk-multitargeting#specify-runtime-identifiers):
@@ -88,8 +88,8 @@ documents locked mode, and its
 [NU1004 reference](https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1004)
 explains inconsistent lock-file inputs. Those are **documented** platform
 contracts, not discoveries unique to this repository. Cross-platform restore,
-Native AOT publishing, tool installation and the need for `osx-arm64` on Apple
-Silicon hosts were **repository-specific verification and investigation**.
+Native AOT publishing, tool installation and initially including `osx-arm64` on Apple
+Silicon hosts were **repository-specific verification and investigation**; expanded six-target execution requires fresh evidence.
 Consult [Issue #2](https://github.com/infoconex/dotnet-binary-tools/issues/2)
 and [PR #3](https://github.com/infoconex/dotnet-binary-tools/pull/3) for
 observed exact-SHA evidence; do not treat this explanation as a claim that

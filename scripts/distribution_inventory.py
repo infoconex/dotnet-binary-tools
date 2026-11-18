@@ -18,7 +18,7 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 PACKAGE_ID = "Infoconex.DotNetBinary.Tools"
-SUPPORTED_RIDS = ("win-x64", "linux-x64", "osx-x64")
+SUPPORTED_RIDS = ("win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64")
 VERSION_PATTERN = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$")
 SHA_PATTERN = re.compile(r"^[0-9a-fA-F]{40}$")
 
@@ -100,7 +100,7 @@ def _read_nuspec(package_path: Path, expected_id: str, version: str, source_sha:
         if len(commands) != 1 or commands[0].attrib.get("Name") != "dotnet-binary":
             raise ValueError(f"incorrect dotnet-binary command metadata in {package_path.name}")
         if rid:
-            entrypoint = "dotnet-binary.exe" if rid == "win-x64" else "dotnet-binary"
+            entrypoint = "dotnet-binary.exe" if rid.startswith("win-") else "dotnet-binary"
             if commands[0].attrib.get("EntryPoint") != entrypoint or commands[0].attrib.get("Runner") != "executable":
                 raise ValueError(f"incorrect native executable entry point in {package_path.name}")
             if f"tools/any/{rid}/{entrypoint}" not in [item.filename for item in members]:
@@ -115,12 +115,12 @@ def _validate_pointer(settings: ET.Element) -> None:
               for item in rid_packages if _local_name(item) == "RuntimeIdentifierPackage"]
     expected = {(rid, f"{PACKAGE_ID}.{rid}") for rid in SUPPORTED_RIDS}
     if set(actual) != expected or len(actual) != len(expected):
-        raise ValueError("RuntimeIdentifierPackages must name exactly the approved three x64 packages")
+        raise ValueError("RuntimeIdentifierPackages must name exactly the approved six native packages")
 
 
 def _validate_native_archive(archive_path: Path, rid: str) -> None:
-    executable = "dotnet-binary.exe" if rid == "win-x64" else "dotnet-binary"
-    if rid == "win-x64":
+    executable = "dotnet-binary.exe" if rid.startswith("win-") else "dotnet-binary"
+    if rid.startswith("win-"):
         with zipfile.ZipFile(archive_path) as archive:
             members = archive.infolist()
             _safe_names([item.filename for item in members], archive_path.name)
@@ -167,7 +167,7 @@ def validate_distribution(packages: Path, standalone: Path, version: str, source
         raise ValueError(f"NuGet artifacts missing {sorted(missing_packages)}, unexpected {sorted(unexpected_packages)}")
 
     expected_archives = {
-        f"dotnet-binary-{version}-{rid}.{'zip' if rid == 'win-x64' else 'tar.gz'}"
+        f"dotnet-binary-{version}-{rid}.{'zip' if rid.startswith('win-') else 'tar.gz'}"
         for rid in SUPPORTED_RIDS
     }
     actual_archives = {p.name for p in standalone.iterdir() if p.name.endswith((".zip", ".tar.gz"))}
@@ -183,7 +183,7 @@ def validate_distribution(packages: Path, standalone: Path, version: str, source
         _read_nuspec(path, package_id, version, source_sha, rid)
 
     for rid in SUPPORTED_RIDS:
-        name = f"dotnet-binary-{version}-{rid}.{'zip' if rid == 'win-x64' else 'tar.gz'}"
+        name = f"dotnet-binary-{version}-{rid}.{'zip' if rid.startswith('win-') else 'tar.gz'}"
         path = standalone / name
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"unsafe standalone artifact path {name}")

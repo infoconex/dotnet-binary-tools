@@ -32,7 +32,7 @@ independent evidence of a runtime-free consumer environment.
 - PowerShell 7 for the cross-platform validation scripts.
 - A matching operating system and native compiler/linker prerequisites for
   Native AOT. Linux CI installs or verifies Clang and `zlib1g-dev` separately.
-  macOS x64 verification uses an Intel runner; Windows uses an x64 runner.
+  macOS x64 verification uses an Intel runner, macOS ARM64 an Apple Silicon runner; Windows and Linux each use native runners for both architectures.
 
 Record the *actual* tool and OS environment and the exact source revision with
 verification evidence. For example:
@@ -103,13 +103,15 @@ option. Process-level contract tests still execute and assert real CLI behavior.
 
 ### Native AOT CLI smoke test
 
-Run on an x64 operating system matching one of `linux-x64`, `win-x64`, or
-`osx-x64`, after installing native AOT prerequisites:
+Run on an OS/CPU matching one of the six declared x64/ARM64 RIDs after installing native AOT prerequisites:
 
 ```shell
 pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier linux-x64
 # Windows x64: pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier win-x64
 # macOS Intel: pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier osx-x64
+# Linux ARM64: pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier linux-arm64
+# Windows ARM64: pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier win-arm64
+# Apple Silicon: pwsh ./scripts/validate-aot.ps1 -RuntimeIdentifier osx-arm64
 ```
 
 The script rejects a mismatched host or architecture and executes the resulting
@@ -120,9 +122,8 @@ the reporting path on that host but **does not** establish complete CAP-007 opti
 acceptance, SDK-free clean installation, or CAP-008 release readiness.
 
 The Native AOT and NuGet tool packaging scripts restore the **common locked
-dependency graph** first, then publish or pack with their explicit x64 RID and
-`--no-restore`. An `osx-arm64` restore target is present so Apple Silicon
-managed hosts resolve the same lock; no ARM64 artifact is tested or shipped.
+dependency graph** first, then publish or pack with the native RID and
+`--no-restore`. Restore and NuGet tool metadata must name all six approved RIDs.
 Linux CI also runs an isolated negative test that changes one central package
 version and verifies locked restore rejects it (`NU1004`).
 
@@ -132,7 +133,7 @@ version and verifies locked restore rejects it (`NU1004`).
 | --- | --- | --- |
 | [Validate engineering documentation](../../.github/workflows/validate-engineering.yml) | Python unit tests, line endings, docs, architecture, and test metadata | Runs Python unit tests on every invocation; relevant validators are selected by changed paths. |
 | [.NET 11 build, test and style](../../.github/workflows/build-test.yml) | Managed restore/audit, build, NUnit and Microsoft Cobertura coverage across three OSes; Linux style | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
-| [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | Common locked restore, RID-specific publish, help, version, NuGet tool packaging and installation on three OSes | All three required job contexts remain present; validation steps are omitted for documentation-only changes. |
+| [.NET 11 Native AOT smoke test](../../.github/workflows/native-aot-smoke.yml) | Common locked restore, RID-specific publish, help, version, NuGet tool packaging and installation on six native OS/CPU combinations | All six native matrix jobs are checked for relevant changes; documentation-only changes may omit execution. |
 | [Dependency review](../../.github/workflows/dependency-review.yml) | GitHub dependency-graph diff and high/critical vulnerability gate | Runs on pull requests; requires GitHub's dependency graph and advisory data, so there is no equivalent entirely local check. |
 
 All workflows trigger on PRs targeting `main`, pushes to `main`, and manual

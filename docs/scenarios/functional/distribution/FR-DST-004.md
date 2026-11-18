@@ -14,4 +14,4 @@ Publish versioned platform-specific artifacts with verifiable package contents, 
 
 **When** artifact inventory is audited
 
-**Then** each declared x64 RID has correctly named binaries and matching version/checksums while no ARM64 package is advertised.
+**Then** all six declared native RIDs have correctly named binaries and matching versions/checksums, while no unapproved RID or unevidenced compatibility claim is advertised.

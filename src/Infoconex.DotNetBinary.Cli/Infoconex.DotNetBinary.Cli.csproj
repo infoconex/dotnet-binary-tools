@@ -17,9 +17,9 @@
     <RepositoryUrl>https://github.com/infoconex/dotnet-binary-tools</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>dotnet;cli;tool;framework;assembly;metadata;nativeaot</PackageTags>
-    <!-- Restore includes Apple Silicon hosts; only the x64 RIDs below are packaged. -->
-    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
-    <ToolPackageRuntimeIdentifiers>win-x64;linux-x64;osx-x64</ToolPackageRuntimeIdentifiers>
+    <!-- Explicit native host RIDs: RID-aware .NET Tool and standalone Native AOT match. -->
+    <RuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</RuntimeIdentifiers>
+    <ToolPackageRuntimeIdentifiers>win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64</ToolPackageRuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Infoconex.DotNetBinary.Application/Infoconex.DotNetBinary.Application.csproj" />

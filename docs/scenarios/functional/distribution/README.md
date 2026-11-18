@@ -6,7 +6,7 @@ Each requirement has its own document containing the approved Given/When/Then sc
 
 | Requirement | Title | Acceptance scenario IDs |
 | --- | --- | --- |
-| [FR-DST-001](FR-DST-001.md) | Publish x64 standalone Native AOT binaries | `SC-DST-001` |
+| [FR-DST-001](FR-DST-001.md) | Package six native standalone Native AOT binaries | `SC-DST-001` |
 | [FR-DST-002](FR-DST-002.md) | Package a RID-aware NuGet .NET Tool | `SC-DST-002` |
 | [FR-DST-003](FR-DST-003.md) | Maintain distribution behavior parity | `SC-DST-003` |
 | [FR-DST-004](FR-DST-004.md) | Ship verifiable platform artifacts | `SC-DST-004` |
