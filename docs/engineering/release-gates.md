@@ -6,6 +6,8 @@ while independent Windows/macOS runtime-free consumer acceptance is tracked
 separately in [release Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4).
 The deferred consumer check remains mandatory before publication; it is not
 evidence that those environments have passed.
+[Issue #4's pinned-candidate preparation and clean-consumer operator procedure](../testing/issue-4-consumer-acceptance.md)
+records what is verified and what remains pending.
 
 Approval to merge source is distinct from approval to distribute packages.
 
