@@ -24,8 +24,11 @@ restore the CLI project's declared multi-RID dependency graph in NuGet
 and tool metadata both declare the same six approved native RIDs. The first script publishes for the host RID
 with `--no-restore` and smoke-tests `--help`/`--version`. The second builds
 both the matching Native AOT RID package and the top-level pointer package
-without restoring again, then installs the latter into a fresh private `--tool-path` from the
-local package source. It tests the installed shim (a `.cmd` launcher on the
+without restoring again, then installs the latter into a fresh private `--tool-path`.
+NuGet source mapping permits all Infoconex tool IDs only from the staged local
+packages. A separate nuget.org source is limited to `Microsoft.NETCore.App.Host.*`
+because the .NET tool installer may need an SDK host pack even when the tool
+itself is Native AOT, particularly on ARM64 hosts. It tests the installed shim (a `.cmd` launcher on the
 observed Windows runner) and `dotnet binary`.
 Neither script pushes artifacts or updates a global tool installation.
 `scripts/write-artifact-checksums.ps1` writes SHA-256 manifests for generated
@@ -73,12 +76,13 @@ three archives. The initial aggregator validator's nuspec-dependency assumption
 failed and was corrected; this is a repository-specific verification of
 [Microsoft's documented RID-aware packaging model](https://learn.microsoft.com/en-us/dotnet/core/tools/rid-specific-tools).
 
-The installation check now supplies a dedicated local-feed `nuget.config`
+The installation check supplies a dedicated `nuget.config` with staged-only
+Infoconex package source mapping, a Microsoft-host-pack-only nuget.org mapping,
 and an isolated package cache. `--add-source` alone would permit existing feeds
-to race to supply the same package ID/version. Per-platform CI compares actual
+to race to supply the same tool package ID/version. Per-platform CI compares actual
 same-fixture `inspect` and `scan` JSON for the installed tool and the standalone
 binary after excluding only their distinct generation timestamps. The CI
-aggregation step verifies the *complete* seven-package set rather than assuming
+aggregation step verifies the *complete* thirteen-artifact set rather than assuming
 that a one-host local installation proved all RID references are present.
 
 These checks do **not** satisfy Issue #4: native SDK/runtime-free Windows and

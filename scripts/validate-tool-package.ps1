@@ -87,6 +87,9 @@ try {
     try {
         $env:NUGET_PACKAGES = Join-Path $installationPath 'nuget-cache'
         Write-Host "Installing $version with staged-only tool packages and NuGet.org restricted to Microsoft SDK host packs into $installationPath"
+        Write-Host "  Infoconex.DotNetBinary.Tools and RID packages: $packageDirectory"
+        Write-Host "  Microsoft.NETCore.App.Host.* only: https://api.nuget.org/v3/index.json"
+        Write-Host "  Isolated NuGet package cache: $env:NUGET_PACKAGES"
         & dotnet tool install Infoconex.DotNetBinary.Tools --version $version --tool-path $installationPath --configfile $nugetConfig --no-cache
         if ($LASTEXITCODE -ne 0) { throw "Isolated staged NuGet tool installation failed with exit code $LASTEXITCODE." }
     }
