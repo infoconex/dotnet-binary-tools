@@ -57,8 +57,10 @@ try {
         if (-not (Test-Path -LiteralPath $package -PathType Leaf)) { throw "Expected NuGet tool package missing: $package" }
     }
 
-    # --add-source alone permits an unrelated configured feed to supply the
-    # same ID/version. A dedicated config and cache make this a local-only test.
+    # The tool and its RID packages must come from our unpublished local feed.
+    # An empty NuGet cache can expose missing Microsoft SDK host packs on ARM64
+    # runners. Permit only those Microsoft host packs from nuget.org, never our
+    # tool ID, so this still proves the tool is installed from staged packages.
     $nugetConfig = Join-Path $installationPath 'nuget.config'
     $escapedSource = [System.Security.SecurityElement]::Escape($packageDirectory)
     @"
@@ -67,16 +69,26 @@ try {
   <packageSources>
     <clear />
     <add key="staged" value="$escapedSource" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
   </packageSources>
+  <packageSourceMapping>
+    <packageSource key="staged">
+      <package pattern="Infoconex.DotNetBinary.Tools" />
+      <package pattern="Infoconex.DotNetBinary.Tools.*" />
+    </packageSource>
+    <packageSource key="nuget.org">
+      <package pattern="Microsoft.NETCore.App.Host.*" />
+    </packageSource>
+  </packageSourceMapping>
   <auditSources><clear /></auditSources>
 </configuration>
 "@ | Set-Content -LiteralPath $nugetConfig -Encoding utf8NoBOM
     $previousPackages = $env:NUGET_PACKAGES
     try {
         $env:NUGET_PACKAGES = Join-Path $installationPath 'nuget-cache'
-        Write-Host "Installing $version from isolated local feed into $installationPath"
+        Write-Host "Installing $version with staged-only tool packages and NuGet.org restricted to Microsoft SDK host packs into $installationPath"
         & dotnet tool install Infoconex.DotNetBinary.Tools --version $version --tool-path $installationPath --configfile $nugetConfig --no-cache
-        if ($LASTEXITCODE -ne 0) { throw "Clean local NuGet tool installation failed with exit code $LASTEXITCODE." }
+        if ($LASTEXITCODE -ne 0) { throw "Isolated staged NuGet tool installation failed with exit code $LASTEXITCODE." }
     }
     finally { $env:NUGET_PACKAGES = $previousPackages }
 
