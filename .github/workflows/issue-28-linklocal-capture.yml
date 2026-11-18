@@ -1,0 +1,189 @@
+# Temporary, single-use runner diagnostic. Remove after reviewing the evidence.
+name: Issue 28 runner link-local packet investigation
+on:
+  push:
+    branches: [issue/28-six-rid-distribution]
+
+# No checkout, project execution, package restore, or repository secrets.
+permissions: {}
+
+jobs:
+  capture:
+    if: "${{ github.event.head_commit.message == 'Issue 28: one-time link-local packet investigation' }}"
+    name: Capture and sanitize isolated runner link-local traffic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Establish network controls before installing capture tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo iptables -N IMDS_DENY
+          sudo iptables -A IMDS_DENY -j REJECT
+          sudo iptables -I OUTPUT -d 169.254.0.0/16 -j IMDS_DENY
+          sudo iptables -I OUTPUT -d 100.100.100.200/32 -j IMDS_DENY
+          sudo ip6tables -N IMDS_DENY
+          sudo ip6tables -A IMDS_DENY -j REJECT
+          sudo ip6tables -I OUTPUT -d fd00:ec2::254/128 -j IMDS_DENY
+          sudo ip6tables -I OUTPUT -d fd20:ce::254/128 -j IMDS_DENY
+          if curl --noproxy '*' --silent --max-time 2 http://169.254.169.254/latest/meta-data/ >/dev/null 2>&1; then
+            echo 'STOP: instance metadata is unexpectedly reachable during preflight.' >&2
+            exit 1
+          fi
+          echo 'Initial metadata network restrictions verified.'
+
+      - name: Capture one bounded link-local communication window
+        shell: bash
+        env:
+          CAPTURE_DIR: ${{ runner.temp }}/issue28-linklocal-evidence
+        run: |
+          set -euo pipefail
+          mkdir -p "$CAPTURE_DIR"
+          if ! command -v tcpdump >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y tcpdump
+          fi
+          command -v tcpdump >/dev/null 2>&1
+          raw_pcap="$RUNNER_TEMP/issue28-linklocal-private.pcap"
+          raw_packets="$RUNNER_TEMP/issue28-linklocal-private-packets.txt"
+          raw_ascii="$RUNNER_TEMP/issue28-linklocal-private-ascii.txt"
+          restore_block() {
+            if ! sudo iptables -C OUTPUT -d 169.254.0.0/16 -j IMDS_DENY >/dev/null 2>&1; then
+              sudo iptables -I OUTPUT 1 -d 169.254.0.0/16 -j IMDS_DENY
+            fi
+          }
+          cleanup() {
+            restore_block || true
+            sudo rm -f "$raw_pcap" "$raw_packets" "$raw_ascii"
+          }
+          trap cleanup EXIT
+          trap 'exit 130' INT TERM
+
+          # Capture only link-local IPv4 traffic. Raw packets never enter an artifact.
+          sudo timeout --signal=INT --kill-after=3s 85s \
+            tcpdump -n -i any -s 0 -U -w "$raw_pcap" 'net 169.254.0.0/16' \
+            >"$CAPTURE_DIR/capture-status.log" 2>&1 &
+          capture_pid=$!
+          sleep 2
+          if ! kill -0 "$capture_pid" 2>/dev/null; then
+            echo 'STOP: packet capture did not start; firewall remains enabled.' >&2
+            exit 1
+          fi
+
+          # The user approved this one 70-second window. All other metadata blocks remain.
+          sudo iptables -D OUTPUT -d 169.254.0.0/16 -j IMDS_DENY
+          echo 'Permitted IPv4 link-local traffic for 70 seconds on a disposable runner.'
+          sleep 70
+          restore_block
+          sudo iptables -C OUTPUT -d 169.254.0.0/16 -j IMDS_DENY
+          echo 'IPv4 link-local firewall restriction restored.'
+
+          set +e
+          wait "$capture_pid"
+          capture_exit=$?
+          set -e
+          if [ "$capture_exit" -ne 0 ] && [ "$capture_exit" -ne 124 ]; then
+            echo "Packet capture returned unexpected exit code $capture_exit." >&2
+          fi
+          if [ -s "$raw_pcap" ]; then
+            sudo tcpdump -nn -tt -r "$raw_pcap" >"$raw_packets" 2>/dev/null || true
+            sudo tcpdump -nn -A -r "$raw_pcap" >"$raw_ascii" 2>/dev/null || true
+          else
+            : >"$raw_packets"
+            : >"$raw_ascii"
+          fi
+
+          python3 - "$raw_packets" "$raw_ascii" "$CAPTURE_DIR" <<'PY'
+          from collections import Counter
+          from pathlib import Path
+          import re
+          import sys
+          from urllib.parse import urlsplit, parse_qsl
+
+          packets = Path(sys.argv[1]).read_text(errors='replace').splitlines()
+          ascii_lines = Path(sys.argv[2]).read_text(errors='replace').splitlines()
+          output = Path(sys.argv[3])
+          destination_counts = Counter()
+          for line in packets:
+              addresses = re.findall(r'169[.]254[.]\d{1,3}[.]\d{1,3}(?:[.]\d+)?', line)
+              if not addresses:
+                  continue
+              for address in set(addresses):
+                  parts = address.split('.')
+                  ip = '.'.join(parts[:4])
+                  port = parts[4] if len(parts) == 5 else 'unknown'
+                  proto = 'TCP' if 'Flags [' in line else 'UDP' if 'UDP' in line else 'ICMP' if 'ICMP' in line else 'other'
+                  destination_counts[(ip, port, proto)] += 1
+          endpoints = [f'{ip}:{port} {proto}: {count} captured packets' for (ip, port, proto), count in sorted(destination_counts.items())]
+          (output / 'packet-endpoints.log').write_text('\n'.join(endpoints or ['No link-local packets observed.']) + '\n')
+
+          requests = Counter()
+          responses = Counter()
+          safe_headers = Counter()
+          body_keys = Counter()
+          for line in ascii_lines:
+              request = re.search(r'\b(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\s+(\S+)\s+HTTP/1[.]\d', line)
+              if request:
+                  parsed = urlsplit(request.group(2))
+                  query_names = sorted({name for name, _ in parse_qsl(parsed.query, keep_blank_values=True)})
+                  safe_path = re.sub(r'[0-9a-fA-F]{8}-[0-9a-fA-F-]{27,}', '[id]', parsed.path)
+                  requests[(request.group(1), safe_path, tuple(query_names))] += 1
+              response = re.search(r'\bHTTP/1[.]\d\s+(\d{3})\b', line)
+              if response:
+                  responses[response.group(1)] += 1
+              cleaned = line.strip()
+              if cleaned.lower().startswith('host:'):
+                  safe_headers['Host header observed (value redacted)'] += 1
+              elif cleaned.lower().startswith('metadata:'):
+                  safe_headers['Metadata header observed (value redacted)'] += 1
+              elif cleaned.lower().startswith('authorization:'):
+                  safe_headers['Authorization header observed (value redacted)'] += 1
+              elif cleaned.lower().startswith('content-type:'):
+                  safe_headers['Content-Type header observed (value redacted)'] += 1
+              for key in re.findall(r'"([A-Za-z][A-Za-z0-9_-]{0,40})"\s*:', line):
+                  body_keys[key] += 1
+          observations = []
+          observations += [f'{method} {path} (query names: {", ".join(params) if params else "none"}; count: {count})' for (method, path, params), count in sorted(requests.items())]
+          observations += [f'HTTP response {code}: {count} observed' for code, count in sorted(responses.items())]
+          observations += [f'{header}: {count}' for header, count in sorted(safe_headers.items())]
+          observations += [f'JSON key name: {key} (count: {count}; values never retained)' for key, count in sorted(body_keys.items())]
+          (output / 'http-exchange-redacted.log').write_text('\n'.join(observations or ['No plaintext HTTP exchange identified.']) + '\n')
+          summary = [
+              '# Issue #28: GitHub runner link-local packet investigation',
+              '',
+              '- Disposable GitHub-hosted runner; no repository checkout, application execution, or project credentials.',
+              '- A single 70-second IPv4 link-local window was allowed, then the firewall restriction was restored.',
+              '- Other metadata addresses remained blocked throughout.',
+              f'- Link-local packets recorded: {len(packets)}',
+              f'- Distinct link-local IP/port/protocol observations: {len(destination_counts)}',
+              f'- Plaintext HTTP requests detected: {sum(requests.values())}',
+              f'- Plaintext HTTP responses detected: {sum(responses.values())}',
+              '- Only endpoints, request methods/paths, query parameter *names*, response status codes, header presence and JSON key names appear in artifacts.',
+              '- Raw PCAP, header values, query parameter values and response bodies are **not** uploaded.',
+              '',
+              'See `packet-endpoints.log`, `http-exchange-redacted.log` and `capture-status.log` in the diagnostic artifact.',
+          ]
+          (output / 'README.md').write_text('\n'.join(summary) + '\n')
+          print('\n'.join(summary))
+          PY
+
+      - name: Publish redacted findings in the workflow summary
+        if: always()
+        shell: bash
+        env:
+          CAPTURE_DIR: ${{ runner.temp }}/issue28-linklocal-evidence
+        run: |
+          if [ -f "$CAPTURE_DIR/README.md" ]; then
+            cat "$CAPTURE_DIR/README.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '## Link-local capture was not completed; inspect preflight and capture-step logs.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload sanitized packet findings only
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: issue-28-linklocal-sanitized-evidence
+          path: ${{ runner.temp }}/issue28-linklocal-evidence/
+          if-no-files-found: warn
+          retention-days: 14
