@@ -58,10 +58,14 @@ jobs:
 
       - name: Diagnose restore-origin versus background metadata traffic
         shell: bash
+        env:
+          ISSUE28_DIAGNOSTIC_DIR: ${{ runner.temp }}/issue28-diagnostic
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/issue28-home" "$RUNNER_TEMP/issue28-packages"
+          mkdir -p "$ISSUE28_DIAGNOSTIC_DIR" "$RUNNER_TEMP/issue28-home" "$RUNNER_TEMP/issue28-packages"
           trace_file="$RUNNER_TEMP/issue28-connect.trace"
+          restore_log="$ISSUE28_DIAGNOSTIC_DIR/restore-output.log"
+          echo 'Beginning one bounded restore diagnostic (120-second limit).'
           set +e
           env -i \
             PATH="$PATH" \
@@ -71,33 +75,45 @@ jobs:
             NUGET_PACKAGES="$RUNNER_TEMP/issue28-packages" \
             DOTNET_CLI_TELEMETRY_OPTOUT=1 \
             DOTNET_NOLOGO=1 \
-            strace -f -qq -e trace=connect -o "$trace_file" \
+            timeout --signal=TERM --kill-after=5s 120s \
+            strace -f -qq -e trace=connect,execve,exit_group -o "$trace_file" \
               dotnet restore src/Infoconex.DotNetBinary.Cli/Infoconex.DotNetBinary.Cli.csproj \
-              --configfile nuget.config --force-evaluate
+              --configfile nuget.config --force-evaluate >"$restore_log" 2>&1
           restore_exit=$?
           set -e
           v4_hits=$(sudo iptables -nvxL IMDS_DENY | awk '$3 == "REJECT" {print $1}')
           v6_hits=$(sudo ip6tables -nvxL IMDS_DENY | awk '$3 == "REJECT" {print $1}')
-          tracer_hits=$(grep -Ec '169[.]254[.]|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$trace_file" || true)
-          echo "Metadata firewall: IPv4 rejected packets=${v4_hits:-unknown}; IPv6 rejected packets=${v6_hits:-unknown}."
-          echo "Restoration process tree: metadata connection attempts=${tracer_hits}."
-          echo 'Blocked IPv4 destination counters:'
-          sudo iptables -nvxL OUTPUT | awk '$3 == "IMDS_DENY" {print $9 ": " $1 " packets"}'
-          echo 'Blocked IPv6 destination counters:'
-          sudo ip6tables -nvxL OUTPUT | awk '$3 == "IMDS_DENY" {print $9 ": " $1 " packets"}'
-          if [ "$restore_exit" -ne 0 ]; then
-            echo "STOP: restore failed with exit code $restore_exit." >&2
-            exit 1
+          if [ -f "$trace_file" ]; then
+            grep -E '169[.]254[.]|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$trace_file" >"$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log" || true
+            grep -E 'execve\(|exit_group\(' "$trace_file" >"$ISSUE28_DIAGNOSTIC_DIR/process-lifecycle.log" || true
+          else
+            echo 'No trace file was produced.' >"$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log"
+            echo 'No trace file was produced.' >"$ISSUE28_DIAGNOSTIC_DIR/process-lifecycle.log"
           fi
-          if [ "${tracer_hits:-missing}" != '0' ]; then
-            echo 'STOP: restore process tree attempted metadata-network access.' >&2
-            exit 1
+          tracer_hits=$(grep -Ec '169[.]254[.]|100[.]100[.]100[.]200|fd00:ec2|fd20:ce' "$ISSUE28_DIAGNOSTIC_DIR/metadata-connections.log" || true)
+          {
+            echo 'IPv4 blocked destinations (packets):'
+            sudo iptables -nvxL OUTPUT | awk '$3 == "IMDS_DENY" {print $9 ": " $1}'
+            echo 'IPv6 blocked destinations (packets):'
+            sudo ip6tables -nvxL OUTPUT | awk '$3 == "IMDS_DENY" {print $9 ": " $1}'
+          } >"$ISSUE28_DIAGNOSTIC_DIR/firewall-counters.log"
+          decision='FAIL: cannot accept lock artifact'
+          explanation=''
+          if [ "$restore_exit" -eq 124 ] || [ "$restore_exit" -eq 137 ]; then
+            explanation="Restore/tracing exceeded the 120-second command limit (exit $restore_exit)."
+          elif [ "$restore_exit" -ne 0 ]; then
+            explanation="Restore or tracing exited unsuccessfully (exit $restore_exit)."
+          elif [ "${tracer_hits:-missing}" != '0' ]; then
+            explanation='Traced restore process tree attempted a blocked metadata destination.'
+          elif [ "${v4_hits:-missing}" != '0' ] || [ "${v6_hits:-missing}" != '0' ]; then
+            explanation='Metadata egress was blocked outside the traced restore process tree; attribution remains unresolved.'
+          else
+            decision='PASS: no observed metadata-network access'
+            explanation='Restore completed without traced metadata connects or firewall rejects.'
           fi
-          if [ "${v4_hits:-missing}" != '0' ] || [ "${v6_hits:-missing}" != '0' ]; then
-            echo 'STOP: runner-level metadata traffic occurred outside the traced restore process tree; investigate before accepting artifact.' >&2
-            exit 1
-          fi
-          python3 - <<'PY'
+          if [ "$decision" = 'PASS: no observed metadata-network access' ]; then
+            set +e
+            python3 - >"$ISSUE28_DIAGNOSTIC_DIR/lock-rid-check.log" 2>&1 <<'PY'
           import json
           from pathlib import Path
           data = json.loads(Path('src/Infoconex.DotNetBinary.Cli/packages.lock.json').read_text())
@@ -107,6 +123,32 @@ jobs:
               raise SystemExit(f'Unexpected lock RID graph: {sorted(actual)}')
           print('Verified six .NET 11 RID dependency graphs.')
           PY
+            lock_exit=$?
+            set -e
+            if [ "$lock_exit" -ne 0 ]; then
+              decision='FAIL: dependency lock verification unsuccessful'
+              explanation='Restore network checks passed, but six-RID graph verification failed. See lock-rid-check.log.'
+            fi
+          fi
+          {
+            echo '# Issue #28 isolated dependency restore diagnostic'
+            echo
+            echo "- **Result:** $decision"
+            echo "- **Interpretation:** $explanation"
+            echo "- **Restore/tracer exit code:** $restore_exit (124 means timeout)"
+            echo "- **Blocked IPv4 packets:** ${v4_hits:-unknown}"
+            echo "- **Blocked IPv6 packets:** ${v6_hits:-unknown}"
+            echo "- **Traced metadata connection attempts:** $tracer_hits"
+            echo '- **Bounded runtime:** 120 seconds, then TERM and a 5-second kill grace period'
+            echo '- **Source:** repository nuget.config (nuget.org only); no credentials passed to restore'
+            echo
+            echo 'Review the downloadable diagnostic artifact for restore output, process lifecycle, metadata connection attempts and per-destination firewall counters.'
+          } >"$ISSUE28_DIAGNOSTIC_DIR/README.md"
+          cat "$ISSUE28_DIAGNOSTIC_DIR/README.md"
+          if [ "$decision" != 'PASS: no observed metadata-network access' ]; then
+            echo "STOP: $explanation" >&2
+            exit 1
+          fi
 
       - name: Preserve candidate lock for reviewed branch commit
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -115,3 +157,25 @@ jobs:
           path: src/Infoconex.DotNetBinary.Cli/packages.lock.json
           if-no-files-found: error
           retention-days: 3
+
+      - name: Show diagnostic findings in workflow summary
+        if: always()
+        shell: bash
+        env:
+          ISSUE28_DIAGNOSTIC_DIR: ${{ runner.temp }}/issue28-diagnostic
+        run: |
+          if [ -f "$ISSUE28_DIAGNOSTIC_DIR/README.md" ]; then
+            cat "$ISSUE28_DIAGNOSTIC_DIR/README.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '## Issue #28 diagnostic did not reach evidence collection' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Inspect the job setup and firewall-preflight steps; no lock artifact is approved.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload reviewable diagnostic logs, including on failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: issue-28-diagnostic-evidence
+          path: ${{ runner.temp }}/issue28-diagnostic/
+          if-no-files-found: warn
+          retention-days: 14
