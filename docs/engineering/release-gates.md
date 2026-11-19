@@ -6,6 +6,15 @@ while independent Windows/macOS runtime-free consumer acceptance is tracked
 separately in [release Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4).
 The deferred consumer check remains mandatory before publication; it is not
 evidence that those environments have passed.
+[Issue #4's pinned-candidate preparation and clean-consumer operator procedure](../testing/issue-4-consumer-acceptance.md)
+records what is verified and what remains pending. The [observed physical
+consumer attempts](../testing/issue-4-observed-consumer-attempts.md) show an
+unsigned Windows executable blocked by Smart App Control and an ad hoc-signed
+macOS ARM64 executable rejected by Gatekeeper. They are **failed/pending**
+evidence, not runtime-free Windows or Intel macOS x64 success. A new signed,
+reviewed candidate and actual clean-consumer reruns are needed; code-signing
+identity, secret management and macOS notarization require separate owner
+approval.
 
 Approval to merge source is distinct from approval to distribute packages.
 
