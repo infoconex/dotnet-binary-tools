@@ -49,4 +49,6 @@ jobs:
         run: |
           bash -n scripts/consumer-acceptance/osx-x64.sh
           bash -n scripts/consumer-acceptance/osx-apple-silicon.sh
-          echo 'Both syntax checks passed. SDK-equipped runner: consumer execution NOT tested.'
+          bash -n scripts/consumer-acceptance/provision-osx-apple-silicon-vm.sh
+          bash -n scripts/consumer-acceptance/run-osx-apple-silicon-guest.sh
+          echo 'All macOS syntax checks passed. SDK-equipped runner: consumer execution NOT tested.'

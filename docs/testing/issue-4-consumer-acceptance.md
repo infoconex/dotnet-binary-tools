@@ -129,6 +129,90 @@ Use this path to collect independent macOS ARM64 consumer execution and
 separately; **Rosetta is not physical Intel macOS x64 acceptance**. Do not change
 the approved RID support or promote `SC-DST-005` on these results alone.
 
+#### Preferred: scripted fresh-VM setup and guest execution (Tart)
+
+The repository provides **two cooperating scripts**: a host provisioner
+(`provision-osx-apple-silicon-vm.sh`) and a guest runner
+(`run-osx-apple-silicon-guest.sh`). The guest runner calls the already-reviewed
+`osx-apple-silicon.sh` scenario suite. Tart is an open-source CLI built on
+[Apple's Virtualization framework](https://developer.apple.com/documentation/virtualization);
+the [Tart quick start](https://tart.run/quick-start/) documents creation of a
+fresh VM from an Apple IPSW, VM launching and read-only directory sharing.
+This avoids installing any SDK, .NET runtime, SSH server, third-party guest
+agent or developer tool inside the **test consumer**.
+
+On the **Apple Silicon host**, install the official Tart CLI if not already
+installed (this changes the *host*, not the clean guest):
+
+```bash
+brew install openai/tools/tart
+```
+
+Alternatively, follow Tart's official release-installation instructions when
+Homebrew is unavailable. Review that installation as you would any third-party
+host tooling. Allow space for a fresh macOS VM and the Apple IPSW download;
+approximately **80 GB of free host storage** is a prudent working allowance,
+not a guaranteed minimum for all macOS releases. The host needs internet access
+to download macOS; the standalone product tests themselves do not use it.
+
+Download the **unaltered workflow ZIPs** `pre-release-osx-arm64` and
+`pre-release-osx-x64` from [frozen run 44360433040](https://github.com/infoconex/dotnet-binary-tools/actions/runs/44360433040).
+The ZIPs must have the SHA-256 values in the table above. GitHub CLI's
+`gh run download` **extracts** these ZIPs and must not be used as the input to
+this provisioner. Download the host and guest scripts plus
+`osx-apple-silicon.sh` together from **PR #30's branch**, and invoke:
+
+```bash
+bash ./provision-osx-apple-silicon-vm.sh \
+  "$HOME/Downloads/pre-release-osx-arm64.zip" \
+  "$HOME/Downloads/pre-release-osx-x64.zip" \
+  "$HOME/Downloads/issue4-fresh-macos-vm"
+```
+
+The third argument **must not already exist**. The host script does the
+following in order:
+
+1. Refuses non-Apple-Silicon hosts, missing files, preexisting output or a
+   wrong ZIP SHA **before creating a VM**.
+2. Makes an evidence workspace with an input-only mount and a separate
+   writable results mount. Records host/Tart versions, candidate identity,
+   pinned digests and the exact Apple IPSW provisioning method.
+3. Creates a uniquely named new VM using `tart create --from-ipsw=latest`,
+   **not** a cached development VM or a third-party SDK-equipped image.
+4. Launches the GUI with both mounts and displays the single guest command.
+   **First boot is intentionally interactive:** complete Apple's macOS Setup
+   Assistant, create a disposable local account with no personal data and
+   do not install developer tools or sign into a personal Apple ID.
+5. Inside the guest, open Terminal and execute:
+
+   ```bash
+   bash "/Volumes/My Shared Files/acceptance-input/run-osx-apple-silicon-guest.sh"
+   ```
+
+   After attesting the guest was freshly installed and no .NET was installed,
+   the guest script verifies the ZIPs/manifests, extracts the exact standalone
+   binaries and runs five ARM64-native plus five Rosetta x64 cases. It produces
+   per-case raw stdout/stderr, exit codes, UTC timestamps, a concise
+   `test-summary.md` with explicit deferred criteria, and an evidence tar.gz
+   + SHA-256 in the `results/` share.
+6. Shut down the guest normally. The host prints all recorded guest attempt
+   exit codes, archive digests, VM name and evidence directory. Failed attempts
+   and the VM are **preserved**. Use the generated `resume-vm.sh` to reopen the
+   same VM, install Rosetta through macOS's ordinary prompt if required, and
+   rerun the guest script. Each attempt receives a new evidence folder; no
+   prior logs are overwritten.
+
+**Automation limit:** Apple macOS Setup Assistant and the explicit guest
+attestation require a person. Full unattended first-boot provisioning would
+require different macOS-version prerequisites and/or guest management
+capabilities; do not silently install a guest agent, enable SSH, turn off
+Gatekeeper or disable macOS authentication to skip them. The Tart VM is left
+intact until the operator confirms the evidence is retained elsewhere. Do not
+delete it automatically. The host script's unit tests use a **mock Tart** on
+Linux and do not constitute actual VM provisioning or consumer acceptance.
+
+#### Alternative: manually provisioned macOS ARM64 VM
+
 1. On the Mac mini M4, use an Apple-supported macOS virtualization application
    and a **new macOS ARM64 guest installed from Apple-provided media**.
    [Apple's Virtualization framework](https://developer.apple.com/documentation/virtualization/virtualize-macos-on-a-mac)
