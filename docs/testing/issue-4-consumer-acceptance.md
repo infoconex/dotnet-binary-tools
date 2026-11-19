@@ -2,8 +2,11 @@
 
 **Status (2026-11-18 UTC): BLOCKED; not release-ready.** No independently provisioned,
 SDK/runtime-free Windows x64 or physical Intel macOS x64 host was available to
-this assessment. Neither the scripts below nor a successful SDK-equipped CI
-runner establishes those two acceptance results. Do not close [Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4),
+this assessment. The owner deferred Intel-hardware rental for now and approved
+preparing supplementary testing on an existing Apple Silicon Mac; this is
+**not** a waiver of Intel x64 acceptance. Neither these scripts nor a successful
+SDK-equipped CI runner establishes those two acceptance results. Do not close
+[Issue #4](https://github.com/infoconex/dotnet-binary-tools/issues/4),
 promote artifacts, tag, release, or publish without the actual consumer logs and
 separate owner authorization.
 
@@ -23,6 +26,7 @@ separate owner authorization.
 | --- | --- | --- |
 | GitHub workflow ZIP `pre-release-win-x64` | `14453944887` | `7b83dd06cc7bc513b13ca0dbd92ccaf2425c087c0d7e8c347b7769c9e1e9af7a` |
 | GitHub workflow ZIP `pre-release-osx-x64` | `14454039718` | `591d4fb3bf4327051f18da7d3f2a56bda43ead509da8a444b534b7bee02f5b6f` |
+| GitHub workflow ZIP `pre-release-osx-arm64` | `14453764676` | `085074157d2b5657ad866decb755b24eabf43f20d31554de2a69a2f47db16e45` (GitHub artifact metadata; not yet rechecked on a consumer) |
 | GitHub workflow ZIP `pre-release-distribution` | `14454665812` | `5a9edfd9a128ad1ebd810d35a1fd8751c36d60624e8959eb244fc93429ca75c0` |
 | Windows standalone ZIP | in Windows artifact | `0b8204ec74f7c1120c51cc2472c246e5827a8ef60c9987e0086a1728c45fea49` |
 | macOS standalone tar.gz | in macOS artifact | `1126739ffb5c75accd01de2827e2555c20b59ef1c57ede11c84fb065ea140f49` |
@@ -117,9 +121,73 @@ considered sufficient. Mac download quarantine/Gatekeeper behavior should be
 recorded accurately; **do not disable Gatekeeper, bypass policy, or remove
 quarantine as an undocumented workaround.**
 
+### Supplemental: Apple Silicon Mac mini M4 / Mac Studio M3 Ultra
+
+The owner has access to both machines, but **neither contains an Intel CPU**.
+Use this path to collect independent macOS ARM64 consumer execution and
+**Rosetta-translated** x64 execution. The two execution modes must be reported
+separately; **Rosetta is not physical Intel macOS x64 acceptance**. Do not change
+the approved RID support or promote `SC-DST-005` on these results alone.
+
+1. On the Mac mini M4, use an Apple-supported macOS virtualization application
+   and a **new macOS ARM64 guest installed from Apple-provided media**.
+   [Apple's Virtualization framework](https://developer.apple.com/documentation/virtualization/virtualize-macos-on-a-mac)
+   supports macOS guests on Apple Silicon. Record the macOS image origin, guest
+   creation time, VM product/version and settings in the provenance note.
+   No SDK, shared .NET runtime or developer toolchain should be installed in
+   the guest. Do not use a snapshot of a development VM or a host with .NET
+   merely hidden from `PATH`.
+2. For the frozen [run 44360433040](https://github.com/infoconex/dotnet-binary-tools/actions/runs/44360433040),
+   download both **`pre-release-osx-arm64`** and **`pre-release-osx-x64`**
+   workflow ZIPs into the guest (or transfer the unmodified ZIPs via a VM share).
+   The runner's build toolchain is *not* transferred. Download
+   `scripts/consumer-acceptance/osx-apple-silicon.sh` from **PR #30's branch**.
+   Do not replace the ZIPs with another workflow run or recompress them.
+3. Record a non-sensitive `provenance.txt` in the guest with operator, host model,
+   guest/VM software version, Apple macOS installer source, fresh-install date,
+   and confirmation that .NET was not installed. Do not include an Apple ID,
+   hostname, account name or other unrelated personal information.
+4. Review the script, then in a new test directory run:
+
+   ```bash
+   bash ./osx-apple-silicon.sh \
+     ./pre-release-osx-arm64.zip \
+     ./pre-release-osx-x64.zip \
+     ./evidence-mac-arm64-rosetta \
+     ./provenance.txt
+   tar -czf ./evidence-mac-arm64-rosetta.tar.gz ./evidence-mac-arm64-rosetta
+   shasum -a 256 ./evidence-mac-arm64-rosetta.tar.gz
+   ```
+
+5. The script requires a genuine macOS ARM64 guest and checks .NET installation
+   locations, package receipts and PATH. It compares **both outer workflow ZIPs**
+   against GitHub's pinned SHA-256 digests, validates each `SHA256SUMS.txt`,
+   extracts the standalone archives and records their executable digests.
+   It invokes native ARM64 commands with `arch -arm64` and x64 commands with
+   `arch -x86_64`, recording a translated-process Rosetta probe, five cases for
+   each architecture, raw stdout/stderr, exact commands, exit codes and UTC times.
+   Fresh-image provenance is necessary; these inventory checks alone cannot
+   exclude undisclosed nonstandard installations.
+6. If Rosetta is not installed, record the original failure first. Apple's
+   [Rosetta instructions](https://support.apple.com/en-us/102527) describe its
+   normal installation prompt for Intel-only apps. Installing Rosetta is not
+   installing .NET; note the installation and rerun with a **new evidence
+   directory**, preserving the original failure logs. Do not disable security
+   controls or alter the x64 product binary to make it launch. Apple's
+   [translation documentation](https://developer.apple.com/documentation/Apple-Silicon/about-the-rosetta-translation-environment)
+   explains why this does not substitute for actual Intel execution.
+7. Inspect and share the evidence archive after checking for personal data.
+   Include its SHA-256 in the Issue #4 discussion or PR evidence. No success
+   should be recorded until the **actual Mac VM output** is independently
+   reviewed, including the report semantics, not just exit codes.
+
+**Operator results: PENDING.** This supplemental script has not yet been run in
+a real Apple Silicon macOS guest. It must not be represented as an observed
+runtime-free acceptance pass based on Linux syntax checks or CI.
+
 ## Evidence outputs and interpretation
 
-Both scripts refuse to reuse an existing evidence directory. The directory
+All three scripts refuse to reuse an existing evidence directory. The directory
 contains:
 
 - `provenance.txt`, `environment.txt`, `context.txt`, `checksums.txt`;
@@ -128,6 +196,12 @@ contains:
   `cases/invalid-arity`: exact argument vector, raw `stdout.txt`, raw
   `stderr.txt`, and `exit-code.txt`;
 - `work/`: verified artifacts and an inert `synthetic.exe` text fixture.
+
+The Apple Silicon supplemental script places each RID's five cases under
+`cases/osx-arm64-*` and `cases/osx-x64-*` and additionally records
+`rosetta-command.txt`, `rosetta-stdout.txt`, `rosetta-stderr.txt` and
+`rosetta-exit-code.txt`. Its two architecture-specific results are independent
+and must never be collapsed into a claim of Intel-native success.
 
 Required exit codes are `0` for help/version/inspect/scan and `2` for an
 `inspect` command missing its path. `--version` must identify
