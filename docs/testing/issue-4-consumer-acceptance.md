@@ -1,6 +1,6 @@
 # Issue #4 — independent Native AOT consumer acceptance
 
-**Status (2026-11-18 UTC): BLOCKED; not release-ready.** No independently provisioned,
+**Status (2026-11-19 UTC): BLOCKED; not release-ready.** No independently provisioned,
 SDK/runtime-free Windows x64 or physical Intel macOS x64 host was available to
 this assessment. The owner deferred Intel-hardware rental for now and approved
 preparing supplementary testing on an existing Apple Silicon Mac; this is
@@ -18,6 +18,7 @@ separate owner authorization.
   with six native builds and all thirteen distribution inputs. Artifacts expire
   on December 2, 2026 (UTC); retain the extracted evidence or acquire a new
   frozen candidate and regenerate these pinned hashes before expiration.
+- [Observed physical Windows/macOS launch failures, signing diagnosis and acceptance matrix](issue-4-observed-consumer-attempts.md). The Windows evidence ZIP was independently checked; macOS archive findings remain operator-reported pending independent file review.
 - [Managed/NUnit](https://github.com/infoconex/dotnet-binary-tools/actions/runs/44360433068),
   [CodeQL](https://github.com/infoconex/dotnet-binary-tools/actions/runs/44360432870),
   [Documentation](https://github.com/infoconex/dotnet-binary-tools/actions/runs/44360437476).
@@ -48,12 +49,12 @@ passed. This was a verification-command path error, not a bad artifact.
 
 | Issue #4 acceptance criterion | Assessment | Evidence required to pass |
 | --- | --- | --- |
-| Genuine clean Windows x64 host, SDK/runtime absent | Pending | Fresh image provenance, inventory, native execution log |
+| Genuine clean Windows x64 host, SDK/runtime absent | **Pending** | The SDK-equipped physical Windows 11 desktop failed to launch under Smart App Control; a genuinely runtime-free host is still required. |
 | Genuine clean Intel macOS x64 host, SDK/runtime absent | Pending | Genuine Intel machine/legitimate macOS VM provenance, inventory, native execution log |
-| Candidate SHA, immutable artifacts and per-platform hashes | Prepared, not complete on hosts | Repeat pinned SHA-256 verification **on both consumers** |
-| Native `--help`, `--version`, `inspect`, `scan` and malformed invocation | Pending | Raw stdout/stderr, exit codes, OS/CPU and UTC time per host |
-| Native OS dependencies/signing/launch restrictions reviewed | Pending | Actual host observations; diagnose each failure with OS build and error text |
-| Release readiness and traceability updated | Partial | Promote `SC-DST-005` only after both hosts genuinely pass; ARM64 gates remain independent |
+| Candidate SHA, immutable artifacts and per-platform hashes | **Partial** | Windows desktop outer ZIP, standalone ZIP, executable and five native manifest checks passed; supplemental Mac ZIP hashes matched. Repeat verification on **both required clean x64 consumers**. |
+| Native `--help`, `--version`, `inspect`, `scan` and malformed invocation | **Blocked** | Windows launch denied by Smart App Control; supplemental macOS ARM64 was killed and Rosetta x64 was unavailable. No application behavior has passed on required consumers. |
+| Native OS dependencies/signing/launch restrictions reviewed | **Partially diagnosed** | Windows unsigned executable blocked by Code Integrity policy; macOS Gatekeeper rejects an ad hoc-signed/quarantined ARM64 binary; see [evidence report](issue-4-observed-consumer-attempts.md). |
+| Release readiness and traceability updated | **Blocked; documented** | `SC-DST-005` stays Blocked until both clean x64 hosts actually pass; signing/notarization and ARM64 gates remain separate. |
 
 The latest product scope also includes `win-arm64` and `osx-arm64`, as approved
 in [Issue #28](https://github.com/infoconex/dotnet-binary-tools/issues/28).
@@ -136,13 +137,14 @@ The owner reported macOS **26.4.1 (25E253)** on a physical Mac mini M4,
 locations absent, no .NET package receipts and no Homebrew .NET packages. The
 owner independently confirmed that **no .NET SDK or shared runtime was ever
 installed on that Mac**. These are operator-reported screening observations,
-**not yet captured by the executable test harness**. They make the physical
+**captured in the failed first test attempt**. The full macOS evidence archive has not yet been supplied for independent review. They make the physical
 Mac a credible clean ARM64 consumer candidate without creating a VM.
 
 The original `pre-release-osx-arm64.zip` and `pre-release-osx-x64.zip` were
 downloaded onto that Mac and their pinned workflow SHA-256 digests independently
-matched the values above, as reported by the owner. The real execution step
-is still pending.
+matched the values above, as reported by the owner. The real execution step was attempted and **failed** due to Gatekeeper rejection
+(ARM64) and unavailable Rosetta translation (x64). The original attempt and
+reported archive SHA-256 are recorded in the [observed-attempts report](issue-4-observed-consumer-attempts.md).
 
 Download both `run-osx-apple-silicon-physical.sh` and
 `osx-apple-silicon.sh` from **PR #30's branch** into one directory. The physical
@@ -162,7 +164,7 @@ Expected output under `issue4-physical-mac-evidence/` includes
 `evidence/test-summary.md`, `evidence/environment.txt`,
 `evidence/checksums.txt`, `evidence/summary.txt`, separate raw case logs
 for each ARM64 and Rosetta x64 command, and `evidence-mac-physical.tar.gz` plus
-`evidence-mac-physical.sha256.txt`. **Preserve any failed first attempt** and
+`evidence-mac-physical.sha256.txt`. The owner preserved the failed first attempt; **preserve any failed first attempt** and
 use a new results directory on retry. Review Gatekeeper/Rosetta prompts
 without weakening security policies. The physical Mac proves nothing about
 Intel-native execution, which remains deferred, or Windows x64, still pending.
