@@ -40,7 +40,7 @@ printf 'Issue #4 supplemental Apple Silicon test (not Intel-native acceptance)\n
 
 clean=true
 {
-  echo 'Requirement: freshly provisioned Apple Silicon macOS guest with NO .NET SDK/shared runtime.'
+  echo 'Requirement: independently evidenced Apple Silicon macOS consumer with NO .NET SDK/shared runtime.'
   echo 'Note: x64 executable will run under Rosetta; this is not physical Intel evidence.'
   sw_vers
   uname -a
@@ -69,7 +69,7 @@ clean=true
   if command -v dotnet >/dev/null 2>&1; then clean=false; fi
   if [ "$(uname -m)" != arm64 ]; then clean=false; fi
   if [ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" != 1 ]; then clean=false; fi
-  printf 'Clean Apple Silicon guest inventory result: %s\n' "$clean"
+  printf 'Clean Apple Silicon consumer inventory result: %s\n' "$clean"
 } > "$evidence/environment.txt" 2>&1
 
 if [ "$clean" != true ]; then
@@ -134,7 +134,7 @@ mkdir -p "$evidence/work/fixtures"
 printf 'Inert, deliberately non-PE test fixture for static inspection.\n' \
   > "$evidence/work/fixtures/synthetic.exe"
 
-# Record whether a translated x86_64 process can start in this guest.
+# Record whether a translated x86_64 process can start on this consumer.
 # The probe is not a substitute for running the actual product executable.
 printf '%s\nUTC start: %s\n' \
   "arch -x86_64 /bin/sh -c 'sysctl -n sysctl.proc_translated'" \

@@ -11,6 +11,7 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "consumer-acceptance" / "osx-apple-silicon.sh"
 VM_SCRIPT = SCRIPT.with_name("provision-osx-apple-silicon-vm.sh")
+PHYSICAL_SCRIPT = SCRIPT.with_name("run-osx-apple-silicon-physical.sh")
 
 
 @unittest.skipUnless(shutil.which("bash"), "system Bash unavailable")
@@ -33,6 +34,58 @@ class AppleSiliconOperatorScriptPreflightTests(unittest.TestCase):
 
         self.assertEqual(1, result.returncode)
         self.assertIn("requires a real macOS", result.stderr)
+
+
+@unittest.skipUnless(shutil.which("bash"), "system Bash unavailable")
+class AppleSiliconPhysicalOperatorPreflightTests(unittest.TestCase):
+    def test_missing_arguments_rejected_without_running_binary(self):
+        result = subprocess.run(["bash", str(PHYSICAL_SCRIPT)], capture_output=True, text=True, check=False)
+        self.assertEqual(2, result.returncode)
+        self.assertIn("Usage:", result.stderr)
+
+    @unittest.skipUnless(platform.system() == "Linux", "requires a non-macOS host")
+    def test_linux_rejected_without_running_binary(self):
+        result = subprocess.run(
+            ["bash", str(PHYSICAL_SCRIPT), "arm.zip", "x64.zip", "new-evidence"],
+            input="YES\n",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(1, result.returncode)
+        self.assertIn("Apple Silicon macOS", result.stderr)
+
+    @unittest.skipUnless(platform.system() == "Linux", "mocked macOS host only")
+    def test_untrusted_artifacts_are_rejected_before_attestation_or_output_creation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            fake_bin = root / "fake-bin"
+            fake_bin.mkdir()
+            fake_uname = fake_bin / "uname"
+            fake_uname.write_text(
+                '#!/bin/sh\nif [ "$1" = -s ]; then echo Darwin; else echo arm64; fi\n',
+                encoding="utf-8",
+            )
+            fake_uname.chmod(0o755)
+            (root / "arm.zip").write_bytes(b"tampered ARM64 artifact")
+            (root / "x64.zip").write_bytes(b"tampered x64 artifact")
+            output = root / "results"
+            env = dict(os.environ)
+            env["PATH"] = f"{fake_bin}{os.pathsep}{env.get('PATH', '')}"
+
+            result = subprocess.run(
+                ["bash", str(PHYSICAL_SCRIPT), str(root / "arm.zip"), str(root / "x64.zip"),
+                 str(output)],
+                input="YES\n",
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(1, result.returncode)
+            self.assertIn("SHA-256 mismatch", result.stderr)
+            self.assertFalse(output.exists(), "No product or evidence output on hash mismatch")
 
 
 @unittest.skipUnless(shutil.which("bash"), "system Bash unavailable")

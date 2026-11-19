@@ -129,7 +129,49 @@ Use this path to collect independent macOS ARM64 consumer execution and
 separately; **Rosetta is not physical Intel macOS x64 acceptance**. Do not change
 the approved RID support or promote `SC-DST-005` on these results alone.
 
-#### Preferred: scripted fresh-VM setup and guest execution (Tart)
+#### Preferred when the physical Mac has never had .NET installed
+
+The owner reported macOS **26.4.1 (25E253)** on a physical Mac mini M4,
+`arm64`, no `dotnet` command on PATH, all seven checked standard installation
+locations absent, no .NET package receipts and no Homebrew .NET packages. The
+owner independently confirmed that **no .NET SDK or shared runtime was ever
+installed on that Mac**. These are operator-reported screening observations,
+**not yet captured by the executable test harness**. They make the physical
+Mac a credible clean ARM64 consumer candidate without creating a VM.
+
+The original `pre-release-osx-arm64.zip` and `pre-release-osx-x64.zip` were
+downloaded onto that Mac and their pinned workflow SHA-256 digests independently
+matched the values above, as reported by the owner. The real execution step
+is still pending.
+
+Download both `run-osx-apple-silicon-physical.sh` and
+`osx-apple-silicon.sh` from **PR #30's branch** into one directory. The physical
+entry point asks for an explicit installation-history attestation, checks the
+exact ZIP hashes again, and then runs the platform-neutral consumer script.
+From that directory, use a **new** output path:
+
+```bash
+bash ./run-osx-apple-silicon-physical.sh \
+  "$HOME/Downloads/pre-release-osx-arm64.zip" \
+  "$HOME/Downloads/pre-release-osx-x64.zip" \
+  "$HOME/Downloads/issue4-physical-mac-evidence"
+```
+
+Expected output under `issue4-physical-mac-evidence/` includes
+`provenance.txt`, `operator-run.log`, `test-exit-code.txt`,
+`evidence/test-summary.md`, `evidence/environment.txt`,
+`evidence/checksums.txt`, `evidence/summary.txt`, separate raw case logs
+for each ARM64 and Rosetta x64 command, and `evidence-mac-physical.tar.gz` plus
+`evidence-mac-physical.sha256.txt`. **Preserve any failed first attempt** and
+use a new results directory on retry. Review Gatekeeper/Rosetta prompts
+without weakening security policies. The physical Mac proves nothing about
+Intel-native execution, which remains deferred, or Windows x64, still pending.
+
+This direct test requires no Homebrew, Tart, guest image or .NET installation.
+The script does not scan unrelated personal files, although evidence may
+contain paths identifying the local account; review before sharing.
+
+#### Alternative: scripted fresh-VM setup and guest execution (Tart)
 
 The repository provides **two cooperating scripts**: a host provisioner
 (`provision-osx-apple-silicon-vm.sh`) and a guest runner
